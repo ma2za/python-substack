@@ -151,7 +151,7 @@ class Api:
         """
 
         Args:
-            draft:
+            draft: draft id
             title:
             subtitle:
             body:
@@ -176,7 +176,7 @@ class Api:
         """
 
         Args:
-            draft:
+            draft: draft id
 
         Returns:
 
@@ -193,14 +193,14 @@ class Api:
         """
 
         Args:
-            draft:
+            draft: draft id
             send:
             share_automatically:
 
         Returns:
 
         """
-        response = requests.post(
+        response = self._session.post(
             f"{self.publication_url}/drafts/{draft}/publish",
             json={"send": send, "share_automatically": share_automatically},
         )

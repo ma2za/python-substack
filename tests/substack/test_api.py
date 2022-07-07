@@ -60,5 +60,5 @@ class ApiTest(unittest.TestCase):
             password=os.getenv("PASSWORD"),
             publication_url=os.getenv("PUBLICATION_URL"),
         )
-        posted_draft = api.put_draft("62667935")
+        posted_draft = api.put_draft("")
         self.assertIsNotNone(posted_draft)
