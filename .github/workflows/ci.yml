@@ -1,0 +1,14 @@
+name: Build and Publish
+on: [ push ]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Formatting
+      - run: pip install black isort
+      - run: black substack
+      - run: isort substack
+      - name: Build and Publish
+      - run: pip install poetry
+      - run: poetry version patch
+      - run: poetry publish --build
