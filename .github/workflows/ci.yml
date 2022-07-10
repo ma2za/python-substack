@@ -4,11 +4,13 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
+      - name: Install dependencies
+        run: pip install black isort poetry
       - name: Formatting
-      - run: pip install black isort
-      - run: black substack
-      - run: isort substack
+        run: |
+          black substack
+          isort substack
       - name: Build and Publish
-      - run: pip install poetry
-      - run: poetry version patch
-      - run: poetry publish --build
+        run: |
+          poetry version patch
+          poetry publish --build
