@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.0.2"
+version = "0.0.4"
 description = "A Python wrapper around the Substack API."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
@@ -17,8 +17,10 @@ keywords = ["substack"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-python-dotenv = "^0.20.0"
+
 requests = "^2.28.1"
+python-dotenv = "^0.20.0"
+
 
 [tool.poetry.dev-dependencies]
 
