@@ -62,3 +62,13 @@ class ApiTest(unittest.TestCase):
         )
         posted_draft = api.put_draft("")
         self.assertIsNotNone(posted_draft)
+
+    def test_get_categories(self):
+        api = Api()
+        categories = api.get_categories()
+        self.assertIsNotNone(categories)
+
+    def test_get_single_category(self):
+        api = Api()
+        category = api.get_single_category(4, "all", limit=100)
+        self.assertIsNotNone(category)

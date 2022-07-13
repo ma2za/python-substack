@@ -15,12 +15,12 @@ class Api:
     """
 
     def __init__(
-        self,
-        email: str,
-        password: str,
-        base_url: str | None = None,
-        publication_url: str | None = None,
-        debug: bool = False,
+            self,
+            email: str | None = None,
+            password: str | None = None,
+            base_url: str | None = None,
+            publication_url: str | None = None,
+            debug: bool = False,
     ):
         """
 
@@ -42,14 +42,17 @@ class Api:
             logging.basicConfig()
             logging.getLogger().setLevel(logging.DEBUG)
 
-        self._init_session(email, password)
+        self._session = requests.Session()
+
+        if email is not None and password is not None:
+            self.login(email, password)
 
     def login(self, email: str, password: str) -> dict:
         """
 
         Args:
-          email:
-          password:
+          email: substack account email
+          password: substack account password
         """
 
         response = self._session.post(
@@ -63,11 +66,6 @@ class Api:
             },
         )
         return Api._handle_response(response=response)
-
-    def _init_session(self, email, password):
-        self._session = requests.Session()
-
-        self.login(email, password)
 
     @staticmethod
     def _handle_response(response: requests.Response):
@@ -112,11 +110,11 @@ class Api:
         return Api._handle_response(response=response)
 
     def post_draft(
-        self,
-        draft_bylines: list,
-        title: str = None,
-        subtitle: str = None,
-        body: str = None,
+            self,
+            draft_bylines: list,
+            title: str = None,
+            subtitle: str = None,
+            body: str = None,
     ) -> dict:
         """
 
@@ -141,12 +139,12 @@ class Api:
         return Api._handle_response(response=response)
 
     def put_draft(
-        self,
-        draft: str,
-        title: str = None,
-        subtitle: str = None,
-        body: str = None,
-        cover_image: str = None,
+            self,
+            draft: str,
+            title: str = None,
+            subtitle: str = None,
+            body: str = None,
+            cover_image: str = None,
     ) -> dict:
         """
 
@@ -188,7 +186,7 @@ class Api:
         return Api._handle_response(response=response)
 
     def publish_draft(
-        self, draft: str, send: bool = True, share_automatically: bool = False
+            self, draft: str, send: bool = True, share_automatically: bool = False
     ) -> dict:
         """
 
@@ -205,3 +203,50 @@ class Api:
             json={"send": send, "share_automatically": share_automatically},
         )
         return Api._handle_response(response=response)
+
+    def get_categories(self):
+        """
+
+        Retrieve list of all available categories.
+
+        Returns:
+
+        """
+        response = self._session.get(f"{self.base_url}/categories")
+        return Api._handle_response(response=response)
+
+    def get_category(self, category_id: int, category_type: str, page: int):
+        response = self._session.get(f"{self.base_url}/category/public/{category_id}/{category_type}",
+                                     params={"page": page})
+        return Api._handle_response(response=response)
+
+    def get_single_category(self, category_id: int, category_type: str, page: int | None = None,
+                            limit: int | None = None):
+        """
+
+        Args:
+            category_id:
+            category_type: paid or all
+            page: by default substack retrieves only the first 25 publications in the category. If this is left None,
+                  then all pages will be retrieved. The page size is 25 publications.
+            limit:
+        Returns:
+
+        """
+        if page is not None:
+            output = self.get_category(category_id, category_type, page)
+        else:
+            publications = []
+            page = 0
+            while True:
+                page_output = self.get_category(category_id, category_type, page)
+                publications.extend(page_output.get("publications", []))
+                if (limit is not None and limit <= len(publications)) or not page_output.get("more", False):
+                    publications = publications[:limit]
+                    break
+                page += 1
+            output = {
+                "publications": publications,
+                "more": page_output.get("more", False)
+            }
+        return output
