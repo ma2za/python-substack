@@ -31,7 +31,7 @@ post = Post("How to publish a Substack post using the Python API",
             os.getenv("USER_ID"))
 post.paragraph().text("Set the EMAIL, PASSWORD and PUBLICATION_URL environment variables.")
 
-draft = api.post_draft(vars(post))
+draft = api.post_draft(post.get_draft())
 
 api.prepublish_draft(draft.get("id"))
 

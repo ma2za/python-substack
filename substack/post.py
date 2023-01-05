@@ -1,3 +1,6 @@
+import json
+
+
 class Post:
 
 	def __init__(self, title: str, subtitle: str, user_id: str):
@@ -26,3 +29,8 @@ class Post:
 
 	def remove_last_paragraph(self):
 		del self.draft_body.get("content")[-1]
+
+	def get_draft(self):
+		out = vars(self)
+		out["draft_body"] = json.dumps(out["draft_body"])
+		return out
