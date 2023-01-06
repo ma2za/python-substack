@@ -1,0 +1,23 @@
+title:
+  "How to publish a Substack post using the Python API"
+subtitle:
+  "This post was published using the Python API"
+body:
+  0:
+    type: "heading"
+    level: 1
+    content: "Steps"
+  1:
+    type: "paragraph"
+    content: "1)"
+  2:
+    type: "paragraph"
+    content: "Discover your USER ID by inspecting the request body of any publish request."
+  3:
+    type: "horizontal_rule"
+  4:
+    type: "paragraph"
+    content: "2)"
+  5:
+    type: "paragraph"
+    content: "Set the EMAIL, PASSWORD, PUBLICATION_URL and USER_ID environment variables."

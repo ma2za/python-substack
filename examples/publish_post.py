@@ -1,5 +1,7 @@
+import argparse
 import os
 
+import yaml
 from dotenv import load_dotenv
 
 from substack import Api
@@ -7,33 +9,34 @@ from substack.post import Post
 
 load_dotenv()
 
-content = """
-1)
+if __name__ == "__main__":
 
-Set the EMAIL, PASSWORD and PUBLICATION_URL environment variables.
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-p", "--post", default="draft.yaml", required=True,
+	                    help="YAML file containing the post to publish.", type=str)
+	parser.add_argument("--publish", help="Publish the draft.", action="store_true")
+	args = parser.parse_args()
 
-2)
+	with open(args.post, "r") as fp:
+		post_data = yaml.safe_load(fp)
 
-Discover your USER ID by inspecting the request body of any publish request.
+	title = post_data.get("title", "")
+	subtitle = post_data.get("subtitle", "")
+	body = post_data.get("body", {})
 
-"""
+	api = Api(
+		email=os.getenv("EMAIL"),
+		password=os.getenv("PASSWORD"),
+		publication_url=os.getenv("PUBLICATION_URL"),
+	)
 
-api = Api(
-	email=os.getenv("EMAIL"),
-	password=os.getenv("PASSWORD"),
-	publication_url=os.getenv("PUBLICATION_URL"),
-)
+	post = Post(title, subtitle, os.getenv("USER_ID"))
+	for _, item in body.items():
+		post.add(item)
 
-body = f'{{"type":"doc","content": {content}}}'
+	draft = api.post_draft(post.get_draft())
 
-post = Post("How to publish a Substack post using the Python API",
-            "This post was published using the Python API",
-            os.getenv("USER_ID"))
-post.paragraph().text("Set the EMAIL, PASSWORD and PUBLICATION_URL environment variables.")
+	if args.publish:
+		api.prepublish_draft(draft.get("id"))
 
-draft = api.post_draft(post.get_draft())
-
-api.prepublish_draft(draft.get("id"))
-
-api.publish_draft(draft.get("id"))
-print()
+		api.publish_draft(draft.get("id"))
