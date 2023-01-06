@@ -1,5 +1,8 @@
 name: Upload Python Package
-on: [ push ]
+on:
+  push:
+    branches:
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
