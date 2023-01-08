@@ -109,3 +109,17 @@ class Post:
 		out = vars(self)
 		out["draft_body"] = json.dumps(out["draft_body"])
 		return out
+
+	def subscribe_with_caption(self, value):
+		content = self.draft_body["content"][-1].get("content", [])
+		content += [{"type": "subscribeWidget",
+		             "attrs": {"url": "%%checkout_url%%", "text": "Subscribe"},
+		             "content": [
+			             {
+				             "type": "ctaCaption",
+				             "content": [{"type": "text",
+				                          "text": f"Thanks for reading {value}’s Substack! Subscribe for free to receive new posts and support my work."}]
+			             }
+		             ]}]
+		self.draft_body["content"][-1]["content"] = content
+		return self
