@@ -14,6 +14,8 @@ class Post:
 		content = item.get("content")
 		if item.get("type") == "captionedImage":
 			self.captioned_image(item)
+		elif item.get("type") == "youtube2":
+			self.youtube(item.get("src"))
 		else:
 			if content is not None:
 				self.add_complex_text(content)
@@ -86,7 +88,8 @@ class Post:
 			self.text(text)
 		else:
 			for chunk in text:
-				self.text(chunk.get("content")).marks(chunk.get("marks"))
+				if chunk:
+					self.text(chunk.get("content")).marks(chunk.get("marks"))
 
 	def marks(self, marks):
 		content = self.draft_body["content"][-1].get("content", [])[-1]
@@ -118,8 +121,14 @@ class Post:
 			             {
 				             "type": "ctaCaption",
 				             "content": [{"type": "text",
-				                          "text": f"Thanks for reading {value}’s Substack! Subscribe for free to receive new posts and support my work."}]
+				                          "text": f"Thanks for reading {value}! Subscribe for free to receive new posts and support my work."}]
 			             }
 		             ]}]
 		self.draft_body["content"][-1]["content"] = content
+		return self
+
+	def youtube(self, value):
+		content_attrs = self.draft_body["content"][-1].get("attrs", {})
+		content_attrs.update({"videoId": value})
+		self.draft_body["content"][-1]["attrs"] = content_attrs
 		return self
