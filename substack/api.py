@@ -111,6 +111,12 @@ class Api:
 		)
 		return Api._handle_response(response=response)
 
+	def delete_draft(self, draft_id):
+		response = self._session.delete(
+			f"{self.publication_url}/drafts/{draft_id}"
+		)
+		return Api._handle_response(response=response)
+
 	def post_draft(self, body) -> dict:
 		"""
 
@@ -189,6 +195,15 @@ class Api:
 		)
 		return Api._handle_response(response=response)
 
+	def get_image(self, image):
+		response = self._session.post(
+			f"{self.publication_url}/image",
+			json={
+				"image": image
+			},
+		)
+		return Api._handle_response(response=response)
+
 	def get_categories(self):
 		"""
 
@@ -235,3 +250,13 @@ class Api:
 				"more": page_output.get("more", False)
 			}
 		return output
+
+	def delete_all_drafts(self):
+		response = None
+		while True:
+			drafts = self.get_drafts(filter="draft", limit=10, offset=0)
+			if len(drafts) == 0:
+				break
+			for draft in drafts:
+				response = self.delete_draft(draft.get("id"))
+		return response
