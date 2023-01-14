@@ -3,7 +3,7 @@ import json
 
 class Post:
 
-	def __init__(self, title: str, subtitle: str, user_id: str):
+	def __init__(self, title, subtitle, user_id):
 		self.draft_title = title
 		self.draft_subtitle = subtitle
 		self.draft_body = {"type": "doc", "content": []}
@@ -67,7 +67,7 @@ class Post:
 		}}]
 		self.draft_body["content"][-1]["content"] = content
 
-	def text(self, value: str):
+	def text(self, value):
 		"""
 
 		Add text to the last paragraph.
