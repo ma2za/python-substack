@@ -16,11 +16,11 @@ class Api:
 
 	def __init__(
 			self,
-			email: str | None = None,
-			password: str | None = None,
-			base_url: str | None = None,
-			publication_url: str | None = None,
-			debug: bool = False,
+			email = None,
+			password = None,
+			base_url = None,
+			publication_url = None,
+			debug = False,
 	):
 		"""
 
@@ -47,7 +47,7 @@ class Api:
 		if email is not None and password is not None:
 			self.login(email, password)
 
-	def login(self, email: str, password: str) -> dict:
+	def login(self, email, password) -> dict:
 		"""
 
 		Login to the substack account.
@@ -104,7 +104,7 @@ class Api:
 
 		return Api._handle_response(response=response)
 
-	def get_drafts(self, filter: str = None, offset: int = None, limit: int = None):
+	def get_drafts(self, filter = None, offset = None, limit = None):
 		response = self._session.get(
 			f"{self.publication_url}/drafts",
 			params={"filter": filter, "offset": offset, "limit": limit},
@@ -131,11 +131,11 @@ class Api:
 
 	def put_draft(
 			self,
-			draft: str,
-			title: str = None,
-			subtitle: str = None,
-			body: str = None,
-			cover_image: str = None,
+			draft,
+			title = None,
+			subtitle = None,
+			body = None,
+			cover_image = None,
 	) -> dict:
 		"""
 
@@ -161,7 +161,7 @@ class Api:
 		)
 		return Api._handle_response(response=response)
 
-	def prepublish_draft(self, draft: str) -> dict:
+	def prepublish_draft(self, draft) -> dict:
 		"""
 
 		Args:
@@ -177,7 +177,7 @@ class Api:
 		return Api._handle_response(response=response)
 
 	def publish_draft(
-			self, draft: str, send: bool = True, share_automatically: bool = False
+			self, draft, send: bool = True, share_automatically: bool = False
 	) -> dict:
 		"""
 
@@ -215,13 +215,13 @@ class Api:
 		response = self._session.get(f"{self.base_url}/categories")
 		return Api._handle_response(response=response)
 
-	def get_category(self, category_id: int, category_type: str, page: int):
+	def get_category(self, category_id, category_type, page):
 		response = self._session.get(f"{self.base_url}/category/public/{category_id}/{category_type}",
 		                             params={"page": page})
 		return Api._handle_response(response=response)
 
-	def get_single_category(self, category_id: int, category_type: str, page: int | None = None,
-	                        limit: int | None = None):
+	def get_single_category(self, category_id, category_type, page = None,
+	                        limit = None):
 		"""
 
 		Args:
