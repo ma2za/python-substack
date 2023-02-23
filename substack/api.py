@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 import requests
 
@@ -192,6 +193,37 @@ class Api:
 		response = self._session.post(
 			f"{self.publication_url}/drafts/{draft}/publish",
 			json={"send": send, "share_automatically": share_automatically},
+		)
+		return Api._handle_response(response=response)
+
+	def schedule_draft(self, draft, draft_datetime: datetime) -> dict:
+		"""
+
+		Args:
+			draft: draft id
+			draft_datetime: datetime to schedule the draft
+
+		Returns:
+
+		"""
+		response = self._session.post(
+			f"{self.publication_url}/drafts/{draft}/schedule",
+			json={"post_date": draft_datetime.isoformat()}
+		)
+		return Api._handle_response(response=response)
+
+	def unschedule_draft(self, draft) -> dict:
+		"""
+
+		Args:
+			draft: draft id
+
+		Returns:
+
+		"""
+		response = self._session.post(
+			f"{self.publication_url}/drafts/{draft}/schedule",
+			json={"post_date": None}
 		)
 		return Api._handle_response(response=response)
 
