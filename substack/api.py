@@ -1,4 +1,6 @@
+import base64
 import logging
+import os
 from datetime import datetime
 from urllib.parse import urljoin
 
@@ -234,14 +236,18 @@ class Api:
         This method generates a new substack link that contains the image.
 
         Args:
-            image: original url to image.
+            image: filepath or original url of image.
 
         Returns:
 
         """
+        if os.path.exists(image):
+            with open(image, "rb") as file:
+                image = b"data:image/jpeg;base64," + base64.b64encode(file.read())
+
         response = self._session.post(
             f"{self.publication_url}/image",
-            json={
+            data={
                 "image": image
             },
         )
