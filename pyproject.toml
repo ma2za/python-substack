@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.1.5"
+version = "0.1.6"
 description = "A Python wrapper around the Substack API."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
@@ -10,8 +10,8 @@ packages = [
 
 readme = "README.md"
 
-repository = "https://github.com/mazza8/python-substack"
-homepage = "https://github.com/mazza8/python-substack"
+repository = "https://github.com/ma2za/python-substack"
+homepage = "https://github.com/ma2za/python-substack"
 
 keywords = ["substack"]
 
