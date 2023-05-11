@@ -19,8 +19,11 @@ body:
     type: "paragraph"
     content: "2)"
   5:
+    type: "captionedImage"
+    src: "https://media.tenor.com/7B4jMa-a7bsAAAAC/i-am-batman.gif"
+  6:
     type: "paragraph"
     content: "Set the EMAIL, PASSWORD, PUBLICATION_URL and USER_ID environment variables."
-  6:
+  7:
     type: "captionedImage"
-    src: "https://i.insider.com/602ee9d81a89f20019a377c6?width=1136&format=jpeg"
+    src: "rickroll_4k.jpg"
