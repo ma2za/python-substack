@@ -21,8 +21,10 @@ Set the following environment variables by creating a **.env** file:
     PASSWORD=
     USER_ID=
 
-The only way I found to discover the USER_ID is to inspect
-the payload to a **/drafts** request. Under the fields **draftBylines**
-or **postBylines** there is a subfield **user_id** or **id**
+To discover the USER_ID go to your public profile page,
+in the URL bar of the browser you find the substack address 
+followed by your USER_ID and your username:
+https://substack.com/profile/[USER_ID]-[username]
+
 
 The .env file will be ignored by git but always be careful.
