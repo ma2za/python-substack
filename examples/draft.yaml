@@ -2,6 +2,10 @@ title:
   "How to publish a Substack post using the Python API"
 subtitle:
   "This post was published using the Python API"
+audience:
+  "everyone" # everyone, only_paid, founding, only_free
+write_comment_permissions:
+  "none" # none, only_paid, everyone
 body:
   0:
     type: "heading"
@@ -12,7 +16,7 @@ body:
     content: "1)"
   2:
     type: "paragraph"
-    content: "Discover your USER ID by inspecting the request body of any publish request."
+    content: "discover the USER_ID in the url of the public profile page"
   3:
     type: "horizontal_rule"
   4:

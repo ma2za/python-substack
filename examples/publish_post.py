@@ -20,17 +20,20 @@ if __name__ == "__main__":
     with open(args.post, "r") as fp:
         post_data = yaml.safe_load(fp)
 
-    title = post_data.get("title", "")
-    subtitle = post_data.get("subtitle", "")
-    body = post_data.get("body", {})
-
     api = Api(
         email=os.getenv("EMAIL"),
         password=os.getenv("PASSWORD"),
         publication_url=os.getenv("PUBLICATION_URL"),
     )
 
-    post = Post(title, subtitle, os.getenv("USER_ID"))
+    post = Post(post_data.get("title"),
+                post_data.get("subtitle", ""),
+                os.getenv("USER_ID"),
+                audience=post_data.get("audience", "everyone"),
+                write_comment_permissions=post_data.get("write_comment_permissions", "everyone"))
+
+    body = post_data.get("body", {})
+
     for _, item in body.items():
         if item.get("type") == "captionedImage":
             image = api.get_image(item.get("src"))
