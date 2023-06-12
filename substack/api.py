@@ -21,12 +21,12 @@ class Api:
     """
 
     def __init__(
-        self,
-        email=None,
-        password=None,
-        base_url=None,
-        publication_url=None,
-        debug=False,
+            self,
+            email=None,
+            password=None,
+            base_url=None,
+            publication_url=None,
+            debug=False,
     ):
         """
 
@@ -94,8 +94,10 @@ class Api:
 
     def get_publication_users(self):
         """
+        Get list of users.
 
-        :return:
+        Returns:
+
         """
         response = self._session.get(f"{self.publication_url}/publication/users")
 
@@ -104,13 +106,24 @@ class Api:
     def get_posts(self) -> dict:
         """
 
-        :return:
+        Returns:
+
         """
         response = self._session.get(f"{self.base_url}/reader/posts")
 
         return Api._handle_response(response=response)
 
     def get_drafts(self, filter=None, offset=None, limit=None):
+        """
+
+        Args:
+            filter:
+            offset:
+            limit:
+
+        Returns:
+
+        """
         response = self._session.get(
             f"{self.publication_url}/drafts",
             params={"filter": filter, "offset": offset, "limit": limit},
@@ -118,6 +131,14 @@ class Api:
         return Api._handle_response(response=response)
 
     def delete_draft(self, draft_id):
+        """
+
+        Args:
+            draft_id:
+
+        Returns:
+
+        """
         response = self._session.delete(f"{self.publication_url}/drafts/{draft_id}")
         return Api._handle_response(response=response)
 
@@ -134,12 +155,12 @@ class Api:
         return Api._handle_response(response=response)
 
     def put_draft(
-        self,
-        draft,
-        title=None,
-        subtitle=None,
-        body=None,
-        cover_image=None,
+            self,
+            draft,
+            title=None,
+            subtitle=None,
+            body=None,
+            cover_image=None,
     ) -> dict:
         """
 
@@ -181,7 +202,7 @@ class Api:
         return Api._handle_response(response=response)
 
     def publish_draft(
-        self, draft, send: bool = True, share_automatically: bool = False
+            self, draft, send: bool = True, share_automatically: bool = False
     ) -> dict:
         """
 
@@ -262,6 +283,16 @@ class Api:
         return Api._handle_response(response=response)
 
     def get_category(self, category_id, category_type, page):
+        """
+
+        Args:
+            category_id:
+            category_type:
+            page:
+
+        Returns:
+
+        """
         response = self._session.get(
             f"{self.base_url}/category/public/{category_id}/{category_type}",
             params={"page": page},
@@ -289,7 +320,7 @@ class Api:
                 page_output = self.get_category(category_id, category_type, page)
                 publications.extend(page_output.get("publications", []))
                 if (
-                    limit is not None and limit <= len(publications)
+                        limit is not None and limit <= len(publications)
                 ) or not page_output.get("more", False):
                     publications = publications[:limit]
                     break
@@ -301,6 +332,11 @@ class Api:
         return output
 
     def delete_all_drafts(self):
+        """
+
+        Returns:
+
+        """
         response = None
         while True:
             drafts = self.get_drafts(filter="draft", limit=10, offset=0)

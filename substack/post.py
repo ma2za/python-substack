@@ -6,12 +6,12 @@ __all__ = ["Post"]
 
 class Post:
     def __init__(
-        self,
-        title: str,
-        subtitle: str,
-        user_id,
-        audience: str = None,
-        write_comment_permissions: str = None,
+            self,
+            title: str,
+            subtitle: str,
+            user_id,
+            audience: str = None,
+            write_comment_permissions: str = None,
     ):
         """
 
@@ -121,20 +121,20 @@ class Post:
         return self
 
     def captioned_image(
-        self,
-        src: str,
-        fullscreen: bool = False,
-        imageSize: str = "normal",
-        height: int = 819,
-        width: int = 1456,
-        resizeWidth: int = 728,
-        bytes: str = None,
-        alt: str = None,
-        title: str = None,
-        type: str = None,
-        href: str = None,
-        belowTheFold: bool = False,
-        internalRedirect: str = None,
+            self,
+            src: str,
+            fullscreen: bool = False,
+            imageSize: str = "normal",
+            height: int = 819,
+            width: int = 1456,
+            resizeWidth: int = 728,
+            bytes: str = None,
+            alt: str = None,
+            title: str = None,
+            type: str = None,
+            href: str = None,
+            belowTheFold: bool = False,
+            internalRedirect: str = None,
     ):
         """
 
@@ -243,15 +243,22 @@ class Post:
         out["draft_body"] = json.dumps(out["draft_body"])
         return out
 
-    def subscribe_with_caption(self, value: str):
+    def subscribe_with_caption(self, message: str = None):
         """
 
+        Add subscribe widget with caption
+
         Args:
-            value:
+            message:
 
         Returns:
 
         """
+
+        if message is None:
+            message = """Thanks for reading this newsletter!
+            Subscribe for free to receive new posts and support my work."""
+
         content = self.draft_body["content"][-1].get("content", [])
         content += [
             {
@@ -263,8 +270,7 @@ class Post:
                         "content": [
                             {
                                 "type": "text",
-                                "text": f"""Thanks for reading {value}! 
-                                          Subscribe for free to receive new posts and support my work.""",
+                                "text": message,
                             }
                         ],
                     }
@@ -277,8 +283,10 @@ class Post:
     def youtube(self, value: str):
         """
 
+        Add youtube video to post.
+
         Args:
-            value:
+            value: youtube url
 
         Returns:
 
