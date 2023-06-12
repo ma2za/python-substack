@@ -1,12 +1,18 @@
 import json
 from typing import Dict
 
+__all__ = ["Post"]
+
 
 class Post:
-
-    def __init__(self, title: str, subtitle: str, user_id,
-                 audience: str = None,
-                 write_comment_permissions: str = None):
+    def __init__(
+        self,
+        title: str,
+        subtitle: str,
+        user_id,
+        audience: str = None,
+        write_comment_permissions: str = None,
+    ):
         """
 
         Args:
@@ -40,7 +46,9 @@ class Post:
 
         """
 
-        self.draft_body["content"] = self.draft_body.get("content", []) + [{"type": item.get("type")}]
+        self.draft_body["content"] = self.draft_body.get("content", []) + [
+            {"type": item.get("type")}
+        ]
         content = item.get("content")
         if item.get("type") == "captionedImage":
             self.captioned_image(**item)
@@ -112,21 +120,22 @@ class Post:
         self.draft_body["content"][-1]["attrs"] = content_attrs
         return self
 
-    def captioned_image(self,
-                        src: str,
-                        fullscreen: bool = False,
-                        imageSize: str = "normal",
-                        height: int = 819,
-                        width: int = 1456,
-                        resizeWidth: int = 728,
-                        bytes: str = None,
-                        alt: str = None,
-                        title: str = None,
-                        type: str = None,
-                        href: str = None,
-                        belowTheFold: bool = False,
-                        internalRedirect: str = None
-                        ):
+    def captioned_image(
+        self,
+        src: str,
+        fullscreen: bool = False,
+        imageSize: str = "normal",
+        height: int = 819,
+        width: int = 1456,
+        resizeWidth: int = 728,
+        bytes: str = None,
+        alt: str = None,
+        title: str = None,
+        type: str = None,
+        href: str = None,
+        belowTheFold: bool = False,
+        internalRedirect: str = None,
+    ):
         """
 
         Add image to body.
@@ -148,22 +157,26 @@ class Post:
         """
 
         content = self.draft_body["content"][-1].get("content", [])
-        content += [{"type": "image2", "attrs": {
-            "src": src,
-            "fullscreen": fullscreen,
-            "imageSize": imageSize,
-            "height": height,
-            "width": width,
-            "resizeWidth": resizeWidth,
-            "bytes": bytes,
-            "alt": alt,
-            "title": title,
-            "type": type,
-            "href": href,
-            "belowTheFold": belowTheFold,
-            "internalRedirect": internalRedirect
-
-        }}]
+        content += [
+            {
+                "type": "image2",
+                "attrs": {
+                    "src": src,
+                    "fullscreen": fullscreen,
+                    "imageSize": imageSize,
+                    "height": height,
+                    "width": width,
+                    "resizeWidth": resizeWidth,
+                    "bytes": bytes,
+                    "alt": alt,
+                    "title": title,
+                    "type": type,
+                    "href": href,
+                    "belowTheFold": belowTheFold,
+                    "internalRedirect": internalRedirect,
+                },
+            }
+        ]
         self.draft_body["content"][-1]["content"] = content
         return self
 
@@ -211,17 +224,13 @@ class Post:
             new_mark = {"type": mark.get("type")}
             if mark.get("type") == "link":
                 href = mark.get("href")
-                new_mark.update({"attrs": {
-                    "href": href
-                }})
+                new_mark.update({"attrs": {"href": href}})
             content_marks.append(new_mark)
         content["marks"] = content_marks
         return self
 
     def remove_last_paragraph(self):
-        """
-
-        """
+        """ """
         del self.draft_body.get("content")[-1]
 
     def get_draft(self):
@@ -244,16 +253,24 @@ class Post:
 
         """
         content = self.draft_body["content"][-1].get("content", [])
-        content += [{"type": "subscribeWidget",
-                     "attrs": {"url": "%%checkout_url%%", "text": "Subscribe"},
-                     "content": [
-                         {
-                             "type": "ctaCaption",
-                             "content": [{"type": "text",
-                                          "text": f"""Thanks for reading {value}! 
-                                          Subscribe for free to receive new posts and support my work."""}]
-                         }
-                     ]}]
+        content += [
+            {
+                "type": "subscribeWidget",
+                "attrs": {"url": "%%checkout_url%%", "text": "Subscribe"},
+                "content": [
+                    {
+                        "type": "ctaCaption",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"""Thanks for reading {value}! 
+                                          Subscribe for free to receive new posts and support my work.""",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
         self.draft_body["content"][-1]["content"] = content
         return self
 

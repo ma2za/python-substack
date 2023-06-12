@@ -10,11 +10,18 @@ from substack.post import Post
 load_dotenv()
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--post", default="draft.yaml", required=False,
-                        help="YAML file containing the post to publish.", type=str)
-    parser.add_argument("--publish", help="Publish the draft.", action="store_true", default=False)
+    parser.add_argument(
+        "-p",
+        "--post",
+        default="draft.yaml",
+        required=False,
+        help="YAML file containing the post to publish.",
+        type=str,
+    )
+    parser.add_argument(
+        "--publish", help="Publish the draft.", action="store_true", default=False
+    )
     args = parser.parse_args()
 
     with open(args.post, "r") as fp:
@@ -26,11 +33,15 @@ if __name__ == "__main__":
         publication_url=os.getenv("PUBLICATION_URL"),
     )
 
-    post = Post(post_data.get("title"),
-                post_data.get("subtitle", ""),
-                os.getenv("USER_ID"),
-                audience=post_data.get("audience", "everyone"),
-                write_comment_permissions=post_data.get("write_comment_permissions", "everyone"))
+    post = Post(
+        post_data.get("title"),
+        post_data.get("subtitle", ""),
+        os.getenv("USER_ID"),
+        audience=post_data.get("audience", "everyone"),
+        write_comment_permissions=post_data.get(
+            "write_comment_permissions", "everyone"
+        ),
+    )
 
     body = post_data.get("body", {})
 
