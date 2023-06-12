@@ -10,6 +10,8 @@ from substack.exceptions import SubstackAPIException, SubstackRequestException
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["Api"]
+
 
 class Api:
     """
@@ -19,12 +21,12 @@ class Api:
     """
 
     def __init__(
-            self,
-            email=None,
-            password=None,
-            base_url=None,
-            publication_url=None,
-            debug=False,
+        self,
+        email=None,
+        password=None,
+        base_url=None,
+        publication_url=None,
+        debug=False,
     ):
         """
 
@@ -116,9 +118,7 @@ class Api:
         return Api._handle_response(response=response)
 
     def delete_draft(self, draft_id):
-        response = self._session.delete(
-            f"{self.publication_url}/drafts/{draft_id}"
-        )
+        response = self._session.delete(f"{self.publication_url}/drafts/{draft_id}")
         return Api._handle_response(response=response)
 
     def post_draft(self, body) -> dict:
@@ -134,12 +134,12 @@ class Api:
         return Api._handle_response(response=response)
 
     def put_draft(
-            self,
-            draft,
-            title=None,
-            subtitle=None,
-            body=None,
-            cover_image=None,
+        self,
+        draft,
+        title=None,
+        subtitle=None,
+        body=None,
+        cover_image=None,
     ) -> dict:
         """
 
@@ -181,7 +181,7 @@ class Api:
         return Api._handle_response(response=response)
 
     def publish_draft(
-            self, draft, send: bool = True, share_automatically: bool = False
+        self, draft, send: bool = True, share_automatically: bool = False
     ) -> dict:
         """
 
@@ -211,7 +211,7 @@ class Api:
         """
         response = self._session.post(
             f"{self.publication_url}/drafts/{draft}/schedule",
-            json={"post_date": draft_datetime.isoformat()}
+            json={"post_date": draft_datetime.isoformat()},
         )
         return Api._handle_response(response=response)
 
@@ -225,8 +225,7 @@ class Api:
 
         """
         response = self._session.post(
-            f"{self.publication_url}/drafts/{draft}/schedule",
-            json={"post_date": None}
+            f"{self.publication_url}/drafts/{draft}/schedule", json={"post_date": None}
         )
         return Api._handle_response(response=response)
 
@@ -247,9 +246,7 @@ class Api:
 
         response = self._session.post(
             f"{self.publication_url}/image",
-            data={
-                "image": image
-            },
+            data={"image": image},
         )
         return Api._handle_response(response=response)
 
@@ -265,12 +262,13 @@ class Api:
         return Api._handle_response(response=response)
 
     def get_category(self, category_id, category_type, page):
-        response = self._session.get(f"{self.base_url}/category/public/{category_id}/{category_type}",
-                                     params={"page": page})
+        response = self._session.get(
+            f"{self.base_url}/category/public/{category_id}/{category_type}",
+            params={"page": page},
+        )
         return Api._handle_response(response=response)
 
-    def get_single_category(self, category_id, category_type, page=None,
-                            limit=None):
+    def get_single_category(self, category_id, category_type, page=None, limit=None):
         """
 
         Args:
@@ -290,13 +288,15 @@ class Api:
             while True:
                 page_output = self.get_category(category_id, category_type, page)
                 publications.extend(page_output.get("publications", []))
-                if (limit is not None and limit <= len(publications)) or not page_output.get("more", False):
+                if (
+                    limit is not None and limit <= len(publications)
+                ) or not page_output.get("more", False):
                     publications = publications[:limit]
                     break
                 page += 1
             output = {
                 "publications": publications,
-                "more": page_output.get("more", False)
+                "more": page_output.get("more", False),
             }
         return output
 
