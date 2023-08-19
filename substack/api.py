@@ -65,6 +65,15 @@ class Api:
 
         response = self._session.post(
             f"{self.base_url}/login",
+            headers={
+                "Content-Type": "application/json",
+                "Dnt": "1",
+                "Referer": "https://substack.com/sign-in?redirect=%2F",
+                "Sec-Ch-Ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": "\"Linux\"",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+            },
             json={
                 "captcha_response": None,
                 "email": email,

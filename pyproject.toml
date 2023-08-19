@@ -16,10 +16,10 @@ homepage = "https://github.com/ma2za/python-substack"
 keywords = ["substack"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.8"
 
 requests = "^2.31.0"
-python-dotenv = "^0.21.0"
+python-dotenv = "^1.0.0"
 PyYAML = "^6.0"
 
 
