@@ -209,7 +209,7 @@ class Post:
         else:
             for chunk in text:
                 if chunk:
-                    self.text(chunk.get("content")).marks(chunk.get("marks"))
+                    self.text(chunk.get("content")).marks(chunk.get("marks", []))
 
     def marks(self, marks):
         """
