@@ -54,6 +54,8 @@ class Post:
             self.captioned_image(**item)
         elif item.get("type") == "youtube2":
             self.youtube(item.get("src"))
+        elif item.get("type") == "subscribeWidget":
+            self.subscribe_with_caption(item.get("message"))
         else:
             if content is not None:
                 self.add_complex_text(content)
@@ -259,25 +261,19 @@ class Post:
             message = """Thanks for reading this newsletter!
             Subscribe for free to receive new posts and support my work."""
 
-        content = self.draft_body["content"][-1].get("content", [])
-        content += [
+        subscribe = self.draft_body["content"][-1]
+        subscribe["attrs"] = {"url": "%%checkout_url%%", "text": "Subscribe", "language": "en"}
+        subscribe["content"] = [
             {
-                "type": "subscribeWidget",
-                "attrs": {"url": "%%checkout_url%%", "text": "Subscribe"},
+                "type": "ctaCaption",
                 "content": [
                     {
-                        "type": "ctaCaption",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": message,
-                            }
-                        ],
+                        "type": "text",
+                        "text": message,
                     }
                 ],
             }
         ]
-        self.draft_body["content"][-1]["content"] = content
         return self
 
     def youtube(self, value: str):

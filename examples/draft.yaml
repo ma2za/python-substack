@@ -14,6 +14,9 @@ body:
   1:
     type: "paragraph"
     content: "1)"
+    marks:
+      - type: "strong"
+      - type: "em"
   2:
     type: "paragraph"
     content: "discover the USER_ID in the url of the public profile page"
@@ -31,3 +34,9 @@ body:
   7:
     type: "captionedImage"
     src: "rickroll_4k.jpg"
+  8:
+    type: "youtube2"
+    src: "EnDg65ISswg"
+  9:
+    type: "subscribeWidget"
+    message: "Hello Everyone!!!"

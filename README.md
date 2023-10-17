@@ -36,6 +36,10 @@ The .env file will be ignored by git but always be careful.
 
 # Usage
 
+Check out the examples folder for some examples 😃 🚀
+
+## Add a YouTube video
+
 ```python
 import os
 
