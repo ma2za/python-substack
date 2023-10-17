@@ -19,7 +19,15 @@ body:
       - type: "em"
   2:
     type: "paragraph"
-    content: "discover the USER_ID in the url of the public profile page"
+    content:
+      - content: "hello"
+        marks:
+          - type: "strong"
+          - type: "em"
+      - content: ", how are you?"
+  10:
+    type: "paragraph"
+    content: "my friend"
   3:
     type: "horizontal_rule"
   4:
