@@ -58,6 +58,15 @@ post = Post(
 
 post.add({'type': 'paragraph', 'content': 'This is how you add a new paragraph to your post!'})
 
+#bolden text
+post.add({'type': "paragraph",'content':[{'content': "This is how you "},{'content': "bolden ",'marks':[{'type': "strong"}]},{'content': "a word."}]})
+
+#add hyperlink to text
+post.add({'type':'paragraph','content':[{'content': "View Link",'marks':[{'type': "link",'href':'https://whoraised.substack.com/'}]}]})
+
+#add image
+post.add({'type':'captionedImage','src': "https://media.tenor.com/7B4jMa-a7bsAAAAC/i-am-batman.gif"})
+
 draft = api.post_draft(post.get_draft())
 
 api.prepublish_draft(draft.get("id"))
