@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 
 from substack import Api
-from substack.post import Post
 
 load_dotenv()
 
