@@ -103,6 +103,18 @@ class Api:
 
         return Api._handle_response(response=response)
 
+    def get_publication_subscriber_count(self):
+
+        """
+        Get subscriber count.
+
+        Returns:
+
+        """
+        response = self._session.get(f"{self.publication_url}/publication_launch_checklist")
+
+        return Api._handle_response(response=response)['subscriberCount']
+
     def get_posts(self) -> dict:
         """
 
