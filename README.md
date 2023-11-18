@@ -58,16 +58,27 @@ post = Post(
 
 post.add({'type': 'paragraph', 'content': 'This is how you add a new paragraph to your post!'})
 
-#bolden text
-post.add({'type': "paragraph",'content':[{'content': "This is how you "},{'content': "bolden ",'marks':[{'type': "strong"}]},{'content': "a word."}]})
+# bolden text
+post.add({'type': "paragraph",
+          'content': [{'content': "This is how you "}, {'content': "bolden ", 'marks': [{'type': "strong"}]},
+                      {'content': "a word."}]})
 
-#add hyperlink to text
-post.add({'type':'paragraph','content':[{'content': "View Link",'marks':[{'type': "link",'href':'https://whoraised.substack.com/'}]}]})
+# add hyperlink to text
+post.add({'type': 'paragraph', 'content': [
+    {'content': "View Link", 'marks': [{'type': "link", 'href': 'https://whoraised.substack.com/'}]}]})
 
-#add image
-post.add({'type':'captionedImage','src': "https://media.tenor.com/7B4jMa-a7bsAAAAC/i-am-batman.gif"})
+# add image
+post.add({'type': 'captionedImage', 'src': "https://media.tenor.com/7B4jMa-a7bsAAAAC/i-am-batman.gif"})
+
+# add local image
+image = api.get_image('image.png')
+post.add({"type": "captionedImage", "src": image.get("url")})
 
 draft = api.post_draft(post.get_draft())
+
+# set section (THIS CAN BE DONE ONLY AFTER HAVING FIRST POSTED THE DRAFT)
+post.set_section("rick rolling", api.get_sections())
+api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
 
 api.prepublish_draft(draft.get("id"))
 

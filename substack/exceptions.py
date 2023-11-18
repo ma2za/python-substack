@@ -26,3 +26,7 @@ class SubstackRequestException(Exception):
 
     def __str__(self):
         return f"SubstackRequestException: {self.message}"
+
+
+class SectionNotExistsException(SubstackRequestException):
+    pass

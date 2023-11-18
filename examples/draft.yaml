@@ -6,6 +6,8 @@ audience:
   "everyone" # everyone, only_paid, founding, only_free
 write_comment_permissions:
   "none" # none, only_paid, everyone
+section:
+  "rick"
 body:
   0:
     type: "heading"
