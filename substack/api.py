@@ -169,32 +169,20 @@ class Api:
     def put_draft(
             self,
             draft,
-            title=None,
-            subtitle=None,
-            body=None,
-            cover_image=None,
+            **kwargs
     ) -> dict:
         """
 
         Args:
-            draft: draft id
-            title:
-            subtitle:
-            body:
-            cover_image:
+            draft:
+            **kwargs:
 
         Returns:
 
         """
-
         response = self._session.put(
             f"{self.publication_url}/drafts/{draft}",
-            json={
-                "draft_title": title,
-                "draft_subtitle": subtitle,
-                "draft_body": body,
-                "cover_image": cover_image,
-            },
+            json=kwargs,
         )
         return Api._handle_response(response=response)
 
@@ -357,3 +345,18 @@ class Api:
             for draft in drafts:
                 response = self.delete_draft(draft.get("id"))
         return response
+
+    def get_sections(self):
+        """
+        Get a list of the sections of your publication.
+
+        TODO: this is hacky but I cannot find another place where to get the sections.
+        Returns:
+
+        """
+        response = self._session.get(
+            f"{self.publication_url}/subscriptions",
+        )
+        content = Api._handle_response(response=response)
+        sections = [p.get("sections") for p in content.get("publications") if p.get("hostname") in self.publication_url]
+        return sections[0]

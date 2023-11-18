@@ -20,7 +20,7 @@ if __name__ == "__main__":
         type=str,
     )
     parser.add_argument(
-        "--publish", help="Publish the draft.", action="store_true", default=False
+        "--publish", help="Publish the draft.", action="store_true", default=True
     )
     args = parser.parse_args()
 
@@ -52,6 +52,9 @@ if __name__ == "__main__":
         post.add(item)
 
     draft = api.post_draft(post.get_draft())
+
+    post.set_section(post_data.get("section"), api.get_sections())
+    api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
 
     if args.publish:
         api.prepublish_draft(draft.get("id"))

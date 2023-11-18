@@ -3,6 +3,8 @@ from typing import Dict
 
 __all__ = ["Post"]
 
+from substack.exceptions import SectionNotExistsException
+
 
 class Post:
     def __init__(
@@ -27,12 +29,30 @@ class Post:
         self.draft_body = {"type": "doc", "content": []}
         self.draft_bylines = [{"id": int(user_id), "is_guest": False}]
         self.audience = audience if audience is not None else "everyone"
+        self.draft_section_id = None
+        self.section_chosen = True
 
         # TODO better understand the possible values and combinations with audience
         if write_comment_permissions is not None:
             self.write_comment_permissions = write_comment_permissions
         else:
             self.write_comment_permissions = self.audience
+
+    def set_section(self, name: str, sections: list):
+        """
+
+        Args:
+            name:
+            sections:
+
+        Returns:
+
+        """
+        section = [s for s in sections if s.get("name") == name]
+        if len(section) != 1:
+            raise SectionNotExistsException(name)
+        section = section[0]
+        self.draft_section_id = section.get("id")
 
     def add(self, item: Dict):
         """
