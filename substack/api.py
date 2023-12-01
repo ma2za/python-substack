@@ -104,6 +104,18 @@ class Api:
         user_id = profile['id']
 
         return user_id
+    
+    def get_publication_url(self, publication):
+        """
+        Gets the publication url
+        """
+        custom_domain = publication['custom_domain']
+        if not custom_domain:
+            publication_url = f"https://{publication['subdomain']}.substack.com"
+        else:
+            publication_url = f"https://{custom_domain}"
+
+        return publication_url
 
     def get_user_primary_publication(self):
         """
@@ -112,7 +124,8 @@ class Api:
 
         profile = self.get_user_profile()
         primary_publication = profile['primaryPublication']
-        primary_publication['publication_url'] = f"https://{primary_publication['subdomain']}.substack.com"
+        primary_publication['publication_url'] = self.get_publication_url(primary_publication)
+
         return primary_publication
 
     def get_user_publications(self):
@@ -126,7 +139,7 @@ class Api:
         user_publications = []
         for publication in profile['publicationUsers']:
             pub = publication['publication']
-            pub['publication_url'] = f"https://{pub['subdomain']}.substack.com"
+            pub['publication_url'] = self.get_publication_url(pub)
             user_publications.append(pub)
 
         return user_publications
