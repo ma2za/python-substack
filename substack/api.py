@@ -42,7 +42,8 @@ class Api:
             Defaults to https://substack.com/api/v1.
         """
         self.base_url = base_url or "https://substack.com/api/v1"
-        self.publication_url = urljoin(publication_url, "api/v1")
+        if publication_url:
+            self.change_publication(publication_url)
 
         if debug:
             logging.basicConfig()
@@ -74,6 +75,12 @@ class Api:
             },
         )
         return Api._handle_response(response=response)
+    
+    def change_publication(self, publication_url):
+        """
+        Change the publication URL
+        """
+        self.publication_url = urljoin(publication_url, "api/v1")
 
     @staticmethod
     def _handle_response(response: requests.Response):
@@ -92,6 +99,61 @@ class Api:
         except ValueError:
             raise SubstackRequestException("Invalid Response: %s" % response.text)
 
+    def get_user_id(self):
+        profile = self.get_user_profile()
+        user_id = profile['id']
+
+        return user_id
+
+    def get_user_primary_publication(self):
+        """
+        Gets the users primary publication
+        """
+
+        profile = self.get_user_profile()
+        primary_publication = profile['primaryPublication']
+        return {
+            "id": primary_publication['id'],
+            "name": primary_publication['name'],
+            "publication_url": f"https://{primary_publication['subdomain']}.substack.com"
+        }
+    
+    def get_user_publications(self):
+        """
+        Gets the users publications
+        """
+
+        profile = self.get_user_profile()
+
+        # Loop through users "publicationUsers" list, and return a list of dictionaries of "name", and "subdomain", and "id"
+        user_publications = []
+        for publication in profile['publicationUsers']:
+            user_publications.append({"id": publication['publication_id'], 
+                "name": publication['publication']['name'], 
+                "publication_url": f"https://{publication['publication']['subdomain']}.substack.com"
+            })
+        
+        return user_publications
+    
+    def get_user_profile(self):
+        """
+        Gets the users profile
+        """
+        response = self._session.get(f"{self.base_url}/user/profile/self")
+
+        return Api._handle_response(response=response)
+    
+    def get_user_settings(self):
+        """
+        Get list of users.
+
+        Returns:
+
+        """
+        response = self._session.get(f"{self.base_url}/settings")
+
+        return Api._handle_response(response=response)
+    
     def get_publication_users(self):
         """
         Get list of users.

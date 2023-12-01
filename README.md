@@ -38,14 +38,6 @@ Set a password:
  - At the sign-in page click, "Sign in with password" under the `Email` text box
  - Then choose, "Set a new password"
 
-## If you can't find your USER_ID
-If you do not see your USER_ID in the url you can find it through your browsers Developer Tools.
- - In Substack open your Home, Posts, or Draft page
- - Open Developer Tools (F12 on Windows, Option + ⌘ + J on Mac).
- - Go to the Console tab
- - Paste this command and hit enter: `window._preloads.user.id`
- - Copy the result into your `.env` file as the USER_ID
-
 The .env file will be ignored by git but always be careful.
 
 ---
