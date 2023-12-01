@@ -112,11 +112,8 @@ class Api:
 
         profile = self.get_user_profile()
         primary_publication = profile['primaryPublication']
-        return {
-            "id": primary_publication['id'],
-            "name": primary_publication['name'],
-            "publication_url": f"https://{primary_publication['subdomain']}.substack.com"
-        }
+        primary_publication['publication_url'] = f"https://{primary_publication['subdomain']}.substack.com"
+        return primary_publication
     
     def get_user_publications(self):
         """
