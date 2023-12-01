@@ -30,6 +30,22 @@ in the URL bar of the browser you find the substack address
 followed by your USER_ID and your username:
 https://substack.com/profile/[USER_ID]-[username]
 
+## If you don't have a password
+Recently Substack has been setting up new accounts without a password. If you sign-out and sign back in it just uses your email address with a "magic" link. 
+
+Set a password:
+ - Sign-out of Substack
+ - At the sign-in page click, "Sign in with password" under the `Email` text box
+ - Then choose, "Set a new password"
+
+## If you can't find your USER_ID
+If you do not see your USER_ID in the url you can find it through your browsers Developer Tools.
+ - In Substack open your Home, Posts, or Draft page
+ - Open Developer Tools (F12 on Windows, Option + ⌘ + J on Mac).
+ - Go to the Console tab
+ - Paste this command and hit enter: `window._preloads.user.id`
+ - Copy the result into your `.env` file as the USER_ID
+
 The .env file will be ignored by git but always be careful.
 
 ---
