@@ -114,7 +114,7 @@ class Api:
         primary_publication = profile['primaryPublication']
         primary_publication['publication_url'] = f"https://{primary_publication['subdomain']}.substack.com"
         return primary_publication
-    
+
     def get_user_publications(self):
         """
         Gets the users publications
@@ -125,13 +125,12 @@ class Api:
         # Loop through users "publicationUsers" list, and return a list of dictionaries of "name", and "subdomain", and "id"
         user_publications = []
         for publication in profile['publicationUsers']:
-            user_publications.append({"id": publication['publication_id'], 
-                "name": publication['publication']['name'], 
-                "publication_url": f"https://{publication['publication']['subdomain']}.substack.com"
-            })
-        
+            pub = publication['publication']
+            pub['publication_url'] = f"https://{pub['subdomain']}.substack.com"
+            user_publications.append(pub)
+
         return user_publications
-    
+
     def get_user_profile(self):
         """
         Gets the users profile
@@ -139,7 +138,7 @@ class Api:
         response = self._session.get(f"{self.base_url}/user/profile/self")
 
         return Api._handle_response(response=response)
-    
+
     def get_user_settings(self):
         """
         Get list of users.
