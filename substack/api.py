@@ -238,6 +238,14 @@ class Api:
         )
         return Api._handle_response(response=response)
 
+    def get_draft(self, draft_id):
+        """
+        Gets a draft given it's id.
+
+        """
+        response = self._session.get(f"{self.publication_url}/drafts/{draft_id}")
+        return Api._handle_response(response=response)
+
     def delete_draft(self, draft_id):
         """
 
