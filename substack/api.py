@@ -25,7 +25,6 @@ class Api:
             email=None,
             password=None,
             base_url=None,
-            publication_url=None,
             debug=False,
     ):
         """
@@ -42,8 +41,6 @@ class Api:
             Defaults to https://substack.com/api/v1.
         """
         self.base_url = base_url or "https://substack.com/api/v1"
-        if publication_url:
-            self.change_publication(publication_url)
 
         if debug:
             logging.basicConfig()
@@ -53,6 +50,11 @@ class Api:
 
         if email is not None and password is not None:
             self.login(email, password)
+
+            # get the users primary publication
+            user_publication = self.get_user_primary_publication()
+            # set the current publication to the users primary publication
+            self.change_publication(user_publication)
 
     def login(self, email, password) -> dict:
         """
@@ -74,13 +76,25 @@ class Api:
                 "redirect": "/",
             },
         )
+
         return Api._handle_response(response=response)
     
-    def change_publication(self, publication_url):
+    def signin_for_pub(self, publication):
+        """
+        Complete the signin process
+        """
+        response = self._session.get(
+            f"https://substack.com/sign-in?redirect=%2F&for_pub={publication['subdomain']}",
+        )
+
+    def change_publication(self, publication):
         """
         Change the publication URL
         """
-        self.publication_url = urljoin(publication_url, "api/v1")
+        self.publication_url = urljoin(publication['publication_url'], "api/v1")
+
+        # sign-in to the publication
+        self.signin_for_pub(publication)
 
     @staticmethod
     def _handle_response(response: requests.Response):
@@ -185,6 +199,17 @@ class Api:
         response = self._session.get(f"{self.publication_url}/publication_launch_checklist")
 
         return Api._handle_response(response=response)['subscriberCount']
+
+    def get_published_posts(self, offset=0, limit=25, order_by="post_date", order_direction="desc"):
+        """
+        Get list of published posts for the publication.
+        """
+        response = self._session.get(
+            f"{self.publication_url}/post_management/published",
+            params={"offset": offset, "limit": limit, "order_by": order_by, "order_direction": order_direction},
+        )
+
+        return Api._handle_response(response=response)
 
     def get_posts(self) -> dict:
         """
