@@ -67,6 +67,9 @@ post.add({'type': "paragraph",
 post.add({'type': 'paragraph', 'content': [
     {'content': "View Link", 'marks': [{'type': "link", 'href': 'https://whoraised.substack.com/'}]}]})
 
+# set paywall boundary
+post.add({'type': 'paywall'})
+
 # add image
 post.add({'type': 'captionedImage', 'src': "https://media.tenor.com/7B4jMa-a7bsAAAAC/i-am-batman.gif"})
 
