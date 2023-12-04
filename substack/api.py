@@ -25,7 +25,7 @@ class Api:
             email=None,
             password=None,
             base_url=None,
-            publication_url=None, 
+            publication_url=None,
             debug=False,
     ):
         """
