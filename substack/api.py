@@ -25,6 +25,7 @@ class Api:
             email=None,
             password=None,
             base_url=None,
+            publication_url=None, 
             debug=False,
     ):
         """
@@ -51,8 +52,25 @@ class Api:
         if email is not None and password is not None:
             self.login(email, password)
 
-            # get the users primary publication
-            user_publication = self.get_user_primary_publication()
+            # if the user provided a publication url, then use that
+            if publication_url:
+                import re
+
+                # Regular expression to extract subdomain name
+                match = re.search(r"https://(.*).substack.com", publication_url.lower())
+                subdomain = match.group(1) if match else None
+                
+                user_publications = self.get_user_publications()
+                # search through publications to find the publication with the matching subdomain
+                for publication in user_publications:
+                    if publication['subdomain'] == subdomain:
+                        # set the current publication to the users publication
+                        user_publication = publication
+                        break
+            else:
+                # get the users primary publication
+                user_publication = self.get_user_primary_publication()
+
             # set the current publication to the users primary publication
             self.change_publication(user_publication)
 
