@@ -20,15 +20,16 @@ You can install python-substack using:
 
 Set the following environment variables by creating a **.env** file:
 
-    PUBLICATION_URL=https://ma2za.substack.com
     EMAIL=
     PASSWORD=
-    USER_ID=
 
-To discover the USER_ID go to your public profile page,
-in the URL bar of the browser you find the substack address
-followed by your USER_ID and your username:
-https://substack.com/profile/[USER_ID]-[username]
+## If you don't have a password
+Recently Substack has been setting up new accounts without a password. If you sign-out and sign back in it just uses your email address with a "magic" link. 
+
+Set a password:
+ - Sign-out of Substack
+ - At the sign-in page click, "Sign in with password" under the `Email` text box
+ - Then choose, "Set a new password"
 
 The .env file will be ignored by git but always be careful.
 
@@ -47,13 +48,24 @@ from substack.post import Post
 api = Api(
     email=os.getenv("EMAIL"),
     password=os.getenv("PASSWORD"),
-    publication_url=os.getenv("PUBLICATION_URL"),
 )
+
+user_id = api.get_user_id()
+
+# Switch Publications - The library defaults to your users primary publication. You can retrieve all your publications and change which one you want to use.
+
+# primary publication
+user_publication = api.get_user_primary_publication()
+# all publications
+user_publications = api.get_user_publications()
+
+# This step is only necessary if you are not using your primary publication
+# api.change_publication(user_publication)
 
 post = Post(
     title="How to publish a Substack post using the Python API",
     subtitle="This post was published using the Python API",
-    user_id=os.getenv("USER_ID")
+    user_id=user_id
 )
 
 post.add({'type': 'paragraph', 'content': 'This is how you add a new paragraph to your post!'})
