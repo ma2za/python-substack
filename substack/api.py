@@ -42,7 +42,6 @@ class Api:
             Defaults to https://substack.com/api/v1.
         """
         self.base_url = base_url or "https://substack.com/api/v1"
-        self.publication_url = urljoin(publication_url, "api/v1")
 
         if debug:
             logging.basicConfig()
@@ -52,6 +51,28 @@ class Api:
 
         if email is not None and password is not None:
             self.login(email, password)
+
+            # if the user provided a publication url, then use that
+            if publication_url:
+                import re
+
+                # Regular expression to extract subdomain name
+                match = re.search(r"https://(.*).substack.com", publication_url.lower())
+                subdomain = match.group(1) if match else None
+                
+                user_publications = self.get_user_publications()
+                # search through publications to find the publication with the matching subdomain
+                for publication in user_publications:
+                    if publication['subdomain'] == subdomain:
+                        # set the current publication to the users publication
+                        user_publication = publication
+                        break
+            else:
+                # get the users primary publication
+                user_publication = self.get_user_primary_publication()
+
+            # set the current publication to the users primary publication
+            self.change_publication(user_publication)
 
     def login(self, email, password) -> dict:
         """
@@ -73,7 +94,25 @@ class Api:
                 "redirect": "/",
             },
         )
+
         return Api._handle_response(response=response)
+    
+    def signin_for_pub(self, publication):
+        """
+        Complete the signin process
+        """
+        response = self._session.get(
+            f"https://substack.com/sign-in?redirect=%2F&for_pub={publication['subdomain']}",
+        )
+
+    def change_publication(self, publication):
+        """
+        Change the publication URL
+        """
+        self.publication_url = urljoin(publication['publication_url'], "api/v1")
+
+        # sign-in to the publication
+        self.signin_for_pub(publication)
 
     @staticmethod
     def _handle_response(response: requests.Response):
@@ -92,6 +131,70 @@ class Api:
         except ValueError:
             raise SubstackRequestException("Invalid Response: %s" % response.text)
 
+    def get_user_id(self):
+        profile = self.get_user_profile()
+        user_id = profile['id']
+
+        return user_id
+    
+    def get_publication_url(self, publication):
+        """
+        Gets the publication url
+        """
+        custom_domain = publication['custom_domain']
+        if not custom_domain:
+            publication_url = f"https://{publication['subdomain']}.substack.com"
+        else:
+            publication_url = f"https://{custom_domain}"
+
+        return publication_url
+
+    def get_user_primary_publication(self):
+        """
+        Gets the users primary publication
+        """
+
+        profile = self.get_user_profile()
+        primary_publication = profile['primaryPublication']
+        primary_publication['publication_url'] = self.get_publication_url(primary_publication)
+
+        return primary_publication
+
+    def get_user_publications(self):
+        """
+        Gets the users publications
+        """
+
+        profile = self.get_user_profile()
+
+        # Loop through users "publicationUsers" list, and return a list of dictionaries of "name", and "subdomain", and "id"
+        user_publications = []
+        for publication in profile['publicationUsers']:
+            pub = publication['publication']
+            pub['publication_url'] = self.get_publication_url(pub)
+            user_publications.append(pub)
+
+        return user_publications
+
+    def get_user_profile(self):
+        """
+        Gets the users profile
+        """
+        response = self._session.get(f"{self.base_url}/user/profile/self")
+
+        return Api._handle_response(response=response)
+
+    def get_user_settings(self):
+        """
+        Get list of users.
+
+        Returns:
+
+        """
+        response = self._session.get(f"{self.base_url}/settings")
+
+        return Api._handle_response(response=response)
+    
     def get_publication_users(self):
         """
         Get list of users.
@@ -114,6 +217,17 @@ class Api:
         response = self._session.get(f"{self.publication_url}/publication_launch_checklist")
 
         return Api._handle_response(response=response)['subscriberCount']
+
+    def get_published_posts(self, offset=0, limit=25, order_by="post_date", order_direction="desc"):
+        """
+        Get list of published posts for the publication.
+        """
+        response = self._session.get(
+            f"{self.publication_url}/post_management/published",
+            params={"offset": offset, "limit": limit, "order_by": order_by, "order_direction": order_direction},
+        )
+
+        return Api._handle_response(response=response)
 
     def get_posts(self) -> dict:
         """
@@ -140,6 +254,14 @@ class Api:
             f"{self.publication_url}/drafts",
             params={"filter": filter, "offset": offset, "limit": limit},
         )
+        return Api._handle_response(response=response)
+
+    def get_draft(self, draft_id):
+        """
+        Gets a draft given it's id.
+
+        """
+        response = self._session.get(f"{self.publication_url}/drafts/{draft_id}")
         return Api._handle_response(response=response)
 
     def delete_draft(self, draft_id):

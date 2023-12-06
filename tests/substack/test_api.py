@@ -18,7 +18,6 @@ class ApiTest(unittest.TestCase):
         api = Api(
             email=os.getenv("EMAIL"),
             password=os.getenv("PASSWORD"),
-            publication_url=os.getenv("PUBLICATION_URL"),
         )
         self.assertIsNotNone(api)
 
@@ -31,7 +30,6 @@ class ApiTest(unittest.TestCase):
         api = Api(
             email=os.getenv("EMAIL"),
             password=os.getenv("PASSWORD"),
-            publication_url=os.getenv("PUBLICATION_URL"),
         )
         drafts = api.get_drafts()
         self.assertIsNotNone(drafts)
@@ -40,7 +38,6 @@ class ApiTest(unittest.TestCase):
         api = Api(
             email=os.getenv("EMAIL"),
             password=os.getenv("PASSWORD"),
-            publication_url=os.getenv("PUBLICATION_URL"),
         )
         posted_draft = api.post_draft([{"id": os.getenv("USER_ID"), "is_guest": False}])
         self.assertIsNotNone(posted_draft)
@@ -49,7 +46,6 @@ class ApiTest(unittest.TestCase):
         api = Api(
             email=os.getenv("EMAIL"),
             password=os.getenv("PASSWORD"),
-            publication_url=os.getenv("PUBLICATION_URL"),
         )
         users = api.get_publication_users()
         self.assertIsNotNone(users)
@@ -58,7 +54,6 @@ class ApiTest(unittest.TestCase):
         api = Api(
             email=os.getenv("EMAIL"),
             password=os.getenv("PASSWORD"),
-            publication_url=os.getenv("PUBLICATION_URL"),
         )
         posted_draft = api.put_draft("")
         self.assertIsNotNone(posted_draft)
