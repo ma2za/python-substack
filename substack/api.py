@@ -3,6 +3,7 @@ import logging
 import os
 from datetime import datetime
 from urllib.parse import urljoin
+import json
 
 import requests
 
@@ -24,6 +25,7 @@ class Api:
             self,
             email=None,
             password=None,
+            cookies_path=None,
             base_url=None,
             publication_url=None,
             debug=False,
@@ -37,6 +39,9 @@ class Api:
         Args:
           email:
           password:
+          cookies_path
+            To re-use your session without logging in each time, you can save your cookies to a json file and then load them in the next session.
+            Make sure to re-save your cookies, as they do update over time.
           base_url:
             The base URL to use to contact the Substack API.
             Defaults to https://substack.com/api/v1.
@@ -49,30 +54,39 @@ class Api:
 
         self._session = requests.Session()
 
-        if email is not None and password is not None:
+        # Load cookies from file if provided
+        # Helps with Captcha errors by reusing cookies from "local" auth, then switching to running code in the cloud
+        if cookies_path is not None:
+            with open(cookies_path, "r") as f:
+                cookies = json.load(f)
+            self._session.cookies.update(cookies)
+
+        elif email is not None and password is not None:
             self.login(email, password)
+        else:
+            raise ValueError("Must provide email and password or cookies_path to authenticate.")
 
-            # if the user provided a publication url, then use that
-            if publication_url:
-                import re
+        # if the user provided a publication url, then use that
+        if publication_url:
+            import re
 
-                # Regular expression to extract subdomain name
-                match = re.search(r"https://(.*).substack.com", publication_url.lower())
-                subdomain = match.group(1) if match else None
-                
-                user_publications = self.get_user_publications()
-                # search through publications to find the publication with the matching subdomain
-                for publication in user_publications:
-                    if publication['subdomain'] == subdomain:
-                        # set the current publication to the users publication
-                        user_publication = publication
-                        break
-            else:
-                # get the users primary publication
-                user_publication = self.get_user_primary_publication()
+            # Regular expression to extract subdomain name
+            match = re.search(r"https://(.*).substack.com", publication_url.lower())
+            subdomain = match.group(1) if match else None
+            
+            user_publications = self.get_user_publications()
+            # search through publications to find the publication with the matching subdomain
+            for publication in user_publications:
+                if publication['subdomain'] == subdomain:
+                    # set the current publication to the users publication
+                    user_publication = publication
+                    break
+        else:
+            # get the users primary publication
+            user_publication = self.get_user_primary_publication()
 
-            # set the current publication to the users primary publication
-            self.change_publication(user_publication)
+        # set the current publication to the users primary publication
+        self.change_publication(user_publication)
 
     def login(self, email, password) -> dict:
         """
@@ -113,6 +127,16 @@ class Api:
 
         # sign-in to the publication
         self.signin_for_pub(publication)
+
+    def export_cookies(self, path: str = "cookies.json"):
+        """
+        Export cookies to a json file.
+        Args:
+            path: path to the json file
+        """
+        cookies = self._session.cookies.get_dict()
+        with open(path, "w") as f:
+            json.dump(cookies, f)
 
     @staticmethod
     def _handle_response(response: requests.Response):
