@@ -1,3 +1,9 @@
+"""
+
+Post Utilities
+
+"""
+
 import json
 from typing import Dict
 
@@ -7,13 +13,19 @@ from substack.exceptions import SectionNotExistsException
 
 
 class Post:
+    """
+
+    Post utility class
+
+    """
+
     def __init__(
-            self,
-            title: str,
-            subtitle: str,
-            user_id,
-            audience: str = None,
-            write_comment_permissions: str = None,
+        self,
+        title: str,
+        subtitle: str,
+        user_id,
+        audience: str = None,
+        write_comment_permissions: str = None,
     ):
         """
 
@@ -143,20 +155,20 @@ class Post:
         return self
 
     def captioned_image(
-            self,
-            src: str,
-            fullscreen: bool = False,
-            imageSize: str = "normal",
-            height: int = 819,
-            width: int = 1456,
-            resizeWidth: int = 728,
-            bytes: str = None,
-            alt: str = None,
-            title: str = None,
-            type: str = None,
-            href: str = None,
-            belowTheFold: bool = False,
-            internalRedirect: str = None,
+        self,
+        src: str,
+        fullscreen: bool = False,
+        imageSize: str = "normal",
+        height: int = 819,
+        width: int = 1456,
+        resizeWidth: int = 728,
+        bytes: str = None,
+        alt: str = None,
+        title: str = None,
+        type: str = None,
+        href: str = None,
+        belowTheFold: bool = False,
+        internalRedirect: str = None,
     ):
         """
 
@@ -252,7 +264,7 @@ class Post:
         return self
 
     def remove_last_paragraph(self):
-        """ """
+        """Remove last paragraph"""
         del self.draft_body.get("content")[-1]
 
     def get_draft(self):
@@ -282,7 +294,11 @@ class Post:
             Subscribe for free to receive new posts and support my work."""
 
         subscribe = self.draft_body["content"][-1]
-        subscribe["attrs"] = {"url": "%%checkout_url%%", "text": "Subscribe", "language": "en"}
+        subscribe["attrs"] = {
+            "url": "%%checkout_url%%",
+            "text": "Subscribe",
+            "language": "en",
+        }
         subscribe["content"] = [
             {
                 "type": "ctaCaption",

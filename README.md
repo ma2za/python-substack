@@ -24,12 +24,15 @@ Set the following environment variables by creating a **.env** file:
     PASSWORD=
 
 ## If you don't have a password
-Recently Substack has been setting up new accounts without a password. If you sign-out and sign back in it just uses your email address with a "magic" link. 
+
+Recently Substack has been setting up new accounts without a password. If you sign-out and sign back in it just uses
+your email address with a "magic" link.
 
 Set a password:
- - Sign-out of Substack
- - At the sign-in page click, "Sign in with password" under the `Email` text box
- - Then choose, "Set a new password"
+
+- Sign-out of Substack
+- At the sign-in page click, "Sign in with password" under the `Email` text box
+- Then choose, "Set a new password"
 
 The .env file will be ignored by git but always be careful.
 
@@ -100,3 +103,16 @@ api.prepublish_draft(draft.get("id"))
 api.publish_draft(draft.get("id"))
 ```
 
+# Contributing
+
+Install pre-commit:
+
+```shell
+pip install pre-commit
+```
+
+Set up pre-commit
+
+```shell
+pre-commit install
+```

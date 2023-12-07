@@ -1,9 +1,15 @@
+"""
+
+API Wrapper
+
+"""
+
 import base64
+import json
 import logging
 import os
 from datetime import datetime
 from urllib.parse import urljoin
-import json
 
 import requests
 
@@ -22,13 +28,13 @@ class Api:
     """
 
     def __init__(
-            self,
-            email=None,
-            password=None,
-            cookies_path=None,
-            base_url=None,
-            publication_url=None,
-            debug=False,
+        self,
+        email=None,
+        password=None,
+        cookies_path=None,
+        base_url=None,
+        publication_url=None,
+        debug=False,
     ):
         """
 
@@ -40,7 +46,8 @@ class Api:
           email:
           password:
           cookies_path
-            To re-use your session without logging in each time, you can save your cookies to a json file and then load them in the next session.
+            To re-use your session without logging in each time, you can save your cookies to a json file and
+            then load them in the next session.
             Make sure to re-save your cookies, as they do update over time.
           base_url:
             The base URL to use to contact the Substack API.
@@ -57,15 +64,18 @@ class Api:
         # Load cookies from file if provided
         # Helps with Captcha errors by reusing cookies from "local" auth, then switching to running code in the cloud
         if cookies_path is not None:
-            with open(cookies_path, "r") as f:
+            with open(cookies_path) as f:
                 cookies = json.load(f)
             self._session.cookies.update(cookies)
 
         elif email is not None and password is not None:
             self.login(email, password)
         else:
-            raise ValueError("Must provide email and password or cookies_path to authenticate.")
+            raise ValueError(
+                "Must provide email and password or cookies_path to authenticate."
+            )
 
+        user_publication = None
         # if the user provided a publication url, then use that
         if publication_url:
             import re
@@ -73,11 +83,11 @@ class Api:
             # Regular expression to extract subdomain name
             match = re.search(r"https://(.*).substack.com", publication_url.lower())
             subdomain = match.group(1) if match else None
-            
+
             user_publications = self.get_user_publications()
             # search through publications to find the publication with the matching subdomain
             for publication in user_publications:
-                if publication['subdomain'] == subdomain:
+                if publication["subdomain"] == subdomain:
                     # set the current publication to the users publication
                     user_publication = publication
                     break
@@ -110,7 +120,7 @@ class Api:
         )
 
         return Api._handle_response(response=response)
-    
+
     def signin_for_pub(self, publication):
         """
         Complete the signin process
@@ -118,12 +128,13 @@ class Api:
         response = self._session.get(
             f"https://substack.com/sign-in?redirect=%2F&for_pub={publication['subdomain']}",
         )
+        return Api._handle_response(response=response)
 
     def change_publication(self, publication):
         """
         Change the publication URL
         """
-        self.publication_url = urljoin(publication['publication_url'], "api/v1")
+        self.publication_url = urljoin(publication["publication_url"], "api/v1")
 
         # sign-in to the publication
         self.signin_for_pub(publication)
@@ -156,16 +167,25 @@ class Api:
             raise SubstackRequestException("Invalid Response: %s" % response.text)
 
     def get_user_id(self):
+        """
+
+        Returns:
+
+        """
         profile = self.get_user_profile()
-        user_id = profile['id']
+        user_id = profile["id"]
 
         return user_id
-    
-    def get_publication_url(self, publication):
+
+    @staticmethod
+    def get_publication_url(publication: dict) -> str:
         """
         Gets the publication url
+
+        Args:
+            publication:
         """
-        custom_domain = publication['custom_domain']
+        custom_domain = publication["custom_domain"]
         if not custom_domain:
             publication_url = f"https://{publication['subdomain']}.substack.com"
         else:
@@ -179,8 +199,10 @@ class Api:
         """
 
         profile = self.get_user_profile()
-        primary_publication = profile['primaryPublication']
-        primary_publication['publication_url'] = self.get_publication_url(primary_publication)
+        primary_publication = profile["primaryPublication"]
+        primary_publication["publication_url"] = self.get_publication_url(
+            primary_publication
+        )
 
         return primary_publication
 
@@ -191,11 +213,12 @@ class Api:
 
         profile = self.get_user_profile()
 
-        # Loop through users "publicationUsers" list, and return a list of dictionaries of "name", and "subdomain", and "id"
+        # Loop through users "publicationUsers" list, and return a list
+        # of dictionaries of "name", and "subdomain", and "id"
         user_publications = []
-        for publication in profile['publicationUsers']:
-            pub = publication['publication']
-            pub['publication_url'] = self.get_publication_url(pub)
+        for publication in profile["publicationUsers"]:
+            pub = publication["publication"]
+            pub["publication_url"] = self.get_publication_url(pub)
             user_publications.append(pub)
 
         return user_publications
@@ -218,7 +241,7 @@ class Api:
         response = self._session.get(f"{self.base_url}/settings")
 
         return Api._handle_response(response=response)
-    
+
     def get_publication_users(self):
         """
         Get list of users.
@@ -238,17 +261,26 @@ class Api:
         Returns:
 
         """
-        response = self._session.get(f"{self.publication_url}/publication_launch_checklist")
+        response = self._session.get(
+            f"{self.publication_url}/publication_launch_checklist"
+        )
 
-        return Api._handle_response(response=response)['subscriberCount']
+        return Api._handle_response(response=response)["subscriberCount"]
 
-    def get_published_posts(self, offset=0, limit=25, order_by="post_date", order_direction="desc"):
+    def get_published_posts(
+        self, offset=0, limit=25, order_by="post_date", order_direction="desc"
+    ):
         """
         Get list of published posts for the publication.
         """
         response = self._session.get(
             f"{self.publication_url}/post_management/published",
-            params={"offset": offset, "limit": limit, "order_by": order_by, "order_direction": order_direction},
+            params={
+                "offset": offset,
+                "limit": limit,
+                "order_by": order_by,
+                "order_direction": order_direction,
+            },
         )
 
         return Api._handle_response(response=response)
@@ -312,11 +344,7 @@ class Api:
         response = self._session.post(f"{self.publication_url}/drafts", json=body)
         return Api._handle_response(response=response)
 
-    def put_draft(
-            self,
-            draft,
-            **kwargs
-    ) -> dict:
+    def put_draft(self, draft, **kwargs) -> dict:
         """
 
         Args:
@@ -348,7 +376,7 @@ class Api:
         return Api._handle_response(response=response)
 
     def publish_draft(
-            self, draft, send: bool = True, share_automatically: bool = False
+        self, draft, send: bool = True, share_automatically: bool = False
     ) -> dict:
         """
 
@@ -466,7 +494,7 @@ class Api:
                 page_output = self.get_category(category_id, category_type, page)
                 publications.extend(page_output.get("publications", []))
                 if (
-                        limit is not None and limit <= len(publications)
+                    limit is not None and limit <= len(publications)
                 ) or not page_output.get("more", False):
                     publications = publications[:limit]
                     break
@@ -504,5 +532,9 @@ class Api:
             f"{self.publication_url}/subscriptions",
         )
         content = Api._handle_response(response=response)
-        sections = [p.get("sections") for p in content.get("publications") if p.get("hostname") in self.publication_url]
+        sections = [
+            p.get("sections")
+            for p in content.get("publications")
+            if p.get("hostname") in self.publication_url
+        ]
         return sections[0]
