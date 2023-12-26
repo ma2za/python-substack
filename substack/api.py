@@ -128,7 +128,11 @@ class Api:
         response = self._session.get(
             f"https://substack.com/sign-in?redirect=%2F&for_pub={publication['subdomain']}",
         )
-        return Api._handle_response(response=response)
+        try:
+            output = Api._handle_response(response=response)
+        except SubstackRequestException as ex:
+            output = {}
+        return output
 
     def change_publication(self, publication):
         """
@@ -538,3 +542,32 @@ class Api:
             if p.get("hostname") in self.publication_url
         ]
         return sections[0]
+
+    def publication_embed(self, url):
+        """
+
+        Args:
+            url:
+
+        Returns:
+
+        """
+        return self.call("/publication/embed", "GET", url=url)
+
+    def call(self, endpoint, method, **params):
+        """
+
+        Args:
+            endpoint:
+            method:
+            **params:
+
+        Returns:
+
+        """
+        response = self._session.request(
+            method=method,
+            url=f"{self.publication_url}/{endpoint}",
+            params=params,
+        )
+        return Api._handle_response(response=response)

@@ -92,6 +92,10 @@ post.add({'type': 'captionedImage', 'src': "https://media.tenor.com/7B4jMa-a7bsA
 image = api.get_image('image.png')
 post.add({"type": "captionedImage", "src": image.get("url")})
 
+# embed publication
+embedded = api.publication_embed("https://jackio.substack.com/")
+post.add({"type": "embeddedPublication", "url": embedded})
+
 draft = api.post_draft(post.get_draft())
 
 # set section (THIS CAN BE DONE ONLY AFTER HAVING FIRST POSTED THE DRAFT)

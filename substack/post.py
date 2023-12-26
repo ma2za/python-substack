@@ -84,6 +84,8 @@ class Post:
         content = item.get("content")
         if item.get("type") == "captionedImage":
             self.captioned_image(**item)
+        elif item.get("type") == "embeddedPublication":
+            self.draft_body["content"][-1]["attrs"] = item.get("url")
         elif item.get("type") == "youtube2":
             self.youtube(item.get("src"))
         elif item.get("type") == "subscribeWidget":
