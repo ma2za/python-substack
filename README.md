@@ -3,7 +3,6 @@
 This is an unofficial library providing a Python interface for [Substack](https://substack.com/).
 I am in no way affiliated with Substack.
 
-[![Python](https://img.shields.io/pypi/pyversions/fastapi.svg?color=%2334D058)](https://www.python.org/downloads/)
 [![Downloads](https://static.pepy.tech/badge/python-substack/month)](https://pepy.tech/project/python-substack)
 ![Release Build](https://github.com/ma2za/python-substack/actions/workflows/ci_publish.yml/badge.svg)
 ---
