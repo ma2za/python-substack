@@ -100,6 +100,16 @@ post.add({"type": "captionedImage", "src": image.get("url")})
 embedded = api.publication_embed("https://jackio.substack.com/")
 post.add({"type": "embeddedPublication", "url": embedded})
 
+# create post from Markdown
+markdown_content = """
+# My Heading
+
+This is a paragraph with **bold** and *italic* text.
+
+![Image Alt](https://example.com/image.jpg)
+"""
+post.from_markdown(markdown_content, api=api)
+
 draft = api.post_draft(post.get_draft())
 
 # set section (can only be done after first posting the draft)
