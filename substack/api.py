@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, unquote
 
 import requests
 
@@ -35,6 +35,7 @@ class Api:
         base_url=None,
         publication_url=None,
         debug=False,
+        cookies_string=None,
     ):
         """
 
@@ -49,6 +50,10 @@ class Api:
             To re-use your session without logging in each time, you can save your cookies to a json file and
             then load them in the next session.
             Make sure to re-save your cookies, as they do update over time.
+          cookies_string
+            To re-use your session without logging in each time, you can provide cookies as a semicolon-separated
+            string (e.g., "cookie1=value1; cookie2=value2"). This is useful when copying cookies from browser
+            developer tools.
           base_url:
             The base URL to use to contact the Substack API.
             Defaults to https://substack.com/api/v1.
@@ -68,11 +73,15 @@ class Api:
                 cookies = json.load(f)
             self._session.cookies.update(cookies)
 
+        elif cookies_string is not None:
+            cookies = self._parse_cookies_string(cookies_string)
+            self._session.cookies.update(cookies)
+
         elif email is not None and password is not None:
             self.login(email, password)
         else:
             raise ValueError(
-                "Must provide email and password or cookies_path to authenticate."
+                "Must provide email and password, cookies_path, or cookies_string to authenticate."
             )
 
         user_publication = None
@@ -97,6 +106,31 @@ class Api:
 
         # set the current publication to the users primary publication
         self.change_publication(user_publication)
+
+    @staticmethod
+    def _parse_cookies_string(cookies_string: str) -> dict:
+        """
+        Parse a semicolon-separated cookie string into a dictionary.
+        
+        Args:
+            cookies_string: A semicolon-separated string of cookies (e.g., "cookie1=value1; cookie2=value2")
+            
+        Returns:
+            A dictionary of cookie name-value pairs
+        """
+        cookies = {}
+        for cookie_pair in cookies_string.split(';'):
+            cookie_pair = cookie_pair.strip()
+            if not cookie_pair:
+                continue
+            if '=' in cookie_pair:
+                key, value = cookie_pair.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                # URL decode the value (e.g., s%3A becomes s:)
+                value = unquote(value)
+                cookies[key] = value
+        return cookies
 
     def login(self, email, password) -> dict:
         """
@@ -189,8 +223,8 @@ class Api:
         Args:
             publication:
         """
-        custom_domain = publication["custom_domain"]
-        if not custom_domain:
+        custom_domain = publication.get("custom_domain", None)
+        if not custom_domain and not publication.get('custom_domain_optional', None):
             publication_url = f"https://{publication['subdomain']}.substack.com"
         else:
             publication_url = f"https://{custom_domain}"
@@ -203,7 +237,31 @@ class Api:
         """
 
         profile = self.get_user_profile()
-        primary_publication = profile["primaryPublication"]
+        primary_publication = None
+        
+        # Try old API format first (backward compatibility)
+        if "primaryPublication" in profile and profile["primaryPublication"] is not None:
+            primary_publication = profile["primaryPublication"]
+        else:
+            # New API format: look for primary publication in publicationUsers
+            publication_users = profile.get("publicationUsers")
+            if publication_users is not None and len(publication_users) > 0:
+                # Find the publication where is_primary is True
+                for pub_user in publication_users:
+                    if pub_user.get("is_primary", False):
+                        primary_publication = pub_user.get("publication")
+                        if primary_publication:
+                            break
+                
+                # If no primary found, use the first publication
+                if primary_publication is None:
+                    primary_publication = publication_users[0].get("publication")
+        
+        if primary_publication is None:
+            raise SubstackRequestException(
+                "Could not find primary publication in profile"
+            )
+            
         primary_publication["publication_url"] = self.get_publication_url(
             primary_publication
         )
@@ -220,10 +278,18 @@ class Api:
         # Loop through users "publicationUsers" list, and return a list
         # of dictionaries of "name", and "subdomain", and "id"
         user_publications = []
-        for publication in profile["publicationUsers"]:
-            pub = publication["publication"]
-            pub["publication_url"] = self.get_publication_url(pub)
-            user_publications.append(pub)
+        publication_users = profile.get("publicationUsers")
+        
+        if publication_users is None:
+            # If publicationUsers is None, return empty list or try to construct from other fields
+            # This maintains backward compatibility while handling new API format
+            return user_publications
+        
+        for publication in publication_users:
+            pub = publication.get("publication")
+            if pub is not None:
+                pub["publication_url"] = self.get_publication_url(pub)
+                user_publications.append(pub)
 
         return user_publications
 

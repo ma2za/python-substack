@@ -22,16 +22,19 @@ Set the following environment variables by creating a **.env** file:
 
     EMAIL=
     PASSWORD=
+    PUBLICATION_URL=  # Optional: your publication URL
+    COOKIES_PATH=     # Optional: path to cookies JSON file
+    COOKIES_STRING=   # Optional: cookie string for authentication
 
 ## If you don't have a password
 
-Recently Substack has been setting up new accounts without a password. If you sign-out and sign back in it just uses
+Recently Substack has been setting up new accounts without a password. If you sign out and sign back in, it just uses
 your email address with a "magic" link.
 
 Set a password:
 
-- Sign-out of Substack
-- At the sign-in page click, "Sign in with password" under the `Email` text box
+- Sign out of Substack
+- At the sign-in page, click "Sign in with password" under the `Email` text box
 - Then choose, "Set a new password"
 
 The .env file will be ignored by git but always be careful.
@@ -51,11 +54,12 @@ from substack.post import Post
 api = Api(
     email=os.getenv("EMAIL"),
     password=os.getenv("PASSWORD"),
+    publication_url=os.getenv("PUBLICATION_URL"),
 )
 
 user_id = api.get_user_id()
 
-# Switch Publications - The library defaults to your users primary publication. You can retrieve all your publications and change which one you want to use.
+# Switch Publications - The library defaults to your user's primary publication. You can retrieve all your publications and change which one you want to use.
 
 # primary publication
 user_publication = api.get_user_primary_publication()
@@ -98,9 +102,9 @@ post.add({"type": "embeddedPublication", "url": embedded})
 
 draft = api.post_draft(post.get_draft())
 
-# set section (THIS CAN BE DONE ONLY AFTER HAVING FIRST POSTED THE DRAFT)
-post.set_section("rick rolling", api.get_sections())
-api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
+# set section (can only be done after first posting the draft)
+# post.set_section("rick rolling", api.get_sections())
+# api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
 
 api.prepublish_draft(draft.get("id"))
 
@@ -120,3 +124,7 @@ Set up pre-commit
 ```shell
 pre-commit install
 ```
+
+## Cookie Help
+
+To get a cookie string, after login, go to dev tools (F12), network tab, refresh and find one of the requests like subscription/unred/subscriptions, right click and copy as fetch (Node.js), paste somewhere and get the entire cookie string assigned to the cookie header and put it in the env variables as COOKIES_STRING, et voila!
