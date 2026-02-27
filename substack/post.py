@@ -613,22 +613,49 @@ class Post:
                 # Process paragraphs or bullet lists
                 else:
                     if "\n" in text_content:
-                        # Process each line separately (for bullet lists)
+                        # Process each line, grouping consecutive bullets
+                        # into a single bullet_list node
+                        pending_bullets: List[List[Dict]] = []
+
+                        def flush_bullets():
+                            if not pending_bullets:
+                                return
+                            list_items = []
+                            for bullet_nodes in pending_bullets:
+                                list_items.append({
+                                    "type": "list_item",
+                                    "content": [{"type": "paragraph", "content": bullet_nodes}],
+                                })
+                            self.draft_body["content"].append(
+                                {"type": "bullet_list", "content": list_items}
+                            )
+                            pending_bullets.clear()
+
                         for line in text_content.split("\n"):
                             line = line.strip()
                             if not line:
+                                flush_bullets()
                                 continue
-                            # Remove bullet marker if present
-                            if line.startswith("* "):
-                                line = line[2:].strip()
-                            elif line.startswith("- "):
-                                line = line[2:].strip()
-                            elif line.startswith("*") and not line.startswith("**"):
-                                line = line[1:].strip()
 
-                            if line:
+                            # Check for bullet marker
+                            bullet_text = None
+                            if line.startswith("* "):
+                                bullet_text = line[2:].strip()
+                            elif line.startswith("- "):
+                                bullet_text = line[2:].strip()
+                            elif line.startswith("*") and not line.startswith("**"):
+                                bullet_text = line[1:].strip()
+
+                            if bullet_text is not None:
+                                tokens = parse_inline(bullet_text)
+                                if tokens:
+                                    pending_bullets.append(tokens)
+                            else:
+                                flush_bullets()
                                 tokens = parse_inline(line)
                                 self.add({"type": "paragraph", "content": tokens})
+
+                        flush_bullets()
                     else:
                         # Single paragraph
                         tokens = parse_inline(text_content)
