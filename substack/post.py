@@ -39,66 +39,64 @@ def parse_inline(text: str) -> List[Dict]:
     tokens = []
     # Process text character by character to handle nested formatting
     # We'll use regex to find all markdown patterns, then process them in order
-    
+
     # Find all markdown patterns: links, bold, italic
     # Pattern order: links first (to avoid conflicts), then bold, then italic
-    link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
-    bold_pattern = r'\*\*([^*]+)\*\*'
-    italic_pattern = r'(?<!\*)\*([^*]+)\*(?!\*)'  # Not preceded or followed by *
-    
+    link_pattern = r"\[([^\]]+)\]\(([^)]+)\)"
+    bold_pattern = r"\*\*([^*]+)\*\*"
+    italic_pattern = r"(?<!\*)\*([^*]+)\*(?!\*)"  # Not preceded or followed by *
+
     # Find all matches with their positions
     matches = []
     for match in re.finditer(link_pattern, text):
         # Skip if it's an image link (starts with ![)
-        if match.start() > 0 and text[match.start()-1:match.start()+1] != "![":
-            matches.append((match.start(), match.end(), "link", match.group(1), match.group(2)))
-    
+        if match.start() == 0 or text[match.start() - 1] != "!":
+            matches.append(
+                (match.start(), match.end(), "link", match.group(1), match.group(2))
+            )
+
     for match in re.finditer(bold_pattern, text):
         # Check if this range is already covered by a link
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "bold", match.group(1), None))
-    
+
     for match in re.finditer(italic_pattern, text):
         # Check if this range is already covered by a link or bold
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "italic", match.group(1), None))
-    
+
     # Sort matches by position
     matches.sort(key=lambda x: x[0])
-    
+
     # Build tokens
     last_pos = 0
     for start, end, match_type, content, url in matches:
         # Add text before this match
         if start > last_pos:
             tokens.append({"content": text[last_pos:start]})
-        
+
         # Add the formatted content
         if match_type == "link":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "link", "attrs": {"href": url}}]
-            })
+            tokens.append(
+                {
+                    "content": content,
+                    "marks": [{"type": "link", "attrs": {"href": url}}],
+                }
+            )
         elif match_type == "bold":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "strong"}]
-            })
+            tokens.append({"content": content, "marks": [{"type": "strong"}]})
         elif match_type == "italic":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "em"}]
-            })
-        
+            tokens.append({"content": content, "marks": [{"type": "em"}]})
+
         last_pos = end
-    
+
     # Add remaining text
     if last_pos < len(text):
         tokens.append({"content": text[last_pos:]})
-    
+
     # Filter out empty tokens
     tokens = [t for t in tokens if t.get("content")]
-    
+
     return tokens
 
 
@@ -351,7 +349,7 @@ class Post:
         for mark in marks:
             new_mark = {"type": mark.get("type")}
             if mark.get("type") == "link":
-                href = mark.get("href")
+                href = mark.get("href") or mark.get("attrs", {}).get("href")
                 new_mark.update({"attrs": {"href": href}})
             content_marks.append(new_mark)
         content["marks"] = content_marks
@@ -491,18 +489,22 @@ class Post:
                 if in_code_block:
                     # End of code block
                     if current_block:
-                        blocks.append({
-                            "type": "code",
-                            "language": code_block_language,
-                            "content": "\n".join(current_block)
-                        })
+                        blocks.append(
+                            {
+                                "type": "code",
+                                "language": code_block_language,
+                                "content": "\n".join(current_block),
+                            }
+                        )
                     current_block = []
                     in_code_block = False
                     code_block_language = None
                 else:
                     # Start of code block
                     if current_block:
-                        blocks.append({"type": "text", "content": "\n".join(current_block)})
+                        blocks.append(
+                            {"type": "text", "content": "\n".join(current_block)}
+                        )
                         current_block = []
                     # Extract language if specified
                     language = line.strip()[3:].strip()
@@ -518,7 +520,9 @@ class Post:
                 if line.strip() == "":
                     # Empty line - end current block if it has content
                     if current_block:
-                        blocks.append({"type": "text", "content": "\n".join(current_block)})
+                        blocks.append(
+                            {"type": "text", "content": "\n".join(current_block)}
+                        )
                         current_block = []
                 else:
                     current_block.append(line)
@@ -526,11 +530,13 @@ class Post:
         # Add any remaining content
         if current_block:
             if in_code_block:
-                blocks.append({
-                    "type": "code",
-                    "language": code_block_language,
-                    "content": "\n".join(current_block)
-                })
+                blocks.append(
+                    {
+                        "type": "code",
+                        "language": code_block_language,
+                        "content": "\n".join(current_block),
+                    }
+                )
             else:
                 blocks.append({"type": "text", "content": "\n".join(current_block)})
 
@@ -544,11 +550,13 @@ class Post:
                     code_attrs = {}
                     if block.get("language"):
                         code_attrs["language"] = block["language"]
-                    self.add({
-                        "type": "codeBlock",
-                        "content": code_content,  # Pass as string, code_block method will handle it
-                        "attrs": code_attrs
-                    })
+                    self.add(
+                        {
+                            "type": "codeBlock",
+                            "content": code_content,  # Pass as string, code_block method will handle it
+                            "attrs": code_attrs,
+                        }
+                    )
             else:
                 # Process text block
                 text_content = block.get("content", "").strip()
@@ -564,17 +572,23 @@ class Post:
 
                 # Process images using Markdown image syntax: ![Alt](URL)
                 # Also handle linked images: [![Alt](image_url)](link_url)
-                elif text_content.startswith("!") or (text_content.startswith("[") and "![" in text_content):
+                elif text_content.startswith("!") or (
+                    text_content.startswith("[") and "![" in text_content
+                ):
                     # Check for linked image first: [![alt](img)](link)
-                    linked_image_match = re.match(r'\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)', text_content)
+                    linked_image_match = re.match(
+                        r"\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)", text_content
+                    )
                     if linked_image_match:
                         # Linked image - create image with href
                         alt_text = linked_image_match.group(1)
                         image_url = linked_image_match.group(2)
                         link_url = linked_image_match.group(3)
-                        
+
                         # Adjust image URL if it starts with a slash
-                        image_url = image_url[1:] if image_url.startswith("/") else image_url
+                        image_url = (
+                            image_url[1:] if image_url.startswith("/") else image_url
+                        )
 
                         # If api is provided and image_url is a local file, upload it
                         if api is not None:
@@ -585,19 +599,25 @@ class Post:
                                 # If upload fails, use original URL
                                 pass
 
-                        self.add({
-                            "type": "captionedImage",
-                            "src": image_url,
-                            "alt": alt_text,
-                            "href": link_url
-                        })
+                        self.add(
+                            {
+                                "type": "captionedImage",
+                                "src": image_url,
+                                "alt": alt_text,
+                                "href": link_url,
+                            }
+                        )
                     else:
                         # Regular image: ![Alt](URL)
                         match = re.match(r"!\[.*?\]\((.*?)\)", text_content)
                         if match:
                             image_url = match.group(1)
                             # Adjust image URL if it starts with a slash
-                            image_url = image_url[1:] if image_url.startswith("/") else image_url
+                            image_url = (
+                                image_url[1:]
+                                if image_url.startswith("/")
+                                else image_url
+                            )
 
                             # If api is provided and image_url is a local file, upload it
                             if api is not None:
