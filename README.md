@@ -13,6 +13,12 @@ You can install python-substack using:
 
     $ pip install python-substack
 
+For the MCP server tools, install the extra dependency set:
+
+    $ poetry install --with mcp
+
+> NOTE: We had to upgrade the package requirements to support Python 3.10 because 3.9 is basically vintage now. If you still run 3.9, please join us in the future (or bring snacks).
+
 ---
 
 # Setup
@@ -245,6 +251,22 @@ body:
   2:
     type: "captionedImage"
     src: "local_image.jpg"  # Local images will be uploaded automatically
+```
+
+## MCP FastMCP server
+
+This package now includes a FastMCP server in `substack/mcp_fastmcp.py` with the following tools:
+
+- `post_draft_from_markdown(...)`: create draft from markdown, optional tag/add/prepublish/publish, and control send/share_automatically.
+- `put_draft(draft_id, update_payload)`: update draft fields.
+- `add_tags(draft_id, tags)`: add tags to a draft/post.
+- `prepublish_draft(draft_id)`: prepublish a draft.
+- `publish_draft(draft_id, send=True, share_automatically=False)`: publish a draft.
+
+Use via stdio transport:
+
+```bash
+python -c "from substack.mcp_fastmcp import main; main()"
 ```
 
 # Contributing
