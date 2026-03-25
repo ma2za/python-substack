@@ -6,6 +6,12 @@ audience:
   "everyone" # everyone, only_paid, founding, only_free
 write_comment_permissions:
   "none" # none, only_paid, everyone
+search_engine_title:
+  "This is a short SEO title set via the Python API wrapper."
+search_engine_description:
+  "This is a short SEO description set via the Python API wrapper."
+slug:
+  "this-is-a-draft-post-2"
 section:
   "rick"
 tags:
