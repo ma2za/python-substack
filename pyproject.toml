@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.1.20"
+version = "0.1.21"
 description = "A Python wrapper around the Substack API."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
@@ -16,15 +16,20 @@ homepage = "https://github.com/ma2za/python-substack"
 keywords = ["substack"]
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = "<4.0,>=3.10"
 
-requests = "^2.31.0"
-python-dotenv = "^0.21.0"
+requests = "^2.32.0"
+python-dotenv = "^1.2.1"
 PyYAML = "^6.0"
-
 
 [tool.poetry.group.dev.dependencies]
 
+[tool.poetry.group.mcp]
+
+optional = true
+
+[tool.poetry.group.mcp.dependencies]
+fastmcp = "^3.1.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
