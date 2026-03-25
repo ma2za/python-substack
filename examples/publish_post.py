@@ -69,6 +69,8 @@ if __name__ == "__main__":
     # post.set_section(post_data.get("section"), api.get_sections())
     api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
 
+    api.add_tags_to_post(draft.get("id"), post_data.get("tags", []))
+
     if args.publish:
         api.prepublish_draft(draft.get("id"))
 

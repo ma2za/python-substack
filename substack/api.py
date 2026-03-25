@@ -514,6 +514,67 @@ class Api:
             data={"image": image},
         )
         return Api._handle_response(response=response)
+    
+    def add_tags_to_post(self, post_id: int, tag_names: list) -> dict:
+        """
+        Add multiple tags to a post.
+
+        Args:
+            post_id: The ID of the post to tag.
+            tag_names: A list of tag names to add.
+
+        Returns:
+            A dictionary with the results of applying all tags.
+        """
+        results = []
+        for tag_name in tag_names:
+            result = self.add_tag_to_post(post_id, tag_name)
+            results.append(result)
+        return {"tags_added": results}
+
+    def get_publication_post_tags(self) -> list:
+        """
+        Retrieve all post tags for the current publication.
+
+        Returns:
+            List of tag dicts as returned by Substack API.
+        """
+        response = self._session.get(f"{self.publication_url}/publication/post-tag")
+        return Api._handle_response(response=response)
+
+    def add_tag_to_post(self, post_id: int, tag_name: str) -> dict:
+        """
+        Add a tag to a post by first checking published tags and creating only if needed.
+
+        Args:
+            post_id: The ID of the post to tag.
+            tag_name: The name of the tag to add.
+
+        Returns:
+            The response from applying the tag to the post.
+        """
+        # Fetch existing publication tags first (avoid re-creating an already existing tag)
+        existing_tags = self.get_publication_post_tags() or []
+        existing_tag = next(
+            (tag for tag in existing_tags if tag.get("name") == tag_name),
+            None,
+        )
+
+        if existing_tag is not None:
+            tag_id = existing_tag["id"]
+        else:
+            create_tag_response = self._session.post(
+                f"{self.publication_url}/publication/post-tag",
+                json={"name": tag_name},
+            )
+            tag_data = Api._handle_response(create_tag_response)
+            tag_id = tag_data["id"]
+
+        apply_tag_response = self._session.post(
+            f"{self.publication_url}/post/{post_id}/tag/{tag_id}",
+        )
+        return Api._handle_response(apply_tag_response)
+
 
     def get_categories(self):
         """
