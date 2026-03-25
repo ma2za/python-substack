@@ -212,7 +212,14 @@ for _, item in body.items():
     post.add(item)
 
 draft = api.post_draft(post.get_draft())
-api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
+put_draft_kwargs = {
+    "draft_section_id": post.draft_section_id,
+    "search_engine_title": post_data.get("search_engine_title"),
+    "search_engine_description": post_data.get("search_engine_description"),
+    "slug": post_data.get("slug"),
+}
+put_draft_kwargs = {k: v for k, v in put_draft_kwargs.items() if v is not None}
+api.put_draft(draft.get("id"), **put_draft_kwargs)
 
 # Publish the draft
 api.prepublish_draft(draft.get("id"))

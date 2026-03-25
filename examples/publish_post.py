@@ -20,7 +20,7 @@ if __name__ == "__main__":
         type=str,
     )
     parser.add_argument(
-        "--publish", help="Publish the draft.", action="store_true", default=True
+        "--publish", help="Publish the draft.", action="store_false", default=False
     )
     parser.add_argument(
         "--cookies",
@@ -38,7 +38,9 @@ if __name__ == "__main__":
 
     api = Api(
         email=os.getenv("EMAIL") if not cookies_path and not cookies_string else None,
-        password=os.getenv("PASSWORD") if not cookies_path and not cookies_string else None,
+        password=os.getenv("PASSWORD")
+        if not cookies_path and not cookies_string
+        else None,
         cookies_path=cookies_path,
         cookies_string=cookies_string,
         publication_url=os.getenv("PUBLICATION_URL"),
@@ -67,7 +69,16 @@ if __name__ == "__main__":
     draft = api.post_draft(post.get_draft())
 
     # post.set_section(post_data.get("section"), api.get_sections())
-    api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
+    put_draft_kwargs = {
+        "draft_section_id": post.draft_section_id,
+        "search_engine_title": post_data.get("search_engine_title"),
+        "search_engine_description": post_data.get("search_engine_description"),
+        "slug": post_data.get("slug"),
+    }
+    # Remove None values so we only send fields that were explicitly provided
+    put_draft_kwargs = {k: v for k, v in put_draft_kwargs.items() if v is not None}
+
+    api.put_draft(draft.get("id"), **put_draft_kwargs)
 
     api.add_tags_to_post(draft.get("id"), post_data.get("tags", []))
 
