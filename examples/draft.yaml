@@ -8,6 +8,9 @@ write_comment_permissions:
   "none" # none, only_paid, everyone
 section:
   "rick"
+tags:
+  - "python"
+  - "api"
 body:
   0:
     type: "heading"
@@ -43,7 +46,7 @@ body:
     content: "Set the EMAIL, PASSWORD, PUBLICATION_URL and USER_ID environment variables."
   7:
     type: "captionedImage"
-    src: "rickroll_4k.jpg"
+    src: "examples/rickroll_4k.jpg"
   8:
     type: "youtube2"
     src: "EnDg65ISswg"
