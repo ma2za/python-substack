@@ -80,3 +80,103 @@ class TestPostMarks:
                         assert mark["attrs"]["href"] == "https://example.com"
                         return
         raise AssertionError("No link mark found in output")
+
+
+class TestBlockquoteFromMarkdown:
+    """Tests for blockquote parsing in from_markdown()."""
+
+    def test_single_blockquote_line(self):
+        """A single '> text' line produces a blockquote with one paragraph."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("> This is a quote")
+        body = json.loads(post.get_draft()["draft_body"])
+        bq = body["content"][0]
+        assert bq["type"] == "blockquote"
+        assert len(bq["content"]) == 1
+        assert bq["content"][0]["type"] == "paragraph"
+        assert bq["content"][0]["content"][0]["text"] == "This is a quote"
+
+    def test_multiline_blockquote_grouped(self):
+        """Consecutive '>' lines become a single blockquote with multiple paragraphs."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("> Line one\n> Line two\n> Line three")
+        body = json.loads(post.get_draft()["draft_body"])
+        bq = body["content"][0]
+        assert bq["type"] == "blockquote"
+        assert len(bq["content"]) == 3
+        texts = [p["content"][0]["text"] for p in bq["content"]]
+        assert texts == ["Line one", "Line two", "Line three"]
+
+    def test_blockquote_separated_by_blank_line(self):
+        """A blank line between '>' groups creates two separate blockquotes."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("> First block\n\n> Second block")
+        body = json.loads(post.get_draft()["draft_body"])
+        blockquotes = [n for n in body["content"] if n["type"] == "blockquote"]
+        assert len(blockquotes) == 2
+
+    def test_blockquote_then_paragraph(self):
+        """A blockquote followed by a regular paragraph produces both node types."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("> A quote\n\nA regular paragraph")
+        body = json.loads(post.get_draft()["draft_body"])
+        assert body["content"][0]["type"] == "blockquote"
+        assert body["content"][1]["type"] == "paragraph"
+
+    def test_paragraph_blockquote_paragraph(self):
+        """Blockquote sandwiched between paragraphs preserves order."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("Before\n\n> The quote\n\nAfter")
+        body = json.loads(post.get_draft()["draft_body"])
+        types = [n["type"] for n in body["content"]]
+        assert types == ["paragraph", "blockquote", "paragraph"]
+
+    def test_blockquote_with_inline_link(self):
+        """Links inside blockquotes are parsed as marks."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("> See [example](https://example.com)")
+        body = json.loads(post.get_draft()["draft_body"])
+        bq = body["content"][0]
+        assert bq["type"] == "blockquote"
+        para = bq["content"][0]
+        assert para["type"] == "paragraph"
+
+    def test_blockquote_adjacent_to_bullet_list(self):
+        """Blockquote followed immediately by bullets flushes correctly."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("> A quote\n- bullet one\n- bullet two")
+        body = json.loads(post.get_draft()["draft_body"])
+        types = [n["type"] for n in body["content"]]
+        assert types == ["blockquote", "bullet_list"]
+
+    def test_empty_continuation_line(self):
+        """A bare '>' between quoted lines keeps them in one blockquote."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.from_markdown("> First\n>\n> Third")
+        body = json.loads(post.get_draft()["draft_body"])
+        blockquotes = [n for n in body["content"] if n["type"] == "blockquote"]
+        assert len(blockquotes) == 1
+        paras_with_content = [p for p in blockquotes[0]["content"] if p.get("content")]
+        assert len(paras_with_content) == 2
+
+
+class TestBlockquoteMethod:
+    """Tests for the Post.blockquote() convenience method."""
+
+    def test_blockquote_string(self):
+        """blockquote('text') wraps text in a blockquote node."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        post.blockquote("Hello world")
+        body = json.loads(post.get_draft()["draft_body"])
+        bq = body["content"][0]
+        assert bq["type"] == "blockquote"
+        assert bq["content"][0]["content"][0]["text"] == "Hello world"
+
+    def test_blockquote_chaining(self):
+        """blockquote() returns self for method chaining."""
+        post = Post(title="T", subtitle="S", user_id=1)
+        result = post.blockquote("one").blockquote("two")
+        assert result is post
+        body = json.loads(post.get_draft()["draft_body"])
+        blockquotes = [n for n in body["content"] if n["type"] == "blockquote"]
+        assert len(blockquotes) == 2

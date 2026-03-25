@@ -227,6 +227,42 @@ class Post:
         item["level"] = level
         return self.add(item)
 
+    def blockquote(self, content=None):
+        """
+        Add a blockquote to the post.
+
+        The blockquote wraps one or more paragraph nodes.
+
+        Args:
+            content: Text string or list of inline token dicts.  When a plain
+                string is provided it is wrapped in a single paragraph node.
+
+        Returns:
+            Self for method chaining.
+        """
+        paragraphs: List[Dict] = []
+        if content is not None:
+            if isinstance(content, str):
+                tokens = parse_inline(content)
+                text_nodes = [
+                    {"type": "text", "text": t["content"]} for t in tokens if t
+                ]
+                if text_nodes:
+                    paragraphs.append({"type": "paragraph", "content": text_nodes})
+            elif isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "paragraph":
+                        paragraphs.append(item)
+                    elif isinstance(item, dict):
+                        text_nodes = [{"type": "text", "text": item.get("content", "")}]
+                        paragraphs.append({"type": "paragraph", "content": text_nodes})
+
+        node: Dict = {"type": "blockquote"}
+        if paragraphs:
+            node["content"] = paragraphs
+        self.draft_body["content"] = self.draft_body.get("content", []) + [node]
+        return self
+
     def horizontal_rule(self):
         """
 
@@ -464,6 +500,7 @@ class Post:
           - Linked images: [![Alt](image_url)](link_url) - images that are also links
           - Links: [text](url) - inline links in paragraphs
           - Code blocks: Fenced code blocks with ```language or ```
+          - Blockquotes: Lines starting with '>' (consecutive lines grouped)
           - Paragraphs: Regular text blocks
           - Bullet lists: Lines starting with '*' or '-'
           - Inline formatting: **bold** and *italic* within paragraphs
@@ -611,12 +648,14 @@ class Post:
 
                             self.add({"type": "captionedImage", "src": image_url})
 
-                # Process paragraphs or bullet lists
+                # Process paragraphs, bullet lists, or blockquotes
                 else:
                     if "\n" in text_content:
                         # Process each line, grouping consecutive bullets
-                        # into a single bullet_list node
+                        # into a single bullet_list node and consecutive
+                        # blockquote lines into a single blockquote node.
                         pending_bullets: List[List[Dict]] = []
+                        pending_quotes: List[str] = []
 
                         def flush_bullets():
                             if not pending_bullets:
@@ -632,10 +671,36 @@ class Post:
                             )
                             pending_bullets.clear()
 
+                        def flush_quotes():
+                            if not pending_quotes:
+                                return
+                            paragraphs: List[Dict] = []
+                            for quote_line in pending_quotes:
+                                tokens = parse_inline(quote_line)
+                                text_nodes = [
+                                    {"type": "text", "text": t["content"]}
+                                    for t in tokens if t
+                                ]
+                                if text_nodes:
+                                    paragraphs.append({"type": "paragraph", "content": text_nodes})
+                            node: Dict = {"type": "blockquote"}
+                            if paragraphs:
+                                node["content"] = paragraphs
+                            self.draft_body["content"].append(node)
+                            pending_quotes.clear()
+
                         for line in text_content.split("\n"):
                             line = line.strip()
                             if not line:
                                 flush_bullets()
+                                flush_quotes()
+                                continue
+
+                            # Check for blockquote marker
+                            if line.startswith("> ") or line == ">":
+                                flush_bullets()
+                                quote_text = line[2:] if line.startswith("> ") else ""
+                                pending_quotes.append(quote_text)
                                 continue
 
                             # Check for bullet marker
@@ -648,18 +713,33 @@ class Post:
                                 bullet_text = line[1:].strip()
 
                             if bullet_text is not None:
+                                flush_quotes()
                                 tokens = parse_inline(bullet_text)
                                 if tokens:
                                     pending_bullets.append(tokens)
                             else:
                                 flush_bullets()
+                                flush_quotes()
                                 tokens = parse_inline(line)
                                 self.add({"type": "paragraph", "content": tokens})
 
                         flush_bullets()
+                        flush_quotes()
                     else:
-                        # Single paragraph
-                        tokens = parse_inline(text_content)
-                        self.add({"type": "paragraph", "content": tokens})
+                        # Single line — could be a blockquote or paragraph
+                        if text_content.startswith("> ") or text_content == ">":
+                            quote_text = text_content[2:] if text_content.startswith("> ") else ""
+                            tokens = parse_inline(quote_text)
+                            text_nodes = [
+                                {"type": "text", "text": t["content"]}
+                                for t in tokens if t
+                            ]
+                            para = {"type": "paragraph", "content": text_nodes} if text_nodes else {"type": "paragraph"}
+                            self.draft_body["content"] = self.draft_body.get("content", []) + [
+                                {"type": "blockquote", "content": [para]}
+                            ]
+                        else:
+                            tokens = parse_inline(text_content)
+                            self.add({"type": "paragraph", "content": tokens})
 
         return self
