@@ -1,19 +1,22 @@
-"""
+"""API Wrapper."""
 
-API Wrapper
-
-"""
+from __future__ import annotations
 
 import base64
 import json
 import logging
 import os
-from datetime import datetime
-from urllib.parse import urljoin, unquote
+import re
+from typing import TYPE_CHECKING
+from urllib.parse import unquote, urljoin
 
 import requests
 
 from substack.exceptions import SubstackAPIException, SubstackRequestException
+from substack.models import PostMetadata
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +24,7 @@ __all__ = ["Api"]
 
 
 class Api:
-    """
-
-    A python interface into the Substack API
-
-    """
+    """A python interface into the Substack API."""
 
     def __init__(
         self,
@@ -36,28 +35,7 @@ class Api:
         publication_url=None,
         debug=False,
         cookies_string=None,
-    ):
-        """
-
-        To create an instance of the substack.Api class:
-            >>> import substack
-            >>> api = substack.Api(email="substack email", password="substack password")
-
-        Args:
-          email:
-          password:
-          cookies_path
-            To re-use your session without logging in each time, you can save your cookies to a json file and
-            then load them in the next session.
-            Make sure to re-save your cookies, as they do update over time.
-          cookies_string
-            To re-use your session without logging in each time, you can provide cookies as a semicolon-separated
-            string (e.g., "cookie1=value1; cookie2=value2"). This is useful when copying cookies from browser
-            developer tools.
-          base_url:
-            The base URL to use to contact the Substack API.
-            Defaults to https://substack.com/api/v1.
-        """
+    ) -> None:
         self.base_url = base_url or "https://substack.com/api/v1"
 
         if debug:
@@ -66,17 +44,13 @@ class Api:
 
         self._session = requests.Session()
 
-        # Load cookies from file if provided
-        # Helps with Captcha errors by reusing cookies from "local" auth, then switching to running code in the cloud
         if cookies_path is not None:
             with open(cookies_path) as f:
                 cookies = json.load(f)
             self._session.cookies.update(cookies)
-
         elif cookies_string is not None:
             cookies = self._parse_cookies_string(cookies_string)
             self._session.cookies.update(cookies)
-
         elif email is not None and password is not None:
             self.login(email, password)
         else:
@@ -85,63 +59,43 @@ class Api:
             )
 
         user_publication = None
-        # if the user provided a publication url, then use that
         if publication_url:
-            import re
-
-            # Regular expression to extract subdomain name
             match = re.search(r"https://(.*).substack.com", publication_url.lower())
             subdomain = match.group(1) if match else None
 
             user_publications = self.get_user_publications()
-            # search through publications to find the publication with the matching subdomain
             for publication in user_publications:
                 if publication["subdomain"] == subdomain:
-                    # set the current publication to the users publication
                     user_publication = publication
                     break
+
+            # Fallback: construct publication dict if not in user's list
+            if user_publication is None and subdomain:
+                user_publication = {
+                    "subdomain": subdomain,
+                    "publication_url": f"https://{subdomain}.substack.com",
+                }
         else:
-            # get the users primary publication
             user_publication = self.get_user_primary_publication()
 
-        # set the current publication to the users primary publication
         self.change_publication(user_publication)
 
     @staticmethod
     def _parse_cookies_string(cookies_string: str) -> dict:
-        """
-        Parse a semicolon-separated cookie string into a dictionary.
-        
-        Args:
-            cookies_string: A semicolon-separated string of cookies (e.g., "cookie1=value1; cookie2=value2")
-            
-        Returns:
-            A dictionary of cookie name-value pairs
-        """
         cookies = {}
-        for cookie_pair in cookies_string.split(';'):
+        for cookie_pair in cookies_string.split(";"):
             cookie_pair = cookie_pair.strip()
             if not cookie_pair:
                 continue
-            if '=' in cookie_pair:
-                key, value = cookie_pair.split('=', 1)
+            if "=" in cookie_pair:
+                key, value = cookie_pair.split("=", 1)
                 key = key.strip()
                 value = value.strip()
-                # URL decode the value (e.g., s%3A becomes s:)
                 value = unquote(value)
                 cookies[key] = value
         return cookies
 
     def login(self, email, password) -> dict:
-        """
-
-        Login to the substack account.
-
-        Args:
-          email: substack account email
-          password: substack account password
-        """
-
         response = self._session.post(
             f"{self.base_url}/login",
             json={
@@ -152,139 +106,88 @@ class Api:
                 "redirect": "/",
             },
         )
-
         return Api._handle_response(response=response)
 
     def signin_for_pub(self, publication):
-        """
-        Complete the signin process
-        """
         response = self._session.get(
             f"https://substack.com/sign-in?redirect=%2F&for_pub={publication['subdomain']}",
         )
         try:
             output = Api._handle_response(response=response)
-        except SubstackRequestException as ex:
+        except SubstackRequestException:
             output = {}
         return output
 
-    def change_publication(self, publication):
-        """
-        Change the publication URL
-        """
+    def change_publication(self, publication) -> None:
+        self.publication = publication
         self.publication_url = urljoin(publication["publication_url"], "api/v1")
-
-        # sign-in to the publication
         self.signin_for_pub(publication)
 
-    def export_cookies(self, path: str = "cookies.json"):
-        """
-        Export cookies to a json file.
-        Args:
-            path: path to the json file
-        """
+    def export_cookies(self, path: str = "cookies.json") -> None:
         cookies = self._session.cookies.get_dict()
         with open(path, "w") as f:
             json.dump(cookies, f)
 
     @staticmethod
     def _handle_response(response: requests.Response):
-        """
-
-        Internal helper for handling API responses from the Substack server.
-        Raises the appropriate exceptions when necessary; otherwise, returns the
-        response.
-
-        """
-
         if not (200 <= response.status_code < 300):
             raise SubstackAPIException(response.status_code, response.text)
         try:
             return response.json()
         except ValueError:
-            raise SubstackRequestException("Invalid Response: %s" % response.text)
+            raise SubstackRequestException(f"Invalid Response: {response.text}")
 
     def get_user_id(self):
-        """
-
-        Returns:
-
-        """
         profile = self.get_user_profile()
-        user_id = profile["id"]
-
-        return user_id
+        return profile["id"]
 
     @staticmethod
     def get_publication_url(publication: dict) -> str:
-        """
-        Gets the publication url
-
-        Args:
-            publication:
-        """
-        custom_domain = publication.get("custom_domain", None)
-        if not custom_domain and not publication.get('custom_domain_optional', None):
+        custom_domain = publication.get("custom_domain")
+        if not custom_domain and not publication.get("custom_domain_optional"):
             publication_url = f"https://{publication['subdomain']}.substack.com"
         else:
             publication_url = f"https://{custom_domain}"
-
         return publication_url
 
     def get_user_primary_publication(self):
-        """
-        Gets the users primary publication
-        """
-
         profile = self.get_user_profile()
         primary_publication = None
-        
-        # Try old API format first (backward compatibility)
-        if "primaryPublication" in profile and profile["primaryPublication"] is not None:
+
+        if (
+            "primaryPublication" in profile
+            and profile["primaryPublication"] is not None
+        ):
             primary_publication = profile["primaryPublication"]
         else:
-            # New API format: look for primary publication in publicationUsers
             publication_users = profile.get("publicationUsers")
             if publication_users is not None and len(publication_users) > 0:
-                # Find the publication where is_primary is True
                 for pub_user in publication_users:
                     if pub_user.get("is_primary", False):
                         primary_publication = pub_user.get("publication")
                         if primary_publication:
                             break
-                
-                # If no primary found, use the first publication
                 if primary_publication is None:
                     primary_publication = publication_users[0].get("publication")
-        
+
         if primary_publication is None:
             raise SubstackRequestException(
                 "Could not find primary publication in profile"
             )
-            
+
         primary_publication["publication_url"] = self.get_publication_url(
             primary_publication
         )
-
         return primary_publication
 
     def get_user_publications(self):
-        """
-        Gets the users publications
-        """
-
         profile = self.get_user_profile()
-
-        # Loop through users "publicationUsers" list, and return a list
-        # of dictionaries of "name", and "subdomain", and "id"
         user_publications = []
         publication_users = profile.get("publicationUsers")
-        
+
         if publication_users is None:
-            # If publicationUsers is None, return empty list or try to construct from other fields
-            # This maintains backward compatibility while handling new API format
             return user_publications
-        
+
         for publication in publication_users:
             pub = publication.get("publication")
             if pub is not None:
@@ -294,55 +197,26 @@ class Api:
         return user_publications
 
     def get_user_profile(self):
-        """
-        Gets the users profile
-        """
         response = self._session.get(f"{self.base_url}/user/profile/self")
-
         return Api._handle_response(response=response)
 
     def get_user_settings(self):
-        """
-        Get list of users.
-
-        Returns:
-
-        """
         response = self._session.get(f"{self.base_url}/settings")
-
         return Api._handle_response(response=response)
 
     def get_publication_users(self):
-        """
-        Get list of users.
-
-        Returns:
-
-        """
         response = self._session.get(f"{self.publication_url}/publication/users")
-
         return Api._handle_response(response=response)
 
     def get_publication_subscriber_count(self):
-
-        """
-        Get subscriber count.
-
-        Returns:
-
-        """
         response = self._session.get(
             f"{self.publication_url}/publication_launch_checklist"
         )
-
         return Api._handle_response(response=response)["subscriberCount"]
 
     def get_published_posts(
         self, offset=0, limit=25, order_by="post_date", order_direction="desc"
     ):
-        """
-        Get list of published posts for the publication.
-        """
         response = self._session.get(
             f"{self.publication_url}/post_management/published",
             params={
@@ -352,30 +226,13 @@ class Api:
                 "order_direction": order_direction,
             },
         )
-
         return Api._handle_response(response=response)
 
     def get_posts(self) -> dict:
-        """
-
-        Returns:
-
-        """
         response = self._session.get(f"{self.base_url}/reader/posts")
-
         return Api._handle_response(response=response)
 
     def get_drafts(self, filter=None, offset=None, limit=None):
-        """
-
-        Args:
-            filter:
-            offset:
-            limit:
-
-        Returns:
-
-        """
         response = self._session.get(
             f"{self.publication_url}/drafts",
             params={"filter": filter, "offset": offset, "limit": limit},
@@ -383,47 +240,18 @@ class Api:
         return Api._handle_response(response=response)
 
     def get_draft(self, draft_id):
-        """
-        Gets a draft given it's id.
-
-        """
         response = self._session.get(f"{self.publication_url}/drafts/{draft_id}")
         return Api._handle_response(response=response)
 
     def delete_draft(self, draft_id):
-        """
-
-        Args:
-            draft_id:
-
-        Returns:
-
-        """
         response = self._session.delete(f"{self.publication_url}/drafts/{draft_id}")
         return Api._handle_response(response=response)
 
     def post_draft(self, body) -> dict:
-        """
-
-        Args:
-          body:
-
-        Returns:
-
-        """
         response = self._session.post(f"{self.publication_url}/drafts", json=body)
         return Api._handle_response(response=response)
 
     def put_draft(self, draft, **kwargs) -> dict:
-        """
-
-        Args:
-            draft:
-            **kwargs:
-
-        Returns:
-
-        """
         response = self._session.put(
             f"{self.publication_url}/drafts/{draft}",
             json=kwargs,
@@ -431,15 +259,6 @@ class Api:
         return Api._handle_response(response=response)
 
     def prepublish_draft(self, draft) -> dict:
-        """
-
-        Args:
-            draft: draft id
-
-        Returns:
-
-        """
-
         response = self._session.get(
             f"{self.publication_url}/drafts/{draft}/prepublish"
         )
@@ -448,16 +267,6 @@ class Api:
     def publish_draft(
         self, draft, send: bool = True, share_automatically: bool = False
     ) -> dict:
-        """
-
-        Args:
-            draft: draft id
-            send:
-            share_automatically:
-
-        Returns:
-
-        """
         response = self._session.post(
             f"{self.publication_url}/drafts/{draft}/publish",
             json={"send": send, "share_automatically": share_automatically},
@@ -465,15 +274,6 @@ class Api:
         return Api._handle_response(response=response)
 
     def schedule_draft(self, draft, draft_datetime: datetime) -> dict:
-        """
-
-        Args:
-            draft: draft id
-            draft_datetime: datetime to schedule the draft
-
-        Returns:
-
-        """
         response = self._session.post(
             f"{self.publication_url}/drafts/{draft}/schedule",
             json={"post_date": draft_datetime.isoformat()},
@@ -481,30 +281,13 @@ class Api:
         return Api._handle_response(response=response)
 
     def unschedule_draft(self, draft) -> dict:
-        """
-
-        Args:
-            draft: draft id
-
-        Returns:
-
-        """
         response = self._session.post(
-            f"{self.publication_url}/drafts/{draft}/schedule", json={"post_date": None}
+            f"{self.publication_url}/drafts/{draft}/schedule",
+            json={"post_date": None},
         )
         return Api._handle_response(response=response)
 
     def get_image(self, image: str):
-        """
-
-        This method generates a new substack link that contains the image.
-
-        Args:
-            image: filepath or original url of image.
-
-        Returns:
-
-        """
         if os.path.exists(image):
             with open(image, "rb") as file:
                 image = b"data:image/jpeg;base64," + base64.b64encode(file.read())
@@ -514,18 +297,8 @@ class Api:
             data={"image": image},
         )
         return Api._handle_response(response=response)
-    
+
     def add_tags_to_post(self, post_id: int, tag_names: list) -> dict:
-        """
-        Add multiple tags to a post.
-
-        Args:
-            post_id: The ID of the post to tag.
-            tag_names: A list of tag names to add.
-
-        Returns:
-            A dictionary with the results of applying all tags.
-        """
         results = []
         for tag_name in tag_names:
             result = self.add_tag_to_post(post_id, tag_name)
@@ -533,27 +306,10 @@ class Api:
         return {"tags_added": results}
 
     def get_publication_post_tags(self) -> list:
-        """
-        Retrieve all post tags for the current publication.
-
-        Returns:
-            List of tag dicts as returned by Substack API.
-        """
         response = self._session.get(f"{self.publication_url}/publication/post-tag")
         return Api._handle_response(response=response)
 
     def add_tag_to_post(self, post_id: int, tag_name: str) -> dict:
-        """
-        Add a tag to a post by first checking published tags and creating only if needed.
-
-        Args:
-            post_id: The ID of the post to tag.
-            tag_name: The name of the tag to add.
-
-        Returns:
-            The response from applying the tag to the post.
-        """
-        # Fetch existing publication tags first (avoid re-creating an already existing tag)
         existing_tags = self.get_publication_post_tags() or []
         existing_tag = next(
             (tag for tag in existing_tags if tag.get("name") == tag_name),
@@ -575,29 +331,11 @@ class Api:
         )
         return Api._handle_response(apply_tag_response)
 
-
     def get_categories(self):
-        """
-
-        Retrieve list of all available categories.
-
-        Returns:
-
-        """
         response = self._session.get(f"{self.base_url}/categories")
         return Api._handle_response(response=response)
 
     def get_category(self, category_id, category_type, page):
-        """
-
-        Args:
-            category_id:
-            category_type:
-            page:
-
-        Returns:
-
-        """
         response = self._session.get(
             f"{self.base_url}/category/public/{category_id}/{category_type}",
             params={"page": page},
@@ -605,17 +343,6 @@ class Api:
         return Api._handle_response(response=response)
 
     def get_single_category(self, category_id, category_type, page=None, limit=None):
-        """
-
-        Args:
-            category_id:
-            category_type: paid or all
-            page: by default substack retrieves only the first 25 publications in the category. If this is left None,
-                  then all pages will be retrieved. The page size is 25 publications.
-            limit:
-        Returns:
-
-        """
         if page is not None:
             output = self.get_category(category_id, category_type, page)
         else:
@@ -637,11 +364,6 @@ class Api:
         return output
 
     def delete_all_drafts(self):
-        """
-
-        Returns:
-
-        """
         response = None
         while True:
             drafts = self.get_drafts(filter="draft", limit=10, offset=0)
@@ -652,13 +374,6 @@ class Api:
         return response
 
     def get_sections(self):
-        """
-        Get a list of the sections of your publication.
-
-        TODO: this is hacky but I cannot find another place where to get the sections.
-        Returns:
-
-        """
         response = self._session.get(
             f"{self.publication_url}/subscriptions",
         )
@@ -671,30 +386,51 @@ class Api:
         return sections[0]
 
     def publication_embed(self, url):
-        """
-
-        Args:
-            url:
-
-        Returns:
-
-        """
         return self.call("/publication/embed", "GET", url=url)
 
     def call(self, endpoint, method, **params):
-        """
-
-        Args:
-            endpoint:
-            method:
-            **params:
-
-        Returns:
-
-        """
         response = self._session.request(
             method=method,
             url=f"{self.publication_url}/{endpoint}",
             params=params,
         )
         return Api._handle_response(response=response)
+
+    # ---- Higher-level helpers returning dataclasses ----
+
+    def schedule_release(
+        self,
+        draft_id: int,
+        trigger_at: datetime,
+        post_audience: str = "everyone",
+        email_audience: str = "only_free",
+    ) -> None:
+        """Schedule a post's audience change (e.g. paid -> free).
+
+        Uses POST /drafts/{id}/scheduled_release.
+        """
+        response = self._session.post(
+            f"{self.publication_url}/drafts/{draft_id}/scheduled_release",
+            json={
+                "trigger_at": trigger_at.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                "post_audience": post_audience,
+                "email_audience": email_audience,
+            },
+        )
+        # Substack returns empty response on success
+        if not (200 <= response.status_code < 300):
+            raise SubstackAPIException(response.status_code, response.text)
+
+    def get_post_metadata(self, draft_id: int) -> PostMetadata:
+        """Get full post metadata as a dataclass."""
+        data = self.get_draft(draft_id)
+        return PostMetadata.from_api(data)
+
+    def make_post_free(self, post_id: int) -> PostMetadata:
+        """Set a post's audience and comments to everyone."""
+        data = self.put_draft(
+            post_id,
+            audience="everyone",
+            write_comment_permissions="everyone",
+        )
+        return PostMetadata.from_api(data)
