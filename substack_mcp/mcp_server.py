@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 try:
     from dotenv import load_dotenv
@@ -43,7 +43,7 @@ def get_api() -> Api:
     )
 
 
-def _normalize_tags(tags: Optional[Any]) -> List[str]:
+def _normalize_tags(tags: Optional[Any]) -> list[str]:
     if tags is None:
         return []
     if isinstance(tags, str):
@@ -68,15 +68,15 @@ async def post_draft_from_markdown(
     slug: Optional[str] = None,
     draft_section_id: Optional[int] = None,
     tags: Optional[Any] = None,
-    prepublish: bool = False,
     publish: bool = False,
     send: bool = True,
     share_automatically: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Create or update a Substack draft from Markdown.
 
     This tool builds a Substack `Post` from markdown content and posts a draft.
-    It supports optional tag assignment, prepublish (setup check), and publishing.
+    It supports optional tag assignment and publishing. Prepublish validation
+    runs automatically when publishing.
 
     Args:
         title: Draft title.
@@ -89,13 +89,12 @@ async def post_draft_from_markdown(
         slug: Optional URL slug for the post.
         draft_section_id: Optional section ID for the draft.
         tags: Tag or list of tags to attach to the post.
-        prepublish: If true, calls `prepublish_draft` after creation.
-        publish: If true, calls `publish_draft` after creation (and optionally prepublish).
+        publish: If true, calls `publish_draft` after creation (prepublish runs automatically).
         send: Passed to `publish_draft` for newsletter delivery.
         share_automatically: Passed to `publish_draft`.
 
     Returns:
-        dict containing drafted post (`draft`), optional `tags`, `prepublish`, `publish` results.
+        dict containing drafted post (`draft`), optional `tags`, `publish` results.
 
     Examples:
         With the YAML structure from the README, a caller can map fields like:
@@ -113,7 +112,6 @@ async def post_draft_from_markdown(
         tags:
           - python
           - substack
-        prepublish: true
         publish: true
         send: false
         share_automatically: true
@@ -131,18 +129,16 @@ async def post_draft_from_markdown(
             audience='everyone',
             write_comment_permissions='everyone',
             tags=['python', 'substack'],
-            prepublish=True,
             publish=False,  # set true when ready
         )
         print(result)
         ```
 
-        A longer process with manual prepublish/publish calls:
+        A longer process with manual publish calls:
 
         ```python
         from substack_mcp.mcp_server import (
             post_draft_from_markdown,
-            prepublish_draft,
             publish_draft,
             add_tags,
         )
@@ -156,7 +152,6 @@ async def post_draft_from_markdown(
         draft_id = d['draft']['id']
 
         await add_tags(draft_id, ['post-tag', 'news'])
-        await prepublish_draft(draft_id)
         await publish_draft(draft_id, send=True, share_automatically=True)
         ```
 
@@ -177,7 +172,7 @@ async def post_draft_from_markdown(
 
     draft = client.post_draft(post.get_draft())
 
-    update_payload: Dict[str, Any] = {}
+    update_payload: dict[str, Any] = {}
     if search_engine_title:
         update_payload["search_engine_title"] = search_engine_title
     if search_engine_description:
@@ -195,10 +190,6 @@ async def post_draft_from_markdown(
     if tags_list:
         tags_result = client.add_tags_to_post(draft.get("id"), tags_list)
 
-    prepublish_result = None
-    if prepublish:
-        prepublish_result = client.prepublish_draft(draft.get("id"))
-
     publish_result = None
     if publish:
         publish_result = client.publish_draft(
@@ -208,7 +199,6 @@ async def post_draft_from_markdown(
     return {
         "draft": draft,
         "tags": tags_result,
-        "prepublish": prepublish_result,
         "publish": publish_result,
     }
 
@@ -216,8 +206,8 @@ async def post_draft_from_markdown(
 @mcp.tool()
 async def put_draft(
     draft_id: int,
-    update_payload: Dict[str, Any],
-) -> Dict[str, Any]:
+    update_payload: dict[str, Any],
+) -> dict[str, Any]:
     """Update an existing draft by draft ID.
 
     Args:
@@ -232,7 +222,7 @@ async def put_draft(
 
 
 @mcp.tool()
-async def add_tags(draft_id: int, tags: Any) -> Dict[str, Any]:
+async def add_tags(draft_id: int, tags: Any) -> dict[str, Any]:
     """Add tags to a specific draft/post.
 
     Args:
@@ -250,26 +240,14 @@ async def add_tags(draft_id: int, tags: Any) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def prepublish_draft(draft_id: int) -> Dict[str, Any]:
-    """Invoke prepublish checks for a draft.
-
-    Args:
-        draft_id: target draft identifier.
-
-    Returns:
-        Prepublish response dict from Substack API.
-    """
-    client = get_api()
-    return client.prepublish_draft(draft_id)
-
-
-@mcp.tool()
 async def publish_draft(
     draft_id: int,
     send: bool = True,
     share_automatically: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Publish a draft to live post state.
+
+    Prepublish validation runs automatically before publishing.
 
     Args:
         draft_id: target draft identifier.

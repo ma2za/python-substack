@@ -2,7 +2,7 @@ import json
 
 
 class SubstackAPIException(Exception):
-    def __init__(self, status_code, text) -> None:
+    def __init__(self, status_code: int, text: str) -> None:
         try:
             json_res = json.loads(text)
         except ValueError:
@@ -19,7 +19,7 @@ class SubstackAPIException(Exception):
 
 
 class SubstackRequestException(Exception):
-    def __init__(self, message) -> None:
+    def __init__(self, message: str) -> None:
         self.message = message
 
     def __str__(self) -> str:

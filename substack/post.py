@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import json
 import re
+from typing import TYPE_CHECKING, ClassVar
 
 from substack.exceptions import SectionNotExistsException
+
+if TYPE_CHECKING:
+    from substack.api import Api
 
 __all__ = ["Post", "parse_inline"]
 
@@ -15,12 +19,12 @@ def parse_inline(text: str) -> list[dict]:
     if not text:
         return []
 
-    tokens = []
+    tokens: list[dict] = []
     link_pattern = r"\[([^\]]+)\]\(([^)]+)\)"
     bold_pattern = r"\*\*([^*]+)\*\*"
     italic_pattern = r"(?<!\*)\*([^*]+)\*(?!\*)"
 
-    matches = []
+    matches: list[tuple[int, int, str, str, str | None]] = []
     for match in re.finditer(link_pattern, text):
         if match.start() == 0 or text[match.start() - 1 : match.start() + 1] != "![":
             matches.append(
@@ -64,16 +68,16 @@ def parse_inline(text: str) -> list[dict]:
 
 def _tokens_to_text_nodes(tokens: list[dict]) -> list[dict]:
     """Convert parse_inline tokens to ProseMirror text nodes."""
-    nodes = []
+    nodes: list[dict] = []
     for t in tokens:
         if not t:
             continue
-        node = {"type": "text", "text": t["content"]}
+        node: dict = {"type": "text", "text": t["content"]}
         marks = t.get("marks")
         if marks:
-            pm_marks = []
+            pm_marks: list[dict] = []
             for m in marks:
-                pm = {"type": m["type"]}
+                pm: dict = {"type": m["type"]}
                 if m["type"] == "link":
                     pm["attrs"] = {"href": m.get("attrs", {}).get("href", "")}
                 pm_marks.append(pm)
@@ -85,76 +89,86 @@ def _tokens_to_text_nodes(tokens: list[dict]) -> list[dict]:
 class Post:
     """Post utility class."""
 
+    _ADD_HANDLERS: ClassVar[dict[str, str]] = {
+        "captionedImage": "_handle_captioned_image",
+        "embeddedPublication": "_handle_embedded_publication",
+        "youtube2": "_handle_youtube",
+        "subscribeWidget": "_handle_subscribe_widget",
+        "codeBlock": "_handle_code_block",
+    }
+
     def __init__(
         self,
         title: str,
         subtitle: str,
-        user_id,
+        user_id: int | str,
         audience: str | None = None,
         write_comment_permissions: str | None = None,
     ) -> None:
         self.draft_title = title
         self.draft_subtitle = subtitle
-        self.draft_body = {"type": "doc", "content": []}
+        self.draft_body: dict = {"type": "doc", "content": []}
         self.draft_bylines = [{"id": int(user_id), "is_guest": False}]
         self.audience = audience if audience is not None else "everyone"
-        self.draft_section_id = None
+        self.draft_section_id: int | None = None
         self.section_chosen = True
 
-        if write_comment_permissions is not None:
-            self.write_comment_permissions = write_comment_permissions
-        else:
-            self.write_comment_permissions = self.audience
+        self.write_comment_permissions = write_comment_permissions or self.audience
 
-    def set_section(self, name: str, sections: list) -> None:
+    def set_section(self, name: str, sections: list[dict]) -> None:
         section = [s for s in sections if s.get("name") == name]
         if len(section) != 1:
             raise SectionNotExistsException(name)
         section = section[0]
         self.draft_section_id = section.get("id")
 
-    def add(self, item: dict):
+    def add(self, item: dict) -> Post:
+        item_type = item.get("type")
         self.draft_body["content"] = self.draft_body.get("content", []) + [
-            {"type": item.get("type")}
+            {"type": item_type}
         ]
-        content = item.get("content")
-        if item.get("type") == "captionedImage":
-            self.captioned_image(**item)
-        elif item.get("type") == "embeddedPublication":
-            self.draft_body["content"][-1]["attrs"] = item.get("url")
-        elif item.get("type") == "youtube2":
-            self.youtube(item.get("src"))
-        elif item.get("type") == "subscribeWidget":
-            self.subscribe_with_caption(item.get("message"))
-        elif item.get("type") == "codeBlock":
-            self.code_block(item.get("content"), item.get("attrs", {}))
-        else:
-            if content is not None:
-                self.add_complex_text(content)
 
-        if item.get("type") == "heading":
+        if handler_name := self._ADD_HANDLERS.get(item_type):
+            getattr(self, handler_name)(item)
+        elif (content := item.get("content")) is not None:
+            self.add_complex_text(content)
+
+        if item_type == "heading":
             self.attrs(item.get("level", 1))
-
-        marks = item.get("marks")
-        if marks is not None:
+        if marks := item.get("marks"):
             self.marks(marks)
 
         return self
 
-    def paragraph(self, content=None):
-        item = {"type": "paragraph"}
+    def _handle_captioned_image(self, item: dict) -> None:
+        self.captioned_image(**item)
+
+    def _handle_embedded_publication(self, item: dict) -> None:
+        self.draft_body["content"][-1]["attrs"] = item.get("url")
+
+    def _handle_youtube(self, item: dict) -> None:
+        self.youtube(item.get("src"))
+
+    def _handle_subscribe_widget(self, item: dict) -> None:
+        self.subscribe_with_caption(item.get("message"))
+
+    def _handle_code_block(self, item: dict) -> None:
+        self.code_block(item.get("content"), item.get("attrs", {}))
+
+    def paragraph(self, content: str | None = None) -> Post:
+        item: dict = {"type": "paragraph"}
         if content is not None:
             item["content"] = content
         return self.add(item)
 
-    def heading(self, content=None, level: int = 1):
-        item = {"type": "heading"}
+    def heading(self, content: str | None = None, level: int = 1) -> Post:
+        item: dict = {"type": "heading"}
         if content is not None:
             item["content"] = content
         item["level"] = level
         return self.add(item)
 
-    def blockquote(self, content=None):
+    def blockquote(self, content: str | list | None = None) -> Post:
         paragraphs: list[dict] = []
         if content is not None:
             if isinstance(content, str):
@@ -166,9 +180,11 @@ class Post:
                     paragraphs.append({"type": "paragraph", "content": text_nodes})
             elif isinstance(content, list):
                 for item in content:
-                    if isinstance(item, dict) and item.get("type") == "paragraph":
+                    if not isinstance(item, dict):
+                        continue
+                    if item.get("type") == "paragraph":
                         paragraphs.append(item)
-                    elif isinstance(item, dict):
+                    else:
                         text_nodes = [{"type": "text", "text": item.get("content", "")}]
                         paragraphs.append({"type": "paragraph", "content": text_nodes})
 
@@ -178,14 +194,38 @@ class Post:
         self.draft_body["content"] = self.draft_body.get("content", []) + [node]
         return self
 
-    def paywall(self):
+    def paywall(self) -> Post:
         """Insert a paywall boundary. Content above is the free preview, below is paid-only."""
         return self.add({"type": "paywall"})
 
-    def horizontal_rule(self):
+    def add_subscribe_button(self, *, with_caption: bool = False) -> Post:
+        """Add a subscribe button.
+
+        Args:
+            with_caption: If True, adds the large widget with caption text.
+                If False (default), adds the small single-button version.
+
+        """
+        if with_caption:
+            return self.add({"type": "subscribeWidget"})
+
+        self.draft_body["content"] = self.draft_body.get("content", []) + [
+            {
+                "type": "button",
+                "attrs": {
+                    "url": "%%checkout_url%%",
+                    "text": "Subscribe now",
+                    "action": None,
+                    "class": None,
+                },
+            }
+        ]
+        return self
+
+    def horizontal_rule(self) -> Post:
         return self.add({"type": "horizontal_rule"})
 
-    def attrs(self, level):
+    def attrs(self, level: int) -> Post:
         content_attrs = self.draft_body["content"][-1].get("attrs", {})
         content_attrs.update({"level": level})
         self.draft_body["content"][-1]["attrs"] = content_attrs
@@ -206,7 +246,7 @@ class Post:
         href: str | None = None,
         belowTheFold: bool = False,
         internalRedirect: str | None = None,
-    ):
+    ) -> Post:
         content = self.draft_body["content"][-1].get("content", [])
         content += [
             {
@@ -231,13 +271,13 @@ class Post:
         self.draft_body["content"][-1]["content"] = content
         return self
 
-    def text(self, value: str):
+    def text(self, value: str) -> Post:
         content = self.draft_body["content"][-1].get("content", [])
         content += [{"type": "text", "text": value}]
         self.draft_body["content"][-1]["content"] = content
         return self
 
-    def add_complex_text(self, text) -> None:
+    def add_complex_text(self, text: str | list[dict]) -> None:
         if isinstance(text, str):
             self.text(text)
         else:
@@ -245,13 +285,13 @@ class Post:
                 if chunk:
                     self.text(chunk.get("content")).marks(chunk.get("marks", []))
 
-    def marks(self, marks):
+    def marks(self, marks: list[dict]) -> Post:
         if not marks:
             return self
         content = self.draft_body["content"][-1].get("content", [])[-1]
         content_marks = content.get("marks", [])
         for mark in marks:
-            new_mark = {"type": mark.get("type")}
+            new_mark: dict = {"type": mark.get("type")}
             if mark.get("type") == "link":
                 href = mark.get("href") or mark.get("attrs", {}).get("href")
                 new_mark.update({"attrs": {"href": href}})
@@ -262,12 +302,12 @@ class Post:
     def remove_last_paragraph(self) -> None:
         del self.draft_body.get("content")[-1]
 
-    def get_draft(self):
+    def get_draft(self) -> dict:
         out = vars(self)
         out["draft_body"] = json.dumps(out["draft_body"])
         return out
 
-    def subscribe_with_caption(self, message: str | None = None):
+    def subscribe_with_caption(self, message: str | None = None) -> Post:
         if message is None:
             message = "Thanks for reading this newsletter! Subscribe for free to receive new posts and support my work."
 
@@ -285,22 +325,20 @@ class Post:
         ]
         return self
 
-    def youtube(self, value: str):
+    def youtube(self, value: str) -> Post:
         content_attrs = self.draft_body["content"][-1].get("attrs", {})
         content_attrs.update({"videoId": value})
         self.draft_body["content"][-1]["attrs"] = content_attrs
         return self
 
-    def code_block(self, content, attrs=None):
-        if attrs is None:
-            attrs = {}
-
-        if isinstance(content, str):
-            code_content = [{"type": "text", "text": content}]
-        elif isinstance(content, list):
-            code_content = content
-        else:
-            code_content = []
+    def code_block(self, content: str | list | None, attrs: dict | None = None) -> Post:
+        match content:
+            case str():
+                code_content = [{"type": "text", "text": content}]
+            case list():
+                code_content = content
+            case _:
+                code_content = []
 
         code_block = self.draft_body["content"][-1]
         code_block["content"] = code_content
@@ -309,13 +347,13 @@ class Post:
 
         return self
 
-    def from_markdown(self, markdown_content: str, api=None):
-        """Parse Markdown content and add it to the post."""
-        lines = markdown_content.split("\n")
-        blocks = []
+    @staticmethod
+    def _parse_markdown_blocks(lines: list[str]) -> list[dict]:
+        """Parse lines into a list of text/code block dicts."""
+        blocks: list[dict] = []
         current_block: list[str] = []
         in_code_block = False
-        code_block_language = None
+        code_block_language: str | None = None
 
         for line in lines:
             if line.strip().startswith("```"):
@@ -365,6 +403,49 @@ class Post:
                 )
             else:
                 blocks.append({"type": "text", "content": "\n".join(current_block)})
+
+        return blocks
+
+    @staticmethod
+    def _upload_or_passthrough(image_url: str, api: Api | None = None) -> str:
+        """Strip leading slash from URL, optionally upload via api."""
+        if image_url.startswith("/"):
+            image_url = image_url[1:]
+        if api is not None:
+            try:
+                image = api.get_image(image_url)
+                image_url = image.get("url")
+            except Exception:
+                pass
+        return image_url
+
+    def _render_image(self, text_content: str, api: Api | None = None) -> None:
+        """Handle linked and regular image markdown syntax."""
+        linked_image_match = re.match(
+            r"\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)", text_content
+        )
+        if linked_image_match:
+            alt_text = linked_image_match.group(1)
+            image_url = self._upload_or_passthrough(linked_image_match.group(2), api)
+            link_url = linked_image_match.group(3)
+            self.add(
+                {
+                    "type": "captionedImage",
+                    "src": image_url,
+                    "alt": alt_text,
+                    "href": link_url,
+                }
+            )
+        else:
+            match = re.match(r"!\[.*?\]\((.*?)\)", text_content)
+            if match:
+                image_url = self._upload_or_passthrough(match.group(1), api)
+                self.add({"type": "captionedImage", "src": image_url})
+
+    def from_markdown(self, markdown_content: str, api: Api | None = None) -> Post:
+        """Parse Markdown content and add it to the post."""
+        lines = markdown_content.split("\n")
+        blocks = self._parse_markdown_blocks(lines)
 
         # -- Render blocks into ProseMirror nodes --
         # Track pending bullet items across blocks so consecutive bullet
@@ -426,18 +507,32 @@ class Post:
             """Emit accumulated blockquote paragraphs as one blockquote node."""
             if not pending_quote_paras:
                 return
-            node: dict = {"type": "blockquote", "content": list(pending_quote_paras)}
+            node: dict = {
+                "type": "blockquote",
+                "content": list(pending_quote_paras),
+            }
             self.draft_body["content"].append(node)
             pending_quote_paras.clear()
 
+        def _flush_all() -> None:
+            flush_para()
+            flush_quotes()
+            flush_bullets()
+
         def _process_line(line: str) -> None:
             """Process a single line of text content."""
-            bullet_text = _extract_bullet(line)
-            if bullet_text is not None:
+            # Heading
+            if line.startswith("#"):
+                _flush_all()
+                level = len(line) - len(line.lstrip("#"))
+                if heading_text := line.lstrip("#").strip():
+                    self.heading(content=heading_text, level=min(level, 6))
+                return
+
+            if (bullet_text := _extract_bullet(line)) is not None:
                 flush_para()
                 flush_quotes()
-                tokens = parse_inline(bullet_text)
-                if tokens:
+                if tokens := parse_inline(bullet_text):
                     pending_bullets.append(tokens)
                 return
 
@@ -447,8 +542,7 @@ class Post:
             if line.startswith("> ") or line == ">":
                 flush_para()
                 quote_text = line[2:] if line.startswith("> ") else ""
-                tokens = parse_inline(quote_text)
-                text_nodes = _tokens_to_text_nodes(tokens)
+                text_nodes = _tokens_to_text_nodes(parse_inline(quote_text))
                 para = (
                     {"type": "paragraph", "content": text_nodes}
                     if text_nodes
@@ -457,17 +551,13 @@ class Post:
                 pending_quote_paras.append(para)
             else:
                 flush_quotes()
-                # Accumulate consecutive plain lines into one paragraph
                 pending_para_lines.append(line)
 
         for block in blocks:
             if block["type"] == "code":
-                flush_para()
-                flush_quotes()
-                flush_bullets()
-                code_content = block.get("content", "").strip()
-                if code_content:
-                    code_attrs = {}
+                _flush_all()
+                if code_content := block.get("content", "").strip():
+                    code_attrs: dict = {}
                     if block.get("language"):
                         code_attrs["language"] = block["language"]
                     self.add(
@@ -479,87 +569,42 @@ class Post:
                     )
                 continue
 
-            text_content = block.get("content", "").strip()
-            if not text_content:
+            if not (text_content := block.get("content", "").strip()):
                 continue
 
             # Horizontal rule
             if _is_hr(text_content):
-                flush_para()
-                flush_quotes()
-                flush_bullets()
+                _flush_all()
                 self.draft_body["content"].append({"type": "horizontal_rule"})
                 continue
 
-            # Heading
+            # Heading — only the first line; remaining lines are processed as text
             if text_content.startswith("#"):
-                flush_para()
-                flush_quotes()
-                flush_bullets()
-                level = len(text_content) - len(text_content.lstrip("#"))
-                heading_text = text_content.lstrip("#").strip()
-                if heading_text:
+                _flush_all()
+                first_line, _, rest = text_content.partition("\n")
+                level = len(first_line) - len(first_line.lstrip("#"))
+                if heading_text := first_line.lstrip("#").strip():
                     self.heading(content=heading_text, level=min(level, 6))
+                if rest.strip():
+                    for line in rest.split("\n"):
+                        if line := line.strip():
+                            _process_line(line)
                 continue
 
             # Image
             if text_content.startswith("!") or (
                 text_content.startswith("[") and "![" in text_content
             ):
-                flush_para()
-                flush_quotes()
-                flush_bullets()
-                linked_image_match = re.match(
-                    r"\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)", text_content
-                )
-                if linked_image_match:
-                    alt_text = linked_image_match.group(1)
-                    image_url = linked_image_match.group(2)
-                    link_url = linked_image_match.group(3)
-                    image_url = (
-                        image_url[1:] if image_url.startswith("/") else image_url
-                    )
-                    if api is not None:
-                        try:
-                            image = api.get_image(image_url)
-                            image_url = image.get("url")
-                        except Exception:
-                            pass
-                    self.add(
-                        {
-                            "type": "captionedImage",
-                            "src": image_url,
-                            "alt": alt_text,
-                            "href": link_url,
-                        }
-                    )
-                else:
-                    match = re.match(r"!\[.*?\]\((.*?)\)", text_content)
-                    if match:
-                        image_url = match.group(1)
-                        image_url = (
-                            image_url[1:] if image_url.startswith("/") else image_url
-                        )
-                        if api is not None:
-                            try:
-                                image = api.get_image(image_url)
-                                image_url = image.get("url")
-                            except Exception:
-                                pass
-                        self.add({"type": "captionedImage", "src": image_url})
+                _flush_all()
+                self._render_image(text_content, api)
                 continue
 
             # Text content — may contain bullets, blockquotes, paragraphs
-            # Each block is separated by blank lines in the source,
-            # so flush any pending content from the previous block.
             flush_para()
             flush_quotes()
             for line in text_content.split("\n"):
-                line = line.strip()
-                if line:
+                if line := line.strip():
                     _process_line(line)
 
-        flush_para()
-        flush_quotes()
-        flush_bullets()
+        _flush_all()
         return self
