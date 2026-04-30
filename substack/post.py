@@ -2,15 +2,35 @@
 
 Post Utilities
 
+Post Utilities
+
 """
 
 import json
 import re
 from typing import Dict, List
 
-__all__ = ["Post", "parse_inline"]
+__all__ = ["Post", "parse_inline", "tokens_to_text_nodes"]
 
 from substack.exceptions import SectionNotExistsException
+
+
+def tokens_to_text_nodes(tokens: List[Dict]) -> List[Dict]:
+    """Convert parse_inline() tokens to ProseMirror text nodes.
+
+    parse_inline() returns {"content": "text", "marks": [...]}.
+    ProseMirror expects {"type": "text", "text": "text", "marks": [...]}.
+    """
+    nodes = []
+    for token in tokens:
+        if not token or not token.get("content"):
+            continue
+        node = {"type": "text", "text": token["content"]}
+        marks = token.get("marks")
+        if marks:
+            node["marks"] = marks
+        nodes.append(node)
+    return nodes
 
 
 def parse_inline(text: str) -> List[Dict]:
@@ -19,8 +39,11 @@ def parse_inline(text: str) -> List[Dict]:
     for use in the post content.
 
     Supported formatting:
+      - `code`: Text wrapped in backticks.
       - **Bold**: Text wrapped in double asterisks.
       - *Italic*: Text wrapped in single asterisks.
+      - ***Bold+Italic***: Text wrapped in triple asterisks.
+      - ~~Strikethrough~~: Text wrapped in double tildes.
       - [Links]: Text wrapped in square brackets followed by URL in parentheses.
 
     Args:
@@ -37,32 +60,49 @@ def parse_inline(text: str) -> List[Dict]:
         return []
 
     tokens = []
-    # Process text character by character to handle nested formatting
-    # We'll use regex to find all markdown patterns, then process them in order
 
-    # Find all markdown patterns: links, bold, italic
-    # Pattern order: links first (to avoid conflicts), then bold, then italic
+    # Pattern order matters: code > links > bold+italic > bold > italic > strikethrough
+    code_pattern = r'`([^`]+)`'
     link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+    bold_italic_pattern = r'\*\*\*([^*]+)\*\*\*'
     bold_pattern = r'\*\*([^*]+)\*\*'
     italic_pattern = r'(?<!\*)\*([^*]+)\*(?!\*)'  # Not preceded or followed by *
+    strikethrough_pattern = r'~~([^~]+)~~'
 
     # Find all matches with their positions
     matches = []
+
+    # 1. Inline code FIRST -- content inside backticks must not be parsed for other formatting
+    for match in re.finditer(code_pattern, text):
+        matches.append((match.start(), match.end(), "code", match.group(1), None))
+
+    # 2. Links
     for match in re.finditer(link_pattern, text):
         # Skip if it's an image link (starts with ![)
         # But do NOT skip normal links at position 0.
         if match.start() == 0 or text[match.start()-1:match.start()+1] != "![":
-            matches.append((match.start(), match.end(), "link", match.group(1), match.group(2)))
+            if not any(start <= match.start() < end for start, end, _, _, _ in matches):
+                matches.append((match.start(), match.end(), "link", match.group(1), match.group(2)))
 
+    # 3. Bold+italic combo
+    for match in re.finditer(bold_italic_pattern, text):
+        if not any(start <= match.start() < end for start, end, _, _, _ in matches):
+            matches.append((match.start(), match.end(), "bold_italic", match.group(1), None))
+
+    # 4. Bold
     for match in re.finditer(bold_pattern, text):
-        # Check if this range is already covered by a link
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "bold", match.group(1), None))
 
+    # 5. Italic
     for match in re.finditer(italic_pattern, text):
-        # Check if this range is already covered by a link or bold
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "italic", match.group(1), None))
+
+    # 6. Strikethrough
+    for match in re.finditer(strikethrough_pattern, text):
+        if not any(start <= match.start() < end for start, end, _, _, _ in matches):
+            matches.append((match.start(), match.end(), "strikethrough", match.group(1), None))
 
     # Sort matches by position
     matches.sort(key=lambda x: x[0])
@@ -75,10 +115,20 @@ def parse_inline(text: str) -> List[Dict]:
             tokens.append({"content": text[last_pos:start]})
 
         # Add the formatted content
-        if match_type == "link":
+        if match_type == "code":
+            tokens.append({
+                "content": content,
+                "marks": [{"type": "code"}]
+            })
+        elif match_type == "link":
             tokens.append({
                 "content": content,
                 "marks": [{"type": "link", "attrs": {"href": url}}]
+            })
+        elif match_type == "bold_italic":
+            tokens.append({
+                "content": content,
+                "marks": [{"type": "strong"}, {"type": "em"}]
             })
         elif match_type == "bold":
             tokens.append({
@@ -89,6 +139,11 @@ def parse_inline(text: str) -> List[Dict]:
             tokens.append({
                 "content": content,
                 "marks": [{"type": "em"}]
+            })
+        elif match_type == "strikethrough":
+            tokens.append({
+                "content": content,
+                "marks": [{"type": "strikethrough"}]
             })
 
         last_pos = end
@@ -503,7 +558,9 @@ class Post:
           - Blockquotes: Lines starting with '>' (consecutive lines grouped)
           - Paragraphs: Regular text blocks
           - Bullet lists: Lines starting with '*' or '-'
-          - Inline formatting: **bold** and *italic* within paragraphs
+          - Ordered lists: Lines starting with '1.', '2.', etc.
+          - Horizontal rules: Lines with ---, ***, or ___
+          - Inline formatting: **bold**, *italic*, ***bold+italic***, `code`, ~~strikethrough~~
 
         Args:
             markdown_content: Markdown string to parse and add to the post.
@@ -593,6 +650,11 @@ class Post:
                 if not text_content:
                     continue
 
+                # Check for horizontal rule: ---, ***, ___
+                if re.match(r'^(\*{3,}|-{3,}|_{3,})\s*$', text_content):
+                    self.horizontal_rule()
+                    continue
+
                 # Process headings (lines starting with '#' characters)
                 if text_content.startswith("#"):
                     level = len(text_content) - len(text_content.lstrip("#"))
@@ -648,14 +710,15 @@ class Post:
 
                             self.add({"type": "captionedImage", "src": image_url})
 
-                # Process paragraphs, bullet lists, or blockquotes
+                # Process paragraphs, bullet lists, ordered lists, or blockquotes
                 else:
                     if "\n" in text_content:
-                        # Process each line, grouping consecutive bullets
-                        # into a single bullet_list node and consecutive
-                        # blockquote lines into a single blockquote node.
+                        # Process each line, grouping consecutive bullets/ordered items
+                        # into list nodes and consecutive blockquote lines into a
+                        # single blockquote node.
                         pending_bullets: List[List[Dict]] = []
                         pending_quotes: List[str] = []
+                        pending_ordered: List[List[Dict]] = []
 
                         def flush_bullets():
                             if not pending_bullets:
@@ -677,10 +740,7 @@ class Post:
                             paragraphs: List[Dict] = []
                             for quote_line in pending_quotes:
                                 tokens = parse_inline(quote_line)
-                                text_nodes = [
-                                    {"type": "text", "text": t["content"]}
-                                    for t in tokens if t
-                                ]
+                                text_nodes = tokens_to_text_nodes(tokens)
                                 if text_nodes:
                                     paragraphs.append({"type": "paragraph", "content": text_nodes})
                             node: Dict = {"type": "blockquote"}
@@ -689,18 +749,46 @@ class Post:
                             self.draft_body["content"].append(node)
                             pending_quotes.clear()
 
+                        def flush_ordered():
+                            if not pending_ordered:
+                                return
+                            list_items = []
+                            for item_nodes in pending_ordered:
+                                list_items.append({
+                                    "type": "list_item",
+                                    "content": [{"type": "paragraph", "content": item_nodes}],
+                                })
+                            self.draft_body["content"].append(
+                                {"type": "ordered_list", "content": list_items}
+                            )
+                            pending_ordered.clear()
+
                         for line in text_content.split("\n"):
                             line = line.strip()
                             if not line:
                                 flush_bullets()
+                                flush_ordered()
                                 flush_quotes()
                                 continue
 
                             # Check for blockquote marker
                             if line.startswith("> ") or line == ">":
                                 flush_bullets()
+                                flush_ordered()
                                 quote_text = line[2:] if line.startswith("> ") else ""
                                 pending_quotes.append(quote_text)
+                                continue
+
+                            # Check for ordered list marker
+                            ordered_match = re.match(r'^(\d+)\.\s+(.*)', line)
+                            if ordered_match:
+                                flush_bullets()
+                                flush_quotes()
+                                item_text = ordered_match.group(2).strip()
+                                tokens = parse_inline(item_text)
+                                text_nodes = tokens_to_text_nodes(tokens)
+                                if text_nodes:
+                                    pending_ordered.append(text_nodes)
                                 continue
 
                             # Check for bullet marker
@@ -713,33 +801,49 @@ class Post:
                                 bullet_text = line[1:].strip()
 
                             if bullet_text is not None:
+                                flush_ordered()
                                 flush_quotes()
                                 tokens = parse_inline(bullet_text)
-                                if tokens:
-                                    pending_bullets.append(tokens)
+                                text_nodes = tokens_to_text_nodes(tokens)
+                                if text_nodes:
+                                    pending_bullets.append(text_nodes)
                             else:
                                 flush_bullets()
+                                flush_ordered()
                                 flush_quotes()
                                 tokens = parse_inline(line)
                                 self.add({"type": "paragraph", "content": tokens})
 
                         flush_bullets()
+                        flush_ordered()
                         flush_quotes()
                     else:
-                        # Single line — could be a blockquote or paragraph
+                        # Single line — could be a blockquote, ordered list, or paragraph
                         if text_content.startswith("> ") or text_content == ">":
                             quote_text = text_content[2:] if text_content.startswith("> ") else ""
                             tokens = parse_inline(quote_text)
-                            text_nodes = [
-                                {"type": "text", "text": t["content"]}
-                                for t in tokens if t
-                            ]
+                            text_nodes = tokens_to_text_nodes(tokens)
                             para = {"type": "paragraph", "content": text_nodes} if text_nodes else {"type": "paragraph"}
                             self.draft_body["content"] = self.draft_body.get("content", []) + [
                                 {"type": "blockquote", "content": [para]}
                             ]
                         else:
-                            tokens = parse_inline(text_content)
-                            self.add({"type": "paragraph", "content": tokens})
+                            # Check for single-line ordered list
+                            ordered_match = re.match(r'^(\d+)\.\s+(.*)', text_content)
+                            if ordered_match:
+                                item_text = ordered_match.group(2).strip()
+                                tokens = parse_inline(item_text)
+                                text_nodes = tokens_to_text_nodes(tokens)
+                                if text_nodes:
+                                    list_item = {
+                                        "type": "list_item",
+                                        "content": [{"type": "paragraph", "content": text_nodes}],
+                                    }
+                                    self.draft_body["content"].append(
+                                        {"type": "ordered_list", "content": [list_item]}
+                                    )
+                            else:
+                                tokens = parse_inline(text_content)
+                                self.add({"type": "paragraph", "content": tokens})
 
         return self
