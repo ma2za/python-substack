@@ -2,8 +2,6 @@
 
 Post Utilities
 
-Post Utilities
-
 """
 
 import json
@@ -72,11 +70,11 @@ def parse_inline(text: str) -> List[Dict]:
     # Find all matches with their positions
     matches = []
 
-    # 1. Inline code FIRST -- content inside backticks must not be parsed for other formatting
+    # Inline code FIRST -- content inside backticks must not be parsed for other formatting
     for match in re.finditer(code_pattern, text):
         matches.append((match.start(), match.end(), "code", match.group(1), None))
 
-    # 2. Links
+    # Links
     for match in re.finditer(link_pattern, text):
         # Skip if it's an image link (starts with ![)
         # But do NOT skip normal links at position 0.
@@ -84,22 +82,22 @@ def parse_inline(text: str) -> List[Dict]:
             if not any(start <= match.start() < end for start, end, _, _, _ in matches):
                 matches.append((match.start(), match.end(), "link", match.group(1), match.group(2)))
 
-    # 3. Bold+italic combo
+    # Bold+italic combo
     for match in re.finditer(bold_italic_pattern, text):
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "bold_italic", match.group(1), None))
 
-    # 4. Bold
+    # Bold
     for match in re.finditer(bold_pattern, text):
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "bold", match.group(1), None))
 
-    # 5. Italic
+    # Italic
     for match in re.finditer(italic_pattern, text):
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "italic", match.group(1), None))
 
-    # 6. Strikethrough
+    # Strikethrough
     for match in re.finditer(strikethrough_pattern, text):
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
             matches.append((match.start(), match.end(), "strikethrough", match.group(1), None))
@@ -818,7 +816,7 @@ class Post:
                         flush_ordered()
                         flush_quotes()
                     else:
-                        # Single line — could be a blockquote, ordered list, or paragraph
+                        # Single line — blockquote, ordered list, or paragraph
                         if text_content.startswith("> ") or text_content == ">":
                             quote_text = text_content[2:] if text_content.startswith("> ") else ""
                             tokens = parse_inline(quote_text)
@@ -827,23 +825,23 @@ class Post:
                             self.draft_body["content"] = self.draft_body.get("content", []) + [
                                 {"type": "blockquote", "content": [para]}
                             ]
-                        else:
-                            # Check for single-line ordered list
+
+                        elif re.match(r'^(\d+)\.\s+(.*)', text_content):
                             ordered_match = re.match(r'^(\d+)\.\s+(.*)', text_content)
-                            if ordered_match:
-                                item_text = ordered_match.group(2).strip()
-                                tokens = parse_inline(item_text)
-                                text_nodes = tokens_to_text_nodes(tokens)
-                                if text_nodes:
-                                    list_item = {
-                                        "type": "list_item",
-                                        "content": [{"type": "paragraph", "content": text_nodes}],
-                                    }
-                                    self.draft_body["content"].append(
-                                        {"type": "ordered_list", "content": [list_item]}
-                                    )
-                            else:
-                                tokens = parse_inline(text_content)
-                                self.add({"type": "paragraph", "content": tokens})
+                            item_text = ordered_match.group(2).strip()
+                            tokens = parse_inline(item_text)
+                            text_nodes = tokens_to_text_nodes(tokens)
+                            if text_nodes:
+                                list_item = {
+                                    "type": "list_item",
+                                    "content": [{"type": "paragraph", "content": text_nodes}],
+                                }
+                                self.draft_body["content"].append(
+                                    {"type": "ordered_list", "content": [list_item]}
+                                )
+
+                        else:
+                            tokens = parse_inline(text_content)
+                            self.add({"type": "paragraph", "content": tokens})
 
         return self
