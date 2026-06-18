@@ -12,6 +12,10 @@ __all__ = ["Post", "parse_inline", "tokens_to_text_nodes"]
 
 from substack.exceptions import SectionNotExistsException
 
+# Markdown footnotes: ``text.[^label]`` references and ``[^label]: definition`` lines.
+FOOTNOTE_REFERENCE_PATTERN = re.compile(r"\[\^([^\]]+)\]")
+FOOTNOTE_DEFINITION_PATTERN = re.compile(r"^\[\^([^\]]+)\]:\s?(.*)$")
+
 
 def tokens_to_text_nodes(tokens: List[Dict]) -> List[Dict]:
     """Convert parse_inline() tokens to ProseMirror text nodes.
@@ -543,6 +547,135 @@ class Post:
 
         return self
 
+    def footnote_anchor(self, number: int):
+        """
+
+        Add an inline footnote reference (the superscript marker) to the last block.
+
+        Args:
+            number: The footnote number this anchor points to.
+
+        Returns:
+            Self for method chaining.
+
+        """
+        content = self.draft_body["content"][-1].get("content", [])
+        content += [{"type": "footnoteAnchor", "attrs": {"number": number}}]
+        self.draft_body["content"][-1]["content"] = content
+        return self
+
+    def footnote(self, number: int, content=None):
+        """
+
+        Append a footnote block (the note shown at the foot of the post).
+
+        Args:
+            number: The footnote number, matching a footnote_anchor.
+            content: Text string or list of inline token dicts. A plain string is
+                parsed for inline Markdown; a parse_inline() token list or a list
+                of ready text nodes is also accepted.
+
+        Returns:
+            Self for method chaining.
+
+        """
+        if isinstance(content, str):
+            text_nodes = tokens_to_text_nodes(parse_inline(content))
+        elif isinstance(content, list):
+            # Accept either parse_inline tokens ({"content": ...}) or text nodes.
+            if content and content[0].get("type") == "text":
+                text_nodes = content
+            else:
+                text_nodes = tokens_to_text_nodes(content)
+        else:
+            text_nodes = []
+
+        node: Dict = {
+            "type": "footnote",
+            "attrs": {"number": number},
+            "content": [{"type": "paragraph", "content": text_nodes}],
+        }
+        self.draft_body["content"] = self.draft_body.get("content", []) + [node]
+        return self
+
+    @staticmethod
+    def _extract_footnote_definitions(markdown_content: str):
+        """
+
+        Pull ``[^label]: definition`` lines out of the Markdown.
+
+        Definitions may wrap onto indented continuation lines. Returns the body
+        with definitions removed plus a {label: definition_text} mapping.
+
+        """
+        lines = markdown_content.split("\n")
+        body_lines: List[str] = []
+        definitions: Dict[str, str] = {}
+        i = 0
+        while i < len(lines):
+            match = FOOTNOTE_DEFINITION_PATTERN.match(lines[i])
+            if match:
+                label, first = match.group(1), match.group(2)
+                parts = [first]
+                i += 1
+                # Continuation lines are indented and neither blank nor a new def.
+                while i < len(lines) and lines[i].strip() and lines[i][:1] in (" ", "\t"):
+                    parts.append(lines[i].strip())
+                    i += 1
+                definitions[label] = " ".join(p for p in parts if p).strip()
+            else:
+                body_lines.append(lines[i])
+                i += 1
+        return "\n".join(body_lines), definitions
+
+    @staticmethod
+    def _number_footnotes(markdown_content: str, definitions: Dict[str, str]):
+        """Number footnotes by order of first inline reference in the body."""
+        order: List[str] = []
+        for match in FOOTNOTE_REFERENCE_PATTERN.finditer(markdown_content):
+            label = match.group(1)
+            if label in definitions and label not in order:
+                order.append(label)
+        # Defined-but-unreferenced footnotes go last, in definition order.
+        for label in definitions:
+            if label not in order:
+                order.append(label)
+        return {label: index + 1 for index, label in enumerate(order)}
+
+    def _inject_footnote_anchors(self, node: Dict, numbers_by_label: Dict[str, int]):
+        """Recursively replace ``[^label]`` in text nodes with footnoteAnchor nodes."""
+        content = node.get("content")
+        if not isinstance(content, list):
+            return
+        new_content: List[Dict] = []
+        for child in content:
+            text = child.get("text", "")
+            if child.get("type") == "text" and FOOTNOTE_REFERENCE_PATTERN.search(text):
+                marks = child.get("marks")
+                last = 0
+                for match in FOOTNOTE_REFERENCE_PATTERN.finditer(text):
+                    label = match.group(1)
+                    if label not in numbers_by_label:
+                        continue  # Unknown label: leave the literal text in place.
+                    if match.start() > last:
+                        segment = {"type": "text", "text": text[last:match.start()]}
+                        if marks:
+                            segment["marks"] = marks
+                        new_content.append(segment)
+                    new_content.append(
+                        {"type": "footnoteAnchor", "attrs": {"number": numbers_by_label[label]}}
+                    )
+                    last = match.end()
+                if last < len(text):
+                    segment = {"type": "text", "text": text[last:]}
+                    if marks:
+                        segment["marks"] = marks
+                    new_content.append(segment)
+            else:
+                self._inject_footnote_anchors(child, numbers_by_label)
+                new_content.append(child)
+        node["content"] = new_content
+
     def from_markdown(self, markdown_content: str, api=None):
         """
         Parse Markdown content and add it to the post.
@@ -559,6 +692,10 @@ class Post:
           - Ordered lists: Lines starting with '1.', '2.', etc.
           - Horizontal rules: Lines with ---, ***, or ___
           - Inline formatting: **bold**, *italic*, ***bold+italic***, `code`, ~~strikethrough~~
+          - Footnotes: ``text.[^label]`` references plus ``[^label]: definition``
+            lines. References become inline anchors and definitions become
+            footnote blocks, numbered by order of first appearance. Labels may be
+            numbers or names (e.g. ``[^1]`` or ``[^agi-book]``).
 
         Args:
             markdown_content: Markdown string to parse and add to the post.
@@ -572,6 +709,13 @@ class Post:
             >>> post = Post("Title", "Subtitle", user_id)
             >>> post.from_markdown("# Heading\\n\\nThis is **bold** text with [a link](https://example.com).")
         """
+        # Footnotes: extract ``[^label]: ...`` definitions and number them by
+        # order of first reference before parsing the rest of the body.
+        markdown_content, footnote_definitions = self._extract_footnote_definitions(
+            markdown_content
+        )
+        footnote_numbers = self._number_footnotes(markdown_content, footnote_definitions)
+
         lines = markdown_content.split("\n")
         blocks = []
         current_block: List[str] = []
@@ -843,5 +987,12 @@ class Post:
                         else:
                             tokens = parse_inline(text_content)
                             self.add({"type": "paragraph", "content": tokens})
+
+        # Footnotes: turn ``[^label]`` references into inline anchors, then append
+        # the footnote blocks in numbered order.
+        if footnote_numbers:
+            self._inject_footnote_anchors(self.draft_body, footnote_numbers)
+            for label, number in sorted(footnote_numbers.items(), key=lambda item: item[1]):
+                self.footnote(number, footnote_definitions[label])
 
         return self
