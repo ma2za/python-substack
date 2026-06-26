@@ -572,28 +572,38 @@ class Post:
         Args:
             number: The footnote number, matching a footnote_anchor.
             content: Text string or list of inline token dicts. A plain string is
-                parsed for inline Markdown; a parse_inline() token list or a list
-                of ready text nodes is also accepted.
+                parsed for inline Markdown and may contain blank-line-separated
+                paragraphs; a parse_inline() token list or a list of ready text
+                nodes is also accepted (single paragraph).
 
         Returns:
             Self for method chaining.
 
         """
+        paragraphs: List[Dict] = []
         if isinstance(content, str):
-            text_nodes = tokens_to_text_nodes(parse_inline(content))
+            # Blank lines separate paragraphs within the footnote.
+            for chunk in re.split(r"\n\s*\n", content):
+                chunk = chunk.strip()
+                if chunk:
+                    paragraphs.append(
+                        {"type": "paragraph", "content": tokens_to_text_nodes(parse_inline(chunk))}
+                    )
         elif isinstance(content, list):
             # Accept either parse_inline tokens ({"content": ...}) or text nodes.
             if content and content[0].get("type") == "text":
                 text_nodes = content
             else:
                 text_nodes = tokens_to_text_nodes(content)
-        else:
-            text_nodes = []
+            paragraphs.append({"type": "paragraph", "content": text_nodes})
+
+        if not paragraphs:
+            paragraphs = [{"type": "paragraph", "content": []}]
 
         node: Dict = {
             "type": "footnote",
             "attrs": {"number": number},
-            "content": [{"type": "paragraph", "content": text_nodes}],
+            "content": paragraphs,
         }
         self.draft_body["content"] = self.draft_body.get("content", []) + [node]
         return self
@@ -604,8 +614,10 @@ class Post:
 
         Pull ``[^label]: definition`` lines out of the Markdown.
 
-        Definitions may wrap onto indented continuation lines. Returns the body
-        with definitions removed plus a {label: definition_text} mapping.
+        Definitions may wrap onto indented continuation lines and may contain
+        multiple paragraphs (blank line followed by an indented block). Returns
+        the body with definitions removed plus a {label: definition_text} mapping,
+        where paragraphs are separated by a blank line.
 
         """
         lines = markdown_content.split("\n")
@@ -624,13 +636,34 @@ class Post:
             match = None if in_code_fence else FOOTNOTE_DEFINITION_PATTERN.match(lines[i])
             if match:
                 label, first = match.group(1), match.group(2)
-                parts = [first]
+                paragraphs: List[str] = []
+                current = [first.strip()] if first.strip() else []
                 i += 1
-                # Continuation lines are indented and neither blank nor a new def.
-                while i < len(lines) and lines[i].strip() and lines[i][:1] in (" ", "\t"):
-                    parts.append(lines[i].strip())
-                    i += 1
-                definitions[label] = " ".join(p for p in parts if p).strip()
+                while i < len(lines):
+                    line = lines[i]
+                    if line.strip() == "":
+                        # A blank line stays in the footnote only if the next
+                        # non-empty line is indented (a further paragraph).
+                        nxt = i + 1
+                        if (
+                            nxt < len(lines)
+                            and lines[nxt].strip()
+                            and lines[nxt][:1] in (" ", "\t")
+                        ):
+                            if current:
+                                paragraphs.append(" ".join(current))
+                                current = []
+                            i += 1
+                            continue
+                        break
+                    if line[:1] in (" ", "\t"):
+                        current.append(line.strip())
+                        i += 1
+                    else:
+                        break
+                if current:
+                    paragraphs.append(" ".join(current))
+                definitions[label] = "\n\n".join(paragraphs)
             else:
                 body_lines.append(lines[i])
                 i += 1

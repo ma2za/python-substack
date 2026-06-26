@@ -204,6 +204,38 @@ class TestFromMarkdownFootnotes:
         assert content[0]["content"][0]["text"] == "code [^1]"
         assert content[0]["content"][0]["marks"] == [{"type": "code"}]
 
+    def test_multiparagraph_definition(self):
+        post = make_post()
+        md = "Claim.[^1]\n\n[^1]: First para.\n\n    Second para."
+        post.from_markdown(md)
+        # The second paragraph must stay in the footnote, not leak into the body.
+        assert [n["type"] for n in body_content(post)] == ["paragraph", "footnote"]
+        block = footnotes(post)[0]
+        assert len(block["content"]) == 2
+        assert block["content"][0]["content"][0]["text"] == "First para."
+        assert block["content"][1]["content"][0]["text"] == "Second para."
+
+    def test_multiparagraph_definition_in_middle(self):
+        post = make_post()
+        md = (
+            "First.[^1]\n\n"
+            "[^1]: Note para one.\n\n"
+            "    Note para two.\n\n"
+            "Back to the body."
+        )
+        post.from_markdown(md)
+        types = [n["type"] for n in body_content(post)]
+        assert types == ["paragraph", "paragraph", "footnote"]
+        assert body_content(post)[1]["content"][0]["text"] == "Back to the body."
+        assert len(footnotes(post)[0]["content"]) == 2
+
+    def test_footnote_helper_splits_paragraphs(self):
+        post = make_post()
+        post.footnote(1, "Para one.\n\nPara two.")
+        block = footnotes(post)[0]
+        assert len(block["content"]) == 2
+        assert block["content"][1]["content"][0]["text"] == "Para two."
+
     def test_no_footnotes_is_unchanged(self):
         post = make_post()
         post.from_markdown("Just a plain paragraph.")
