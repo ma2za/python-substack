@@ -181,6 +181,29 @@ class TestFromMarkdownFootnotes:
         block = footnotes(post)[0]
         assert block["content"][0]["content"][0]["text"] == "First footnote."
 
+    def test_footnote_definition_inside_fenced_code_stays_code(self):
+        post = make_post()
+        post.from_markdown("```\n[^1]: not a footnote\n```")
+        content = body_content(post)
+        assert len(content) == 1
+        assert content[0]["type"] == "codeBlock"
+        assert content[0]["content"][0]["text"] == "[^1]: not a footnote"
+
+    def test_footnote_reference_inside_fenced_code_stays_text(self):
+        post = make_post()
+        post.from_markdown("```\ncode [^1]\n```\n\n[^1]: note")
+        content = body_content(post)
+        assert content[0]["type"] == "codeBlock"
+        assert content[0]["content"][0]["text"] == "code [^1]"
+
+    def test_footnote_reference_inside_inline_code_stays_text(self):
+        post = make_post()
+        post.from_markdown("`code [^1]`\n\n[^1]: note")
+        content = body_content(post)
+        assert content[0]["type"] == "paragraph"
+        assert content[0]["content"][0]["text"] == "code [^1]"
+        assert content[0]["content"][0]["marks"] == [{"type": "code"}]
+
     def test_no_footnotes_is_unchanged(self):
         post = make_post()
         post.from_markdown("Just a plain paragraph.")

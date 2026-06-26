@@ -611,9 +611,17 @@ class Post:
         lines = markdown_content.split("\n")
         body_lines: List[str] = []
         definitions: Dict[str, str] = {}
+        in_code_fence = False
         i = 0
         while i < len(lines):
-            match = FOOTNOTE_DEFINITION_PATTERN.match(lines[i])
+            # Track fenced code blocks so footnote-like lines inside them are
+            # left untouched.
+            if lines[i].lstrip().startswith("```"):
+                in_code_fence = not in_code_fence
+                body_lines.append(lines[i])
+                i += 1
+                continue
+            match = None if in_code_fence else FOOTNOTE_DEFINITION_PATTERN.match(lines[i])
             if match:
                 label, first = match.group(1), match.group(2)
                 parts = [first]
@@ -644,13 +652,23 @@ class Post:
 
     def _inject_footnote_anchors(self, node: Dict, numbers_by_label: Dict[str, int]):
         """Recursively replace ``[^label]`` in text nodes with footnoteAnchor nodes."""
+        # Never rewrite the contents of a code block.
+        if node.get("type") == "codeBlock":
+            return
         content = node.get("content")
         if not isinstance(content, list):
             return
         new_content: List[Dict] = []
         for child in content:
             text = child.get("text", "")
-            if child.get("type") == "text" and FOOTNOTE_REFERENCE_PATTERN.search(text):
+            has_code_mark = any(
+                mark.get("type") == "code" for mark in (child.get("marks") or [])
+            )
+            if (
+                child.get("type") == "text"
+                and not has_code_mark
+                and FOOTNOTE_REFERENCE_PATTERN.search(text)
+            ):
                 marks = child.get("marks")
                 last = 0
                 for match in FOOTNOTE_REFERENCE_PATTERN.finditer(text):
