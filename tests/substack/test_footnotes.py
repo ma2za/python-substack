@@ -144,11 +144,18 @@ class TestFromMarkdownFootnotes:
         text = footnotes(post)[0]["content"][0]["content"][0]["text"]
         assert text == "First line continued on the next line."
 
-    def test_unreferenced_definition_still_appended(self):
+    def test_unreferenced_definition_is_dropped(self):
+        # CommonMark footnote semantics: a definition that is never referenced is
+        # not rendered, and must not leak into the body text.
         post = make_post()
         post.from_markdown("No references here.\n\n[^1]: Orphan note.")
         assert len(anchors(post)) == 0
-        assert len(footnotes(post)) == 1
+        assert len(footnotes(post)) == 0
+        paragraphs = find_nodes(post.draft_body, "paragraph")
+        body_text = " ".join(
+            n.get("text", "") for para in paragraphs for n in para.get("content", [])
+        )
+        assert "Orphan note" not in body_text
 
     def test_reference_without_definition_left_as_text(self):
         post = make_post()
