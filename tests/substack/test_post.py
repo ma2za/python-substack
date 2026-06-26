@@ -97,15 +97,14 @@ class TestBlockquoteFromMarkdown:
         assert bq["content"][0]["content"][0]["text"] == "This is a quote"
 
     def test_multiline_blockquote_grouped(self):
-        """Consecutive '>' lines become a single blockquote with multiple paragraphs."""
+        """Consecutive '>' lines are one paragraph (CommonMark); blank '>' lines split them."""
         post = Post(title="T", subtitle="S", user_id=1)
         post.from_markdown("> Line one\n> Line two\n> Line three")
         body = json.loads(post.get_draft()["draft_body"])
         bq = body["content"][0]
         assert bq["type"] == "blockquote"
-        assert len(bq["content"]) == 3
-        texts = [p["content"][0]["text"] for p in bq["content"]]
-        assert texts == ["Line one", "Line two", "Line three"]
+        assert len(bq["content"]) == 1
+        assert bq["content"][0]["content"][0]["text"] == "Line one Line two Line three"
 
     def test_blockquote_separated_by_blank_line(self):
         """A blank line between '>' groups creates two separate blockquotes."""
