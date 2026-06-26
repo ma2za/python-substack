@@ -171,6 +171,7 @@ post.from_markdown(footnote_markdown, api=api)
 post.paragraph(content=[{"content": "Some claim."}]).footnote_anchor(1)
 post.footnote(1, "The note text, with **formatting** allowed.")
 
+
 draft = api.post_draft(post.get_draft())
 
 # set section (can only be done after first posting the draft)
