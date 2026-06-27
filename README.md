@@ -156,6 +156,21 @@ This is a paragraph with **bold** and *italic* text.
 """
 post.from_markdown(markdown_content, api=api)
 
+# Markdown footnotes are supported too. References become inline anchors and
+# definitions become footnote blocks, numbered by order of first appearance.
+# Labels can be numbers or names (e.g. [^1] or [^source]).
+footnote_markdown = """
+A claim that needs support.[^1] Another, with a named label.[^source]
+
+[^1]: The supporting detail, with a [link](https://example.com).
+[^source]: Author, *Title* (2025).
+"""
+post.from_markdown(footnote_markdown, api=api)
+
+# Or build footnotes manually:
+post.paragraph(content=[{"content": "Some claim."}]).footnote_anchor(1)
+post.footnote(1, "The note text, with **formatting** allowed.")
+
 draft = api.post_draft(post.get_draft())
 
 # set section (can only be done after first posting the draft)
