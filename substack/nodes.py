@@ -101,12 +101,29 @@ def code_block(code: str, language: Optional[str] = None) -> Dict:
 def captioned_image(
     src: str, alt: Optional[str] = None, href: Optional[str] = None
 ) -> Dict:
-    node: Dict = {"type": NodeType.CAPTIONED_IMAGE, "src": src}
-    if alt:
-        node["alt"] = alt
-    if href:
-        node["href"] = href
-    return node
+    return {
+        "type": NodeType.CAPTIONED_IMAGE,
+        "content": [
+            {
+                "type": "image2",
+                "attrs": {
+                    "src": src,
+                    "fullscreen": False,
+                    "imageSize": "normal",
+                    "height": 819,
+                    "width": 1456,
+                    "resizeWidth": 728,
+                    "bytes": None,
+                    "alt": alt,
+                    "title": None,
+                    "type": None,
+                    "href": href,
+                    "belowTheFold": False,
+                    "internalRedirect": None,
+                },
+            }
+        ],
+    }
 
 
 def footnote_anchor(number: int) -> Dict:

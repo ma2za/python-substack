@@ -133,13 +133,17 @@ class TestBlocks:
         post.from_markdown("![alt](https://example.com/img.png)")
         block = body(post)[0]
         assert block["type"] == "captionedImage"
-        assert block["src"] == "https://example.com/img.png"
-        assert block["alt"] == "alt"
+        assert block["content"][0]["type"] == "image2"
+        attrs = block["content"][0]["attrs"]
+        assert attrs["src"] == "https://example.com/img.png"
+        assert attrs["alt"] == "alt"
 
     def test_linked_image(self):
         post = make_post()
         post.from_markdown("[![alt](https://i/x.png)](https://link)")
         block = body(post)[0]
         assert block["type"] == "captionedImage"
-        assert block["src"] == "https://i/x.png"
-        assert block["href"] == "https://link"
+        assert block["content"][0]["type"] == "image2"
+        attrs = block["content"][0]["attrs"]
+        assert attrs["src"] == "https://i/x.png"
+        assert attrs["href"] == "https://link"
