@@ -1,9 +1,9 @@
 """ProseMirror node builders for Substack documents.
 
-PROTOTYPE: this module centralises the (undocumented) Substack ProseMirror
-schema in one place. Today the node-type strings ("paragraph", "footnoteAnchor",
-"image2", ...) and their shapes are scattered across post.py as inline dict
-literals. Pulling them here gives:
+Centralises the (undocumented) Substack ProseMirror schema in one place.
+The node-type strings ("paragraph", "footnoteAnchor", "image2", ...) and
+their shapes live here rather than as inline dict literals scattered across
+post.py, giving:
 
   * one source of truth for node shapes (so a schema change is a one-line fix),
   * discoverable, typed constructors instead of bare dict literals,

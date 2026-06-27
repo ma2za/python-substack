@@ -1,14 +1,11 @@
-"""PROTOTYPE: Markdown -> Substack ProseMirror via markdown-it-py.
+"""Markdown -> Substack ProseMirror via markdown-it-py.
 
-This replaces the hand-rolled parser in Post.from_markdown() with a real
-CommonMark parser (markdown-it-py) plus the standard footnote plugin, and a
-small renderer that walks the syntax tree into Substack's node schema.
+Implements Post.from_markdown() using a real CommonMark parser (markdown-it-py)
+plus the standard footnote plugin, with a small renderer that walks the syntax
+tree into Substack's node schema.
 
 Node construction goes through ``substack.nodes`` so the (undocumented) schema
 lives in exactly one place.
-
-Not wired for production; imported by Post.from_markdown() when available so the
-existing test-suite can be run against it for evaluation.
 """
 
 from __future__ import annotations
