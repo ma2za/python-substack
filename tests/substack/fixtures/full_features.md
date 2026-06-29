@@ -20,6 +20,20 @@ A sentence with a numeric footnote[^1] and a named footnote[^note], plus a repea
 1. Ordered one
 2. Ordered two
 
+- Bulleted list with a nested bulleted list:
+  - inner bullet a
+  - inner bullet b
+- Bulleted list with a nested numbered list:
+  1. inner number a
+  2. inner number b
+
+1. Numbered list with a nested bulleted list:
+   - inner bullet a
+   - inner bullet b
+2. Numbered list with a nested numbered list:
+   1. inner number a
+   2. inner number b
+
 > A blockquote across
 > two wrapped lines.
 
