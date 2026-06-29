@@ -1,0 +1,457 @@
+[
+  {
+    "type": "heading",
+    "content": [
+      {
+        "type": "text",
+        "text": "Heading level 1"
+      }
+    ],
+    "attrs": {
+      "level": 1
+    }
+  },
+  {
+    "type": "heading",
+    "content": [
+      {
+        "type": "text",
+        "text": "Heading level 2"
+      }
+    ],
+    "attrs": {
+      "level": 2
+    }
+  },
+  {
+    "type": "heading",
+    "content": [
+      {
+        "type": "text",
+        "text": "Heading level 3"
+      }
+    ],
+    "attrs": {
+      "level": 3
+    }
+  },
+  {
+    "type": "heading",
+    "content": [
+      {
+        "type": "text",
+        "text": "Heading level 4"
+      }
+    ],
+    "attrs": {
+      "level": 4
+    }
+  },
+  {
+    "type": "heading",
+    "content": [
+      {
+        "type": "text",
+        "text": "Heading level 5"
+      }
+    ],
+    "attrs": {
+      "level": 5
+    }
+  },
+  {
+    "type": "heading",
+    "content": [
+      {
+        "type": "text",
+        "text": "Heading level 6"
+      }
+    ],
+    "attrs": {
+      "level": 6
+    }
+  },
+  {
+    "type": "paragraph",
+    "content": [
+      {
+        "type": "text",
+        "text": "A paragraph with "
+      },
+      {
+        "type": "text",
+        "text": "bold",
+        "marks": [
+          {
+            "type": "strong"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": ", "
+      },
+      {
+        "type": "text",
+        "text": "italic",
+        "marks": [
+          {
+            "type": "em"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": ", "
+      },
+      {
+        "type": "text",
+        "text": "bold italic",
+        "marks": [
+          {
+            "type": "em"
+          },
+          {
+            "type": "strong"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": ", "
+      },
+      {
+        "type": "text",
+        "text": "inline code",
+        "marks": [
+          {
+            "type": "code"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": ", "
+      },
+      {
+        "type": "text",
+        "text": "strikethrough",
+        "marks": [
+          {
+            "type": "strikethrough"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": ", and a "
+      },
+      {
+        "type": "text",
+        "text": "link",
+        "marks": [
+          {
+            "type": "link",
+            "attrs": {
+              "href": "https://example.com"
+            }
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": "."
+      }
+    ]
+  },
+  {
+    "type": "paragraph",
+    "content": [
+      {
+        "type": "text",
+        "text": "A sentence with a numeric footnote"
+      },
+      {
+        "type": "footnoteAnchor",
+        "attrs": {
+          "number": 1
+        }
+      },
+      {
+        "type": "text",
+        "text": " and a named footnote"
+      },
+      {
+        "type": "footnoteAnchor",
+        "attrs": {
+          "number": 2
+        }
+      },
+      {
+        "type": "text",
+        "text": ", plus a repeat of the first."
+      },
+      {
+        "type": "footnoteAnchor",
+        "attrs": {
+          "number": 1
+        }
+      }
+    ]
+  },
+  {
+    "type": "bullet_list",
+    "content": [
+      {
+        "type": "list_item",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Bullet one"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list_item",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Bullet two with "
+              },
+              {
+                "type": "text",
+                "text": "bold",
+                "marks": [
+                  {
+                    "type": "strong"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "ordered_list",
+    "content": [
+      {
+        "type": "list_item",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Ordered one"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list_item",
+        "content": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Ordered two"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "blockquote",
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "A blockquote across two wrapped lines."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "blockquote",
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "First quote paragraph."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Second quote paragraph."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "codeBlock",
+    "content": [
+      {
+        "type": "text",
+        "text": "# fenced code: footnote-like text must stay literal\nx = \"[^1]: not a footnote\"\nprint(\"reference [^1] stays text\")"
+      }
+    ],
+    "attrs": {
+      "language": "python"
+    }
+  },
+  {
+    "type": "codeBlock",
+    "content": [
+      {
+        "type": "text",
+        "text": "plain code block without a language"
+      }
+    ]
+  },
+  {
+    "type": "horizontal_rule"
+  },
+  {
+    "type": "captionedImage",
+    "content": [
+      {
+        "type": "image2",
+        "attrs": {
+          "src": "<SRC>",
+          "fullscreen": false,
+          "imageSize": "normal",
+          "height": 819,
+          "width": 1456,
+          "resizeWidth": 728,
+          "bytes": null,
+          "alt": "A captioned image",
+          "title": null,
+          "type": null,
+          "href": null,
+          "belowTheFold": false,
+          "internalRedirect": null
+        }
+      }
+    ]
+  },
+  {
+    "type": "captionedImage",
+    "content": [
+      {
+        "type": "image2",
+        "attrs": {
+          "src": "<SRC>",
+          "fullscreen": false,
+          "imageSize": "normal",
+          "height": 819,
+          "width": 1456,
+          "resizeWidth": 728,
+          "bytes": null,
+          "alt": "Linked image alt",
+          "title": null,
+          "type": null,
+          "href": "https://example.com/target",
+          "belowTheFold": false,
+          "internalRedirect": null
+        }
+      }
+    ]
+  },
+  {
+    "type": "paragraph",
+    "content": [
+      {
+        "type": "text",
+        "text": "inline code with [^1] inside stays literal",
+        "marks": [
+          {
+            "type": "code"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "footnote",
+    "attrs": {
+      "number": 1
+    },
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "The first footnote, with a "
+          },
+          {
+            "type": "text",
+            "text": "link",
+            "marks": [
+              {
+                "type": "link",
+                "attrs": {
+                  "href": "https://example.com"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "footnote",
+    "attrs": {
+      "number": 2
+    },
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "A named footnote whose definition spans a continuation line in the same paragraph."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "And a second paragraph after a blank line."
+          }
+        ]
+      }
+    ]
+  }
+]
