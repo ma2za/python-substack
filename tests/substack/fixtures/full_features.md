@@ -39,9 +39,9 @@ plain code block without a language
 
 ---
 
-![A captioned image](https://example.com/image.png)
+![A captioned image](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)
 
-[![Linked image alt](https://example.com/thumb.png)](https://example.com/target)
+[![Linked image alt](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)](https://example.com/target)
 
 `inline code with [^1] inside stays literal`
 
