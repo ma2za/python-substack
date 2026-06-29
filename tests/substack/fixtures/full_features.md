@@ -57,7 +57,7 @@ plain code block without a language
 
 [![Linked image alt](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)](https://example.com/target)
 
-![A locally uploaded image]({{LOCAL_IMAGE}})
+![A locally uploaded image](local_image.png)
 
 `inline code with [^1] inside stays literal`
 
