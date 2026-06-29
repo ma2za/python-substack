@@ -38,8 +38,6 @@ EXPECTED_FILE = FIXTURES / "full_features.expected.json"
 TITLE = "python-substack e2e feature test"
 SUBTITLE = "Automated round-trip fixture"
 
-LOCAL_IMAGE_FILE = FIXTURES / "local_image.png"
-LOCAL_IMAGE_TOKEN = "{{LOCAL_IMAGE}}"
 LOCAL_IMAGE_ALT = "A locally uploaded image"
 
 
@@ -118,13 +116,16 @@ def _normalize(content):
 def _roundtrip(api: Api):
     """Post the fixture as a draft, read it back, and return its stored content."""
     markdown = MARKDOWN_FILE.read_text(encoding="utf-8")
-    # The local-image path is environment-specific, so it lives as a token in the
-    # fixture. We resolve it to a path relative to the current directory: get_image()
-    # uploads any path that os.path.exists(), and a relative path avoids the
-    # leading-slash handling that from_markdown applies to web-root paths.
-    markdown = markdown.replace(LOCAL_IMAGE_TOKEN, os.path.relpath(LOCAL_IMAGE_FILE))
     post = Post(TITLE, SUBTITLE, user_id=api.get_user_id())
-    post.from_markdown(markdown, api=api)
+    # Markdown image paths resolve relative to the working directory (this is how
+    # get_image uploads local files), so render from the fixtures directory just as
+    # a user authoring alongside their images would.
+    previous_cwd = os.getcwd()
+    os.chdir(FIXTURES)
+    try:
+        post.from_markdown(markdown, api=api)
+    finally:
+        os.chdir(previous_cwd)
     draft = api.post_draft(post.get_draft())
     draft_id = draft.get("id")
     try:
