@@ -57,7 +57,13 @@ plain code block without a language
 
 [![Linked image alt](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)](https://example.com/target)
 
+![A locally uploaded image]({{LOCAL_IMAGE}})
+
 `inline code with [^1] inside stays literal`
+
+## Heading with **bold**, *italic*, and a [link](https://example.com)
+
+An autolink to <https://example.com> becomes a link.
 
 [^1]: The first footnote, with a [link](https://example.com).
 [^note]: A named footnote whose definition spans
