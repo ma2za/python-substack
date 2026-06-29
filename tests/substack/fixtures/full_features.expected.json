@@ -542,9 +542,9 @@
           "src": "<SRC>",
           "fullscreen": false,
           "imageSize": "normal",
-          "height": 819,
-          "width": 1456,
-          "resizeWidth": 728,
+          "height": "<DIM>",
+          "width": "<DIM>",
+          "resizeWidth": "<DIM>",
           "bytes": null,
           "alt": "A captioned image",
           "title": null,
@@ -565,14 +565,37 @@
           "src": "<SRC>",
           "fullscreen": false,
           "imageSize": "normal",
-          "height": 819,
-          "width": 1456,
-          "resizeWidth": 728,
+          "height": "<DIM>",
+          "width": "<DIM>",
+          "resizeWidth": "<DIM>",
           "bytes": null,
           "alt": "Linked image alt",
           "title": null,
           "type": null,
           "href": "https://example.com/target",
+          "belowTheFold": false,
+          "internalRedirect": null
+        }
+      }
+    ]
+  },
+  {
+    "type": "captionedImage",
+    "content": [
+      {
+        "type": "image2",
+        "attrs": {
+          "src": "<SRC>",
+          "fullscreen": false,
+          "imageSize": "normal",
+          "height": "<DIM>",
+          "width": "<DIM>",
+          "resizeWidth": "<DIM>",
+          "bytes": null,
+          "alt": "A locally uploaded image",
+          "title": null,
+          "type": null,
+          "href": null,
           "belowTheFold": false,
           "internalRedirect": null
         }
@@ -590,6 +613,81 @@
             "type": "code"
           }
         ]
+      }
+    ]
+  },
+  {
+    "type": "heading",
+    "content": [
+      {
+        "type": "text",
+        "text": "Heading with "
+      },
+      {
+        "type": "text",
+        "text": "bold",
+        "marks": [
+          {
+            "type": "strong"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": ", "
+      },
+      {
+        "type": "text",
+        "text": "italic",
+        "marks": [
+          {
+            "type": "em"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": ", and a "
+      },
+      {
+        "type": "text",
+        "text": "link",
+        "marks": [
+          {
+            "type": "link",
+            "attrs": {
+              "href": "https://example.com"
+            }
+          }
+        ]
+      }
+    ],
+    "attrs": {
+      "level": 2
+    }
+  },
+  {
+    "type": "paragraph",
+    "content": [
+      {
+        "type": "text",
+        "text": "An autolink to "
+      },
+      {
+        "type": "text",
+        "text": "https://example.com",
+        "marks": [
+          {
+            "type": "link",
+            "attrs": {
+              "href": "https://example.com"
+            }
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": " becomes a link."
       }
     ]
   },
