@@ -148,12 +148,13 @@ def _render_block(node: SyntaxTreeNode, api) -> List[Dict]:
         out = []
         for fn in node.children:
             number = fn.meta["id"] + 1
-            paras = [
-                nodes.paragraph(_render_inline(child.children[0], []))
-                for child in fn.children
-                if child.type == "paragraph"
-            ]
-            out.append(nodes.footnote(number, paras))
+            # Render every child block (paragraphs, lists, code, ...) so footnote
+            # content is preserved. The trailing footnote_anchor backref renders to
+            # nothing and is dropped.
+            children_nodes = []
+            for child in fn.children:
+                children_nodes.extend(_render_block(child, api))
+            out.append(nodes.footnote(number, children_nodes))
         return out
 
     return []

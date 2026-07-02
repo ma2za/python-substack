@@ -200,6 +200,21 @@
     ]
   },
   {
+    "type": "paragraph",
+    "content": [
+      {
+        "type": "text",
+        "text": "A footnote whose definition is a list."
+      },
+      {
+        "type": "footnoteAnchor",
+        "attrs": {
+          "number": 3
+        }
+      }
+    ]
+  },
+  {
     "type": "bullet_list",
     "content": [
       {
@@ -745,6 +760,47 @@
           {
             "type": "text",
             "text": "And a second paragraph after a blank line."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "footnote",
+    "attrs": {
+      "number": 3
+    },
+    "content": [
+      {
+        "type": "bullet_list",
+        "content": [
+          {
+            "type": "list_item",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "list item one"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "list_item",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "list item two"
+                  }
+                ]
+              }
+            ]
           }
         ]
       }
