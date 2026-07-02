@@ -555,6 +555,7 @@
         "type": "image2",
         "attrs": {
           "src": "<SRC>",
+          "srcNoWatermark": null,
           "fullscreen": false,
           "imageSize": "normal",
           "height": "<DIM>",
@@ -566,7 +567,11 @@
           "type": null,
           "href": null,
           "belowTheFold": false,
-          "internalRedirect": null
+          "topImage": false,
+          "internalRedirect": null,
+          "isProcessing": false,
+          "align": null,
+          "offset": false
         }
       }
     ]
@@ -578,6 +583,7 @@
         "type": "image2",
         "attrs": {
           "src": "<SRC>",
+          "srcNoWatermark": null,
           "fullscreen": false,
           "imageSize": "normal",
           "height": "<DIM>",
@@ -589,7 +595,11 @@
           "type": null,
           "href": "https://example.com/target",
           "belowTheFold": false,
-          "internalRedirect": null
+          "topImage": false,
+          "internalRedirect": null,
+          "isProcessing": false,
+          "align": null,
+          "offset": false
         }
       }
     ]
@@ -601,6 +611,44 @@
         "type": "image2",
         "attrs": {
           "src": "<SRC>",
+          "srcNoWatermark": null,
+          "fullscreen": false,
+          "imageSize": "normal",
+          "height": "<DIM>",
+          "width": "<DIM>",
+          "resizeWidth": "<DIM>",
+          "bytes": null,
+          "alt": "Captioned with title",
+          "title": null,
+          "type": null,
+          "href": null,
+          "belowTheFold": false,
+          "topImage": false,
+          "internalRedirect": null,
+          "isProcessing": false,
+          "align": null,
+          "offset": false
+        }
+      },
+      {
+        "type": "caption",
+        "content": [
+          {
+            "type": "text",
+            "text": "Caption text from markdown title"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "captionedImage",
+    "content": [
+      {
+        "type": "image2",
+        "attrs": {
+          "src": "<SRC>",
+          "srcNoWatermark": null,
           "fullscreen": false,
           "imageSize": "normal",
           "height": "<DIM>",
@@ -612,7 +660,11 @@
           "type": null,
           "href": null,
           "belowTheFold": false,
-          "internalRedirect": null
+          "topImage": false,
+          "internalRedirect": null,
+          "isProcessing": false,
+          "align": null,
+          "offset": false
         }
       }
     ]

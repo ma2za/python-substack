@@ -133,10 +133,37 @@ class TestBlocks:
         post.from_markdown("![alt](https://example.com/img.png)")
         block = body(post)[0]
         assert block["type"] == "captionedImage"
+        assert len(block["content"]) == 1
         assert block["content"][0]["type"] == "image2"
         attrs = block["content"][0]["attrs"]
         assert attrs["src"] == "https://example.com/img.png"
         assert attrs["alt"] == "alt"
+        assert attrs["href"] is None
+        assert attrs["imageSize"] == "normal"
+        assert attrs["srcNoWatermark"] is None
+        assert attrs["topImage"] is False
+        assert attrs["isProcessing"] is False
+        assert attrs["align"] is None
+        assert attrs["offset"] is False
+
+    def test_image_with_caption(self):
+        post = make_post()
+        post.from_markdown('![alt](https://example.com/img.png "My caption")')
+        block = body(post)[0]
+        assert block["type"] == "captionedImage"
+        assert len(block["content"]) == 2
+        assert block["content"][0]["type"] == "image2"
+        assert block["content"][0]["attrs"]["alt"] == "alt"
+        caption = block["content"][1]
+        assert caption["type"] == "caption"
+        assert caption["content"] == [{"type": "text", "text": "My caption"}]
+
+    def test_image_without_caption_has_no_caption_node(self):
+        post = make_post()
+        post.from_markdown("![alt](https://example.com/img.png)")
+        block = body(post)[0]
+        types = [n["type"] for n in block["content"]]
+        assert "caption" not in types
 
     def test_linked_image(self):
         post = make_post()

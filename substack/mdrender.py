@@ -111,10 +111,14 @@ def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
             pass
     # markdown-it stores the image alt text as the node's content, not in attrs.
     alt = img.content or img.attrs.get("alt") or None
+    # Standard markdown image title `![alt](src "caption")` maps to Substack's caption node.
+    title = img.attrs.get("title") or None
+    caption = [nodes.text(title)] if title else None
     return nodes.captioned_image(
         src,
         alt=alt,
         href=getattr(img, "_link_href", None),
+        caption=caption,
     )
 
 
