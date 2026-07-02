@@ -4,13 +4,14 @@ Reads a feature-complete Markdown fixture, creates a real draft via the API,
 retrieves it, and compares the (normalised) stored document against a saved
 golden file (``full_features.expected.json``).
 
-Requires live credentials in the environment (a ``.env`` file is loaded):
+This test creates and deletes a real draft, so it is opt-in: it only runs when
+``RUN_SUBSTACK_E2E`` is set **and** credentials are configured (a ``.env`` file
+is loaded). A normal ``pytest`` run with a ``.env`` present will skip it rather
+than touching the account.
 
+  - ``RUN_SUBSTACK_E2E=1`` to enable
   - ``COOKIES_STRING`` (or ``COOKIES_PATH``), **or** ``EMAIL`` + ``PASSWORD``
   - ``PUBLICATION_URL`` (optional but recommended)
-
-The test is skipped when no credentials are configured, so it is safe to run in
-CI without secrets.
 
 To regenerate the golden file after an intentional change::
 
@@ -60,12 +61,21 @@ def _image_srcs_by_alt(content, alt):
 
 
 def _has_credentials() -> bool:
-    """Whether auth is configured, checked without any network calls."""
     return bool(
         os.getenv("COOKIES_STRING")
         or os.getenv("COOKIES_PATH")
         or (os.getenv("EMAIL") and os.getenv("PASSWORD"))
     )
+
+
+def _e2e_enabled() -> bool:
+    """Only run when explicitly opted in AND credentials are present.
+
+    Creating/deleting real drafts should never happen by surprise on a local
+    ``pytest`` run that merely has a ``.env`` file, so an explicit
+    ``RUN_SUBSTACK_E2E`` opt-in is required.
+    """
+    return bool(os.getenv("RUN_SUBSTACK_E2E")) and _has_credentials()
 
 
 def _api_from_env() -> Api:
@@ -141,7 +151,10 @@ def _roundtrip(api: Api):
             pass
 
 
-@pytest.mark.skipif(not _has_credentials(), reason="no Substack credentials configured")
+@pytest.mark.skipif(
+    not _e2e_enabled(),
+    reason="set RUN_SUBSTACK_E2E=1 and configure credentials to run the live e2e test",
+)
 def test_full_features_roundtrip():
     api = _api_from_env()
     content = _roundtrip(api)

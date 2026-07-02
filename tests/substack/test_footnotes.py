@@ -243,6 +243,22 @@ class TestFromMarkdownFootnotes:
         assert len(block["content"]) == 2
         assert block["content"][1]["content"][0]["text"] == "Para two."
 
+    def test_definition_with_block_content_is_preserved(self):
+        # A footnote whose definition is a list (or other block content) must keep
+        # its text rather than dropping it.
+        post = make_post()
+        post.from_markdown("Claim[^1]\n\n[^1]: - item one\n    - item two")
+        note = footnotes(post)[0]
+        text = " ".join(
+            n.get("text", "")
+            for para in find_nodes(note, "paragraph")
+            for n in para.get("content", [])
+        )
+        assert "item one" in text
+        assert "item two" in text
+        # rendered as a real nested list inside the footnote
+        assert find_nodes(note, "bullet_list")
+
     def test_no_footnotes_is_unchanged(self):
         post = make_post()
         post.from_markdown("Just a plain paragraph.")
