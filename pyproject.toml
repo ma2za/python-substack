@@ -21,6 +21,8 @@ python = "<4.0,>=3.10"
 requests = "^2.32.0"
 python-dotenv = "^1.2.1"
 PyYAML = "^6.0"
+markdown-it-py = "^3.0"
+mdit-py-plugins = "^0.4"
 
 [tool.poetry.group.dev.dependencies]
 

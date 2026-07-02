@@ -7,6 +7,7 @@ from substack.post import Post
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def make_post():
     """Create a fresh Post instance for testing."""
     return Post(title="Test", subtitle="Sub", user_id=1)
@@ -44,6 +45,7 @@ def footnotes(post):
 # TestFootnoteHelpers
 # ---------------------------------------------------------------------------
 
+
 class TestFootnoteHelpers:
     def test_footnote_anchor_added_inline(self):
         post = make_post()
@@ -68,12 +70,15 @@ class TestFootnoteHelpers:
         text_nodes = block["content"][0]["content"]
         link_node = next(n for n in text_nodes if n.get("marks"))
         assert link_node["text"] == "the source"
-        assert link_node["marks"] == [{"type": "link", "attrs": {"href": "https://example.com"}}]
+        assert link_node["marks"] == [
+            {"type": "link", "attrs": {"href": "https://example.com"}}
+        ]
 
 
 # ---------------------------------------------------------------------------
 # TestFromMarkdownFootnotes
 # ---------------------------------------------------------------------------
+
 
 class TestFromMarkdownFootnotes:
     def test_basic_reference_and_definition(self):
@@ -92,9 +97,7 @@ class TestFromMarkdownFootnotes:
         # The definition line must not leak into a paragraph.
         paragraphs = find_nodes(post.draft_body, "paragraph")
         body_text = " ".join(
-            n.get("text", "")
-            for p in paragraphs
-            for n in p.get("content", [])
+            n.get("text", "") for p in paragraphs for n in p.get("content", [])
         )
         assert "[^1]:" not in body_text
 
@@ -121,20 +124,24 @@ class TestFromMarkdownFootnotes:
         assert blocks[0]["content"][0]["content"][0]["text"] == "First definition."
         assert blocks[1]["content"][0]["content"][0]["text"] == "Second definition."
 
-    def test_repeated_reference_reuses_number(self):
+    def test_repeated_reference_duplicates_footnote(self):
+        # Substack numbers anchors by position and pairs them 1:1 with footnote
+        # blocks, so a definition referenced twice yields two sequentially-numbered
+        # anchors and two footnote blocks with identical content.
         post = make_post()
         post.from_markdown("One[^a] two[^a].\n\n[^a]: Note.")
         nums = [a["attrs"]["number"] for a in anchors(post)]
-        assert nums == [1, 1]
-        assert len(footnotes(post)) == 1
+        assert nums == [1, 2]
+        blocks = footnotes(post)
+        assert [b["attrs"]["number"] for b in blocks] == [1, 2]
+        assert blocks[0]["content"] == blocks[1]["content"]
+        assert blocks[0]["content"][0]["content"][0]["text"] == "Note."
 
     def test_link_inside_definition_preserved(self):
         post = make_post()
         post.from_markdown("Claim.[^1]\n\n[^1]: See [docs](https://example.com).")
         block = footnotes(post)[0]
-        link_node = next(
-            n for n in block["content"][0]["content"] if n.get("marks")
-        )
+        link_node = next(n for n in block["content"][0]["content"] if n.get("marks"))
         assert link_node["marks"][0]["attrs"]["href"] == "https://example.com"
 
     def test_multiline_definition(self):
@@ -144,11 +151,18 @@ class TestFromMarkdownFootnotes:
         text = footnotes(post)[0]["content"][0]["content"][0]["text"]
         assert text == "First line continued on the next line."
 
-    def test_unreferenced_definition_still_appended(self):
+    def test_unreferenced_definition_is_dropped(self):
+        # CommonMark footnote semantics: a definition that is never referenced is
+        # not rendered, and must not leak into the body text.
         post = make_post()
         post.from_markdown("No references here.\n\n[^1]: Orphan note.")
         assert len(anchors(post)) == 0
-        assert len(footnotes(post)) == 1
+        assert len(footnotes(post)) == 0
+        paragraphs = find_nodes(post.draft_body, "paragraph")
+        body_text = " ".join(
+            n.get("text", "") for para in paragraphs for n in para.get("content", [])
+        )
+        assert "Orphan note" not in body_text
 
     def test_reference_without_definition_left_as_text(self):
         post = make_post()
@@ -160,11 +174,7 @@ class TestFromMarkdownFootnotes:
 
     def test_definition_in_middle_moves_to_end(self):
         post = make_post()
-        md = (
-            "First paragraph.[^1]\n\n"
-            "[^1]: First footnote.\n\n"
-            "Second paragraph."
-        )
+        md = "First paragraph.[^1]\n\n[^1]: First footnote.\n\nSecond paragraph."
         post.from_markdown(md)
 
         types = [node["type"] for node in body_content(post)]
@@ -235,6 +245,22 @@ class TestFromMarkdownFootnotes:
         block = footnotes(post)[0]
         assert len(block["content"]) == 2
         assert block["content"][1]["content"][0]["text"] == "Para two."
+
+    def test_definition_with_block_content_is_preserved(self):
+        # A footnote whose definition is a list (or other block content) must keep
+        # its text rather than dropping it.
+        post = make_post()
+        post.from_markdown("Claim[^1]\n\n[^1]: - item one\n    - item two")
+        note = footnotes(post)[0]
+        text = " ".join(
+            n.get("text", "")
+            for para in find_nodes(note, "paragraph")
+            for n in para.get("content", [])
+        )
+        assert "item one" in text
+        assert "item two" in text
+        # rendered as a real nested list inside the footnote
+        assert find_nodes(note, "bullet_list")
 
     def test_no_footnotes_is_unchanged(self):
         post = make_post()
