@@ -194,7 +194,7 @@
       {
         "type": "footnoteAnchor",
         "attrs": {
-          "number": 1
+          "number": 3
         }
       }
     ]
@@ -209,7 +209,7 @@
       {
         "type": "footnoteAnchor",
         "attrs": {
-          "number": 3
+          "number": 4
         }
       }
     ]
@@ -769,6 +769,39 @@
     "type": "footnote",
     "attrs": {
       "number": 3
+    },
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "The first footnote, with a "
+          },
+          {
+            "type": "text",
+            "text": "link",
+            "marks": [
+              {
+                "type": "link",
+                "attrs": {
+                  "href": "https://example.com"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "footnote",
+    "attrs": {
+      "number": 4
     },
     "content": [
       {
