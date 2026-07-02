@@ -14,6 +14,8 @@ A paragraph with **bold**, *italic*, ***bold italic***, `inline code`, ~~striket
 
 A sentence with a numeric footnote[^1] and a named footnote[^note], plus a repeat of the first.[^1]
 
+A footnote whose definition is a list.[^listnote]
+
 - Bullet one
 - Bullet two with **bold**
 
@@ -71,3 +73,5 @@ An autolink to <https://example.com> becomes a link.
 
     And a second paragraph after a blank line.
 [^unused]: This definition is never referenced and should be dropped.
+[^listnote]: - list item one
+    - list item two
