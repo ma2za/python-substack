@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest.mock import Mock, patch
 
 from dotenv import load_dotenv
 
@@ -34,8 +35,10 @@ _e2e = unittest.skipUnless(
 
 class ApiTest(unittest.TestCase):
     def test_api_exception(self):
+        response = Mock(status_code=401, text="Unauthorized")
         with self.assertRaises(SubstackAPIException):
-            Api(email="", password="")
+            with patch("requests.Session.post", return_value=response):
+                Api(email="", password="")
 
     @_e2e
     def test_get_posts(self):
