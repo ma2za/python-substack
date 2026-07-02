@@ -6,10 +6,18 @@ tree into Substack's node schema.
 
 Node construction goes through ``substack.nodes`` so the (undocumented) schema
 lives in exactly one place.
+
+Footnotes: Substack numbers footnote anchors by their position in the document
+and pairs them one-to-one, in order, with the footnote blocks at the end (it
+ignores any explicit number and does not support one block serving several
+anchors). So each reference is emitted as its own sequentially-numbered anchor,
+and a matching footnote block is appended for each -- a definition referenced
+more than once is duplicated, which mirrors how Substack's own editor behaves.
 """
 
 from __future__ import annotations
 
+import copy
 from typing import Dict, List, Optional
 
 from markdown_it import MarkdownIt
@@ -46,7 +54,7 @@ def _coalesce(out_nodes: List[Dict]) -> List[Dict]:
     return merged
 
 
-def _render_inline(node: SyntaxTreeNode, marks: List[Dict]) -> List[Dict]:
+def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[Dict]:
     """Render an inline subtree into a flat list of text / anchor nodes."""
     out: List[Dict] = []
     for child in node.children:
@@ -57,14 +65,17 @@ def _render_inline(node: SyntaxTreeNode, marks: List[Dict]) -> List[Dict]:
         elif t == "code_inline":
             out.append(nodes.text(child.content, marks + [nodes.code_mark()]))
         elif t in _MARK_FOR:
-            out.extend(_render_inline(child, marks + [_MARK_FOR[t]]))
+            out.extend(_render_inline(child, marks + [_MARK_FOR[t]], ctx))
         elif t == "link":
             href = child.attrs.get("href", "")
-            out.extend(_render_inline(child, marks + [nodes.link_mark(href)]))
+            out.extend(_render_inline(child, marks + [nodes.link_mark(href)], ctx))
         elif t in ("softbreak", "hardbreak"):
             out.append(nodes.text(" ", marks))
         elif t == "footnote_ref":
-            out.append(nodes.footnote_anchor(child.meta["id"] + 1))
+            # Number anchors by document position and record which definition each
+            # one points to, so matching blocks can be emitted 1:1 afterwards.
+            ctx["order"].append(child.meta["id"])
+            out.append(nodes.footnote_anchor(len(ctx["order"])))
         elif t == "image":
             # Inline images are rare in this schema; fall back to alt text.
             alt = child.attrs.get("alt") or "".join(
@@ -107,7 +118,7 @@ def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
     )
 
 
-def _render_block(node: SyntaxTreeNode, api) -> List[Dict]:
+def _render_block(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     """Render a block-level node into zero or more Substack nodes."""
     t = node.type
 
@@ -116,11 +127,11 @@ def _render_block(node: SyntaxTreeNode, api) -> List[Dict]:
         img = _only_image(inline)
         if img is not None:
             return [_captioned_image(img, api)]
-        return [nodes.paragraph(_render_inline(inline, []))]
+        return [nodes.paragraph(_render_inline(inline, [], ctx))]
 
     if t == "heading":
         level = int(node.tag[1])
-        return [nodes.heading(_render_inline(node.children[0], []), level=level)]
+        return [nodes.heading(_render_inline(node.children[0], [], ctx), level=level)]
 
     if t == "hr":
         return [nodes.horizontal_rule()]
@@ -135,47 +146,61 @@ def _render_block(node: SyntaxTreeNode, api) -> List[Dict]:
     if t == "blockquote":
         paras: List[Dict] = []
         for child in node.children:
-            paras.extend(_render_block(child, api))
+            paras.extend(_render_block(child, api, ctx))
         return [nodes.blockquote(paras)]
 
     if t == "bullet_list":
-        return [nodes.bullet_list(_render_list_items(node, api))]
+        return [nodes.bullet_list(_render_list_items(node, api, ctx))]
 
     if t == "ordered_list":
-        return [nodes.ordered_list(_render_list_items(node, api))]
+        return [nodes.ordered_list(_render_list_items(node, api, ctx))]
 
-    if t == "footnote_block":
-        out = []
-        for fn in node.children:
-            number = fn.meta["id"] + 1
-            # Render every child block (paragraphs, lists, code, ...) so footnote
-            # content is preserved. The trailing footnote_anchor backref renders to
-            # nothing and is dropped.
-            children_nodes = []
-            for child in fn.children:
-                children_nodes.extend(_render_block(child, api))
-            out.append(nodes.footnote(number, children_nodes))
-        return out
-
+    # footnote_block is handled separately in markdown_to_doc; ignore it here.
     return []
 
 
-def _render_list_items(list_node: SyntaxTreeNode, api) -> List[Dict]:
+def _render_list_items(list_node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     items = []
     for li in list_node.children:
-        # A list_item built by nodes.list_item wraps inline content in a single
-        # paragraph; here items may already contain block nodes, so build directly.
         content: List[Dict] = []
         for child in li.children:
-            content.extend(_render_block(child, api))
+            content.extend(_render_block(child, api, ctx))
         items.append({"type": NodeType.LIST_ITEM, "content": content})
     return items
+
+
+def _footnote_definitions(tree: SyntaxTreeNode, api) -> Dict[int, List[Dict]]:
+    """Map each footnote id to its rendered block content."""
+    definitions: Dict[int, List[Dict]] = {}
+    for node in tree.children:
+        if node.type != "footnote_block":
+            continue
+        for fn in node.children:
+            # A footnote's own content should not register anchors of its own.
+            local_ctx = {"order": []}
+            content: List[Dict] = []
+            for child in fn.children:
+                content.extend(_render_block(child, api, local_ctx))
+            definitions[fn.meta["id"]] = content
+    return definitions
 
 
 def markdown_to_doc(markdown_content: str, api=None) -> List[Dict]:
     """Convert Markdown into a list of Substack ProseMirror block nodes."""
     tree = SyntaxTreeNode(_make_parser().parse(markdown_content))
+
+    definitions = _footnote_definitions(tree, api)
+
+    ctx: Dict = {"order": []}
     out: List[Dict] = []
     for node in tree.children:
-        out.extend(_render_block(node, api))
+        if node.type == "footnote_block":
+            continue
+        out.extend(_render_block(node, api, ctx))
+
+    # Emit one footnote block per reference, in anchor order, numbered to match.
+    for number, footnote_id in enumerate(ctx["order"], start=1):
+        content = copy.deepcopy(definitions.get(footnote_id, []))
+        out.append(nodes.footnote(number, content))
+
     return out

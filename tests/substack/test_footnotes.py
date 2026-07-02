@@ -7,6 +7,7 @@ from substack.post import Post
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def make_post():
     """Create a fresh Post instance for testing."""
     return Post(title="Test", subtitle="Sub", user_id=1)
@@ -44,6 +45,7 @@ def footnotes(post):
 # TestFootnoteHelpers
 # ---------------------------------------------------------------------------
 
+
 class TestFootnoteHelpers:
     def test_footnote_anchor_added_inline(self):
         post = make_post()
@@ -68,12 +70,15 @@ class TestFootnoteHelpers:
         text_nodes = block["content"][0]["content"]
         link_node = next(n for n in text_nodes if n.get("marks"))
         assert link_node["text"] == "the source"
-        assert link_node["marks"] == [{"type": "link", "attrs": {"href": "https://example.com"}}]
+        assert link_node["marks"] == [
+            {"type": "link", "attrs": {"href": "https://example.com"}}
+        ]
 
 
 # ---------------------------------------------------------------------------
 # TestFromMarkdownFootnotes
 # ---------------------------------------------------------------------------
+
 
 class TestFromMarkdownFootnotes:
     def test_basic_reference_and_definition(self):
@@ -92,9 +97,7 @@ class TestFromMarkdownFootnotes:
         # The definition line must not leak into a paragraph.
         paragraphs = find_nodes(post.draft_body, "paragraph")
         body_text = " ".join(
-            n.get("text", "")
-            for p in paragraphs
-            for n in p.get("content", [])
+            n.get("text", "") for p in paragraphs for n in p.get("content", [])
         )
         assert "[^1]:" not in body_text
 
@@ -121,20 +124,24 @@ class TestFromMarkdownFootnotes:
         assert blocks[0]["content"][0]["content"][0]["text"] == "First definition."
         assert blocks[1]["content"][0]["content"][0]["text"] == "Second definition."
 
-    def test_repeated_reference_reuses_number(self):
+    def test_repeated_reference_duplicates_footnote(self):
+        # Substack numbers anchors by position and pairs them 1:1 with footnote
+        # blocks, so a definition referenced twice yields two sequentially-numbered
+        # anchors and two footnote blocks with identical content.
         post = make_post()
         post.from_markdown("One[^a] two[^a].\n\n[^a]: Note.")
         nums = [a["attrs"]["number"] for a in anchors(post)]
-        assert nums == [1, 1]
-        assert len(footnotes(post)) == 1
+        assert nums == [1, 2]
+        blocks = footnotes(post)
+        assert [b["attrs"]["number"] for b in blocks] == [1, 2]
+        assert blocks[0]["content"] == blocks[1]["content"]
+        assert blocks[0]["content"][0]["content"][0]["text"] == "Note."
 
     def test_link_inside_definition_preserved(self):
         post = make_post()
         post.from_markdown("Claim.[^1]\n\n[^1]: See [docs](https://example.com).")
         block = footnotes(post)[0]
-        link_node = next(
-            n for n in block["content"][0]["content"] if n.get("marks")
-        )
+        link_node = next(n for n in block["content"][0]["content"] if n.get("marks"))
         assert link_node["marks"][0]["attrs"]["href"] == "https://example.com"
 
     def test_multiline_definition(self):
@@ -167,11 +174,7 @@ class TestFromMarkdownFootnotes:
 
     def test_definition_in_middle_moves_to_end(self):
         post = make_post()
-        md = (
-            "First paragraph.[^1]\n\n"
-            "[^1]: First footnote.\n\n"
-            "Second paragraph."
-        )
+        md = "First paragraph.[^1]\n\n[^1]: First footnote.\n\nSecond paragraph."
         post.from_markdown(md)
 
         types = [node["type"] for node in body_content(post)]
