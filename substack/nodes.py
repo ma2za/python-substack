@@ -32,6 +32,7 @@ class NodeType:
     FOOTNOTE = "footnote"
     FOOTNOTE_ANCHOR = "footnoteAnchor"
     CAPTIONED_IMAGE = "captionedImage"
+    CAPTION = "caption"
 
 
 class MarkType:
@@ -99,31 +100,40 @@ def code_block(code: str, language: Optional[str] = None) -> Dict:
 
 
 def captioned_image(
-    src: str, alt: Optional[str] = None, href: Optional[str] = None
+    src: str,
+    alt: Optional[str] = None,
+    href: Optional[str] = None,
+    caption: Optional[List[Dict]] = None,
+    image_size: str = "normal",
 ) -> Dict:
-    return {
-        "type": NodeType.CAPTIONED_IMAGE,
-        "content": [
-            {
-                "type": "image2",
-                "attrs": {
-                    "src": src,
-                    "fullscreen": False,
-                    "imageSize": "normal",
-                    "height": 819,
-                    "width": 1456,
-                    "resizeWidth": 728,
-                    "bytes": None,
-                    "alt": alt,
-                    "title": None,
-                    "type": None,
-                    "href": href,
-                    "belowTheFold": False,
-                    "internalRedirect": None,
-                },
-            }
-        ],
-    }
+    content: List[Dict] = [
+        {
+            "type": "image2",
+            "attrs": {
+                "src": src,
+                "srcNoWatermark": None,
+                "fullscreen": False,
+                "imageSize": image_size,
+                "height": 819,
+                "width": 1456,
+                "resizeWidth": 728 if image_size == "normal" else None,
+                "bytes": None,
+                "alt": alt,
+                "title": None,
+                "type": None,
+                "href": href,
+                "belowTheFold": False,
+                "topImage": False,
+                "internalRedirect": None,
+                "isProcessing": False,
+                "align": None,
+                "offset": False,
+            },
+        }
+    ]
+    if caption:
+        content.append({"type": NodeType.CAPTION, "content": caption})
+    return {"type": NodeType.CAPTIONED_IMAGE, "content": content}
 
 
 def footnote_anchor(number: int) -> Dict:
