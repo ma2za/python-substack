@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.1.24"
+version = "0.1.25"
 description = "A Python wrapper around the Substack API."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
 packages = [
-    { include = "substack" }
+    { include = "substack" },
+    { include = "substack_mcp" }
 ]
 
 readme = "README.md"
@@ -14,6 +15,22 @@ repository = "https://github.com/ma2za/python-substack"
 homepage = "https://github.com/ma2za/python-substack"
 
 keywords = ["substack"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Email",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[tool.poetry.urls]
+"Changelog" = "https://github.com/ma2za/python-substack/blob/main/CHANGELOG.md"
+"Issues" = "https://github.com/ma2za/python-substack/issues"
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.10"
@@ -23,15 +40,18 @@ python-dotenv = "^1.2.1"
 PyYAML = "^6.0"
 markdown-it-py = "^3.0"
 mdit-py-plugins = "^0.4"
+fastmcp = { version = "^3.1.1", optional = true }
+
+[tool.poetry.extras]
+mcp = ["fastmcp"]
 
 [tool.poetry.group.dev.dependencies]
 
-[tool.poetry.group.mcp]
-
-optional = true
-
-[tool.poetry.group.mcp.dependencies]
-fastmcp = "^3.1.1"
+[tool.poetry.scripts]
+substack-auth-check = "substack.cli:auth_check"
+substack-publish-markdown = "substack.cli:publish_markdown"
+substack-publish-yaml = "substack.cli:publish_yaml"
+substack-mcp = "substack_mcp.mcp_server:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
