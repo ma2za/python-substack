@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from urllib.parse import urljoin, unquote
+from urllib.parse import unquote, urljoin
 
 import requests
 
@@ -111,26 +111,34 @@ class Api:
     def _parse_cookies_string(cookies_string: str) -> dict:
         """
         Parse a semicolon-separated cookie string into a dictionary.
-        
+
         Args:
             cookies_string: A semicolon-separated string of cookies (e.g., "cookie1=value1; cookie2=value2")
-            
+
         Returns:
             A dictionary of cookie name-value pairs
         """
         cookies = {}
-        for cookie_pair in cookies_string.split(';'):
+        for cookie_pair in cookies_string.split(";"):
             cookie_pair = cookie_pair.strip()
             if not cookie_pair:
                 continue
-            if '=' in cookie_pair:
-                key, value = cookie_pair.split('=', 1)
+            if "=" in cookie_pair:
+                key, value = cookie_pair.split("=", 1)
                 key = key.strip()
                 value = value.strip()
                 # URL decode the value (e.g., s%3A becomes s:)
                 value = unquote(value)
                 cookies[key] = value
         return cookies
+
+    @staticmethod
+    def _normalize_tags(tags):
+        if tags is None:
+            return []
+        if isinstance(tags, str):
+            return [tags]
+        return [str(tag) for tag in tags]
 
     def login(self, email, password) -> dict:
         """
@@ -224,7 +232,7 @@ class Api:
             publication:
         """
         custom_domain = publication.get("custom_domain", None)
-        if not custom_domain and not publication.get('custom_domain_optional', None):
+        if not custom_domain and not publication.get("custom_domain_optional", None):
             publication_url = f"https://{publication['subdomain']}.substack.com"
         else:
             publication_url = f"https://{custom_domain}"
@@ -238,9 +246,12 @@ class Api:
 
         profile = self.get_user_profile()
         primary_publication = None
-        
+
         # Try old API format first (backward compatibility)
-        if "primaryPublication" in profile and profile["primaryPublication"] is not None:
+        if (
+            "primaryPublication" in profile
+            and profile["primaryPublication"] is not None
+        ):
             primary_publication = profile["primaryPublication"]
         else:
             # New API format: look for primary publication in publicationUsers
@@ -252,16 +263,16 @@ class Api:
                         primary_publication = pub_user.get("publication")
                         if primary_publication:
                             break
-                
+
                 # If no primary found, use the first publication
                 if primary_publication is None:
                     primary_publication = publication_users[0].get("publication")
-        
+
         if primary_publication is None:
             raise SubstackRequestException(
                 "Could not find primary publication in profile"
             )
-            
+
         primary_publication["publication_url"] = self.get_publication_url(
             primary_publication
         )
@@ -279,12 +290,12 @@ class Api:
         # of dictionaries of "name", and "subdomain", and "id"
         user_publications = []
         publication_users = profile.get("publicationUsers")
-        
+
         if publication_users is None:
             # If publicationUsers is None, return empty list or try to construct from other fields
             # This maintains backward compatibility while handling new API format
             return user_publications
-        
+
         for publication in publication_users:
             pub = publication.get("publication")
             if pub is not None:
@@ -414,6 +425,73 @@ class Api:
         response = self._session.post(f"{self.publication_url}/drafts", json=body)
         return Api._handle_response(response=response)
 
+    def create_draft_from_markdown(
+        self,
+        title: str,
+        markdown: str,
+        subtitle: str = "",
+        audience: str = "everyone",
+        write_comment_permissions: str = "everyone",
+        search_engine_title: str = None,
+        search_engine_description: str = None,
+        slug: str = None,
+        draft_section_id: int = None,
+        tags=None,
+        prepublish: bool = False,
+        publish: bool = False,
+        send: bool = True,
+        share_automatically: bool = False,
+    ) -> dict:
+        from substack.post import Post
+
+        post = Post(
+            title=title,
+            subtitle=subtitle or "",
+            user_id=self.get_user_id(),
+            audience=audience,
+            write_comment_permissions=write_comment_permissions,
+        )
+        post.from_markdown(markdown, api=self)
+
+        draft = self.post_draft(post.get_draft())
+        draft_id = draft.get("id")
+
+        update_payload = {
+            "search_engine_title": search_engine_title,
+            "search_engine_description": search_engine_description,
+            "slug": slug,
+            "draft_section_id": draft_section_id,
+        }
+        update_payload = {
+            key: value for key, value in update_payload.items() if value is not None
+        }
+        if update_payload:
+            draft = self.put_draft(draft_id, **update_payload)
+
+        tags_result = None
+        tags_list = self._normalize_tags(tags)
+        if tags_list:
+            tags_result = self.add_tags_to_post(draft_id, tags_list)
+
+        prepublish_result = None
+        if prepublish:
+            prepublish_result = self.prepublish_draft(draft_id)
+
+        publish_result = None
+        if publish:
+            publish_result = self.publish_draft(
+                draft_id,
+                send=send,
+                share_automatically=share_automatically,
+            )
+
+        return {
+            "draft": draft,
+            "tags": tags_result,
+            "prepublish": prepublish_result,
+            "publish": publish_result,
+        }
+
     def put_draft(self, draft, **kwargs) -> dict:
         """
 
@@ -514,7 +592,7 @@ class Api:
             data={"image": image},
         )
         return Api._handle_response(response=response)
-    
+
     def add_tags_to_post(self, post_id: int, tag_names: list) -> dict:
         """
         Add multiple tags to a post.
@@ -574,7 +652,6 @@ class Api:
             f"{self.publication_url}/post/{post_id}/tag/{tag_id}",
         )
         return Api._handle_response(apply_tag_response)
-
 
     def get_categories(self):
         """

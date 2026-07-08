@@ -1,261 +1,292 @@
 # Python Substack
 
-This is an unofficial library providing a Python interface for [Substack](https://substack.com/).
-I am in no way affiliated with Substack.
+Unofficial Python tools for publishing to [Substack](https://substack.com/).
 
 [![Downloads](https://static.pepy.tech/badge/python-substack/month)](https://pepy.tech/project/python-substack)
 ![Release Build](https://github.com/ma2za/python-substack/actions/workflows/ci_publish.yml/badge.svg)
----
 
-# Installation
+## Features
 
-You can install python-substack using:
+- Create drafts and publish posts from Python.
+- Convert Markdown into Substack's editor document format.
+- Upload local images while rendering Markdown.
+- Set audience, comment permissions, SEO title, SEO description, slug, sections, and tags.
+- Publish now, schedule drafts, or keep drafts unpublished by default.
+- Authenticate with email/password, cookies JSON, or a browser cookie string.
+- Run a FastMCP server for AI-assisted publishing workflows.
 
-    $ pip install python-substack
+## Installation
 
-For the MCP server tools, install the extra dependency set:
+```bash
+pip install python-substack
+```
 
-    $ poetry install --with mcp
+Install the MCP server extra:
 
-> NOTE: We had to upgrade the package requirements to support Python 3.10 because 3.9 is basically vintage now. If you still run 3.9, please join us in the future (or bring snacks).
+```bash
+pip install "python-substack[mcp]"
+```
 
----
+## Setup
 
-# Setup
+Copy `.env.example` to `.env` and fill in one authentication method:
 
-Set the following environment variables by creating a **.env** file:
+```env
+EMAIL=
+PASSWORD=
+PUBLICATION_URL=
+COOKIES_PATH=
+COOKIES_STRING=
+```
 
-    EMAIL=
-    PASSWORD=
-    PUBLICATION_URL=  # Optional: your publication URL
-    COOKIES_PATH=     # Optional: path to cookies JSON file
-    COOKIES_STRING=   # Optional: cookie string for authentication
+Use either `EMAIL` and `PASSWORD`, or cookie-based authentication with `COOKIES_PATH` or `COOKIES_STRING`. Cookie authentication is usually the better option if Substack prompts for captcha or magic-link sign-in.
 
-## If you don't have a password
+Newer Substack accounts may only have magic-link sign-in enabled. To set a password, sign out of Substack, choose "Sign in with password", then choose "Set a new password".
 
-Recently Substack has been setting up new accounts without a password. If you sign out and sign back in, it just uses
-your email address with a "magic" link.
-
-Set a password:
-
-- Sign out of Substack
-- At the sign-in page, click "Sign in with password" under the `Email` text box
-- Then choose, "Set a new password"
-
-The .env file will be ignored by git but always be careful.
-
----
-
-# Usage
-
-Check out the examples folder for some examples 😃 🚀
-
-## Basic Authentication
+## Quickstart
 
 ```python
 import os
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from substack import Api
-from substack.post import Post
 
 load_dotenv()
 
-# Authenticate with email and password
 api = Api(
     email=os.getenv("EMAIL"),
     password=os.getenv("PASSWORD"),
     publication_url=os.getenv("PUBLICATION_URL"),
 )
+
+result = api.create_draft_from_markdown(
+    title="Shipping with Python",
+    subtitle="A short note from a script",
+    markdown="""
+# Hello
+
+This draft was created from **Markdown**.
+
+![Alt text](https://example.com/image.png "Image caption")
+""",
+    tags=["python", "automation"],
+    slug="shipping-with-python",
+)
+
+print(result["draft"]["id"])
 ```
 
-## Cookie-based Authentication
+`create_draft_from_markdown` creates a draft by default. It only publishes when `publish=True` is passed.
 
-You can also authenticate using cookies instead of email/password:
+## CLI
+
+Check authentication without creating a draft:
+
+```bash
+substack-auth-check
+```
+
+With a cookies JSON file:
+
+```bash
+substack-auth-check --cookies cookies.json
+```
+
+Publish a Markdown file as a draft:
+
+```bash
+substack-publish-markdown post.md --title "My Post"
+```
+
+Create and publish:
+
+```bash
+substack-publish-markdown post.md --title "My Post" --publish
+```
+
+Publish from YAML:
+
+```bash
+substack-publish-yaml draft.yaml
+```
+
+Useful options:
+
+```bash
+substack-publish-markdown post.md \
+  --title "My Post" \
+  --subtitle "Optional subtitle" \
+  --tag python \
+  --tag substack \
+  --slug my-post \
+  --search-engine-title "SEO title" \
+  --search-engine-description "SEO description"
+```
+
+## Cookie Authentication
+
+Cookie authentication avoids logging in with email/password on every run and helps when Substack requires captcha or magic-link sign-in.
+
+Use a cookies JSON file:
 
 ```python
 import os
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from substack import Api
 
 load_dotenv()
 
-# Authenticate with cookies (alternative to email/password)
 api = Api(
-    cookies_path=os.getenv("COOKIES_PATH"),  # Path to cookies JSON file
-    # OR
-    cookies_string=os.getenv("COOKIES_STRING"),  # Cookie string
+    cookies_path=os.getenv("COOKIES_PATH"),
     publication_url=os.getenv("PUBLICATION_URL"),
 )
 ```
 
-## Creating and Publishing Posts
+Or paste a browser cookie header into `COOKIES_STRING`:
 
 ```python
-user_id = api.get_user_id()
+import os
 
-# Switch Publications - The library defaults to your user's primary publication. You can retrieve all your publications and change which one you want to use.
+from dotenv import load_dotenv
+from substack import Api
 
-# primary publication
-user_publication = api.get_user_primary_publication()
-# all publications
-user_publications = api.get_user_publications()
+load_dotenv()
 
-# This step is only necessary if you are not using your primary publication
-# api.change_publication(user_publication)
-
-# Create a post with basic settings
-post = Post(
-    title="How to publish a Substack post using the Python API",
-    subtitle="This post was published using the Python API",
-    user_id=user_id
+api = Api(
+    cookies_string=os.getenv("COOKIES_STRING"),
+    publication_url=os.getenv("PUBLICATION_URL"),
 )
-
-# Create a post with audience and comment permissions
-post = Post(
-    title="My Post Title",
-    subtitle="My Post Subtitle",
-    user_id=user_id,
-    audience="everyone",  # Options: "everyone", "only_paid", "founding", "only_free"
-    write_comment_permissions="everyone"  # Options: "none", "only_paid", "everyone"
-)
-
-post.add({'type': 'paragraph', 'content': 'This is how you add a new paragraph to your post!'})
-
-# bolden text
-post.add({'type': "paragraph",
-          'content': [{'content': "This is how you "}, {'content': "bolden ", 'marks': [{'type': "strong"}]},
-                      {'content': "a word."}]})
-
-# add hyperlink to text
-post.add({'type': 'paragraph', 'content': [
-    {'content': "View Link", 'marks': [{'type': "link", 'href': 'https://whoraised.substack.com/'}]}]})
-
-# set paywall boundary
-post.add({'type': 'paywall'})
-
-# add image
-post.add({'type': 'captionedImage', 'src': "https://media.tenor.com/7B4jMa-a7bsAAAAC/i-am-batman.gif"})
-
-# add local image
-image = api.get_image('image.png')
-post.add({"type": "captionedImage", "src": image.get("url")})
-
-# embed publication
-embedded = api.publication_embed("https://jackio.substack.com/")
-post.add({"type": "embeddedPublication", "url": embedded})
-
-# create post from Markdown
-markdown_content = """
-# My Heading
-
-This is a paragraph with **bold** and *italic* text.
-
-![Image Alt](https://example.com/image.jpg)
-"""
-post.from_markdown(markdown_content, api=api)
-
-# Markdown footnotes are supported too. References become inline anchors and
-# definitions become footnote blocks, numbered by order of first appearance.
-# Labels can be numbers or names (e.g. [^1] or [^source]).
-footnote_markdown = """
-A claim that needs support.[^1] Another, with a named label.[^source]
-
-[^1]: The supporting detail, with a [link](https://example.com).
-[^source]: Author, *Title* (2025).
-"""
-post.from_markdown(footnote_markdown, api=api)
-
-# Or build footnotes manually:
-post.paragraph(content=[{"content": "Some claim."}]).footnote_anchor(1)
-post.footnote(1, "The note text, with **formatting** allowed.")
-
-
-draft = api.post_draft(post.get_draft())
-
-# set section (can only be done after first posting the draft)
-# post.set_section("rick rolling", api.get_sections())
-# api.put_draft(draft.get("id"), draft_section_id=post.draft_section_id)
-
-api.prepublish_draft(draft.get("id"))
-
-api.publish_draft(draft.get("id"))
 ```
 
-## Loading Posts from YAML Files
+To get a cookie string:
 
-You can define your posts in YAML files for easier management:
+1. Sign in to Substack in your browser.
+2. Open developer tools.
+3. Go to the network tab and refresh Substack.
+4. Select a request such as `subscription/unred/subscriptions`.
+5. Copy the full `cookie` request header value into `COOKIES_STRING`.
+
+To export a working session to a cookies JSON file:
 
 ```python
-import yaml
-import os
-from dotenv import load_dotenv
+api.export_cookies("cookies.json")
+```
 
+Then set:
+
+```env
+COOKIES_PATH=cookies.json
+```
+
+The CLI also accepts a cookie JSON path:
+
+```bash
+substack-publish-markdown post.md --cookies cookies.json
+```
+
+## Low-Level Post Builder
+
+```python
+import os
+
+from dotenv import load_dotenv
 from substack import Api
 from substack.post import Post
 
 load_dotenv()
 
-# Load post data from YAML file
-with open("draft.yaml", "r") as fp:
-    post_data = yaml.safe_load(fp)
-
-# Authenticate (using cookies or email/password)
-cookies_path = os.getenv("COOKIES_PATH")
-cookies_string = os.getenv("COOKIES_STRING")
-
 api = Api(
-    email=os.getenv("EMAIL") if not cookies_path and not cookies_string else None,
-    password=os.getenv("PASSWORD") if not cookies_path and not cookies_string else None,
-    cookies_path=cookies_path,
-    cookies_string=cookies_string,
+    email=os.getenv("EMAIL"),
+    password=os.getenv("PASSWORD"),
     publication_url=os.getenv("PUBLICATION_URL"),
 )
 
 user_id = api.get_user_id()
 
-# Create post from YAML data
 post = Post(
-    post_data.get("title"),
-    post_data.get("subtitle", ""),
-    user_id,
-    audience=post_data.get("audience", "everyone"),
-    write_comment_permissions=post_data.get("write_comment_permissions", "everyone"),
+    title="How to publish a Substack post using Python",
+    subtitle="Created with python-substack",
+    user_id=user_id,
+    audience="everyone",
+    write_comment_permissions="everyone",
 )
 
-# Add body content from YAML
-body = post_data.get("body", {})
-for _, item in body.items():
-    # Handle local images - upload them first
-    if item.get("type") == "captionedImage" and not item.get("src").startswith("http"):
-        image = api.get_image(item.get("src"))
-        item.update({"src": image.get("url")})
-    post.add(item)
+post.paragraph("This is a paragraph.")
+post.add(
+    {
+        "type": "paragraph",
+        "content": [
+            {"content": "A link to "},
+            {
+                "content": "Substack",
+                "marks": [{"type": "link", "href": "https://substack.com"}],
+            },
+        ],
+    }
+)
+post.add({"type": "paywall"})
+post.add({"type": "captionedImage", "src": "https://example.com/image.png"})
 
 draft = api.post_draft(post.get_draft())
-put_draft_kwargs = {
-    "draft_section_id": post.draft_section_id,
-    "search_engine_title": post_data.get("search_engine_title"),
-    "search_engine_description": post_data.get("search_engine_description"),
-    "slug": post_data.get("slug"),
-}
-put_draft_kwargs = {k: v for k, v in put_draft_kwargs.items() if v is not None}
-api.put_draft(draft.get("id"), **put_draft_kwargs)
-
-# Publish the draft
 api.prepublish_draft(draft.get("id"))
 api.publish_draft(draft.get("id"))
 ```
 
-Example YAML structure:
+## Markdown Support
+
+```python
+from substack.post import Post
+
+post = Post("Title", "Subtitle", user_id=1)
+post.from_markdown(
+    """
+# Heading
+
+Paragraph with **bold**, *italic*, `code`, [links](https://example.com), and footnotes.[^1]
+
+- Lists
+- Images
+
+![Alt](local-image.png "Caption")
+
+[^1]: Footnote text.
+"""
+)
+```
+
+Supported Markdown includes headings, paragraphs, bold, italic, inline code, strikethrough, links, images, linked images, image captions, code blocks, blockquotes, ordered lists, unordered lists, horizontal rules, and footnotes.
+
+When an `Api` instance is passed to `from_markdown`, local image paths are uploaded before the draft is created:
+
+```python
+post.from_markdown(markdown_content, api=api)
+```
+
+## YAML Drafts
 
 ```yaml
 title: "My Post Title"
 subtitle: "My Post Subtitle"
-audience: "everyone"  # everyone, only_paid, founding, only_free
-write_comment_permissions: "everyone"  # none, only_paid, everyone
-section: "my-section"
+audience: "everyone"
+write_comment_permissions: "everyone"
+search_engine_title: "SEO title"
+search_engine_description: "SEO description"
+slug: "my-post-title"
+tags:
+  - python
+  - substack
+markdown: |
+  # Introduction
+
+  This post body is Markdown.
+```
+
+The lower-level node format is also supported:
+
+```yaml
+title: "My Post Title"
+subtitle: "My Post Subtitle"
 body:
   0:
     type: "heading"
@@ -266,39 +297,49 @@ body:
     content: "This is a paragraph."
   2:
     type: "captionedImage"
-    src: "local_image.jpg"  # Local images will be uploaded automatically
+    src: "local_image.jpg"
 ```
 
-## MCP FastMCP server
+## MCP Server
 
-This package now includes a FastMCP server in `substack/mcp_fastmcp.py` with the following tools:
-
-- `post_draft_from_markdown(...)`: create draft from markdown, optional tag/add/prepublish/publish, and control send/share_automatically.
-- `put_draft(draft_id, update_payload)`: update draft fields.
-- `add_tags(draft_id, tags)`: add tags to a draft/post.
-- `prepublish_draft(draft_id)`: prepublish a draft.
-- `publish_draft(draft_id, send=True, share_automatically=False)`: publish a draft.
-
-Use via stdio transport:
+Install the MCP extra:
 
 ```bash
-python -c "from substack.mcp_fastmcp import main; main()"
+pip install "python-substack[mcp]"
 ```
 
-# Contributing
+Run the server over stdio:
 
-Install pre-commit:
+```bash
+substack-mcp
+```
 
-```shell
+Equivalent Python entry point:
+
+```bash
+python -c "from substack_mcp.mcp_server import main; main()"
+```
+
+Available tools:
+
+- `post_draft_from_markdown(...)`
+- `put_draft(draft_id, update_payload)`
+- `add_tags(draft_id, tags)`
+- `prepublish_draft(draft_id)`
+- `publish_draft(draft_id, send=True, share_automatically=False)`
+
+## Development
+
+```bash
 pip install pre-commit
-```
-
-Set up pre-commit
-
-```shell
 pre-commit install
+pytest
 ```
 
-## Cookie Help
+Live Substack tests are opt-in. Set `RUN_SUBSTACK_E2E=1` and configure credentials before running them.
 
-To get a cookie string, after login, go to dev tools (F12), network tab, refresh and find one of the requests like subscription/unred/subscriptions, right click and copy as fetch (Node.js), paste somewhere and get the entire cookie string assigned to the cookie header and put it in the env variables as COOKIES_STRING, et voila!
+Release changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
+## Disclaimer
+
+This project is not affiliated with Substack.

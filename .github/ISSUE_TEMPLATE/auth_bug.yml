@@ -1,0 +1,66 @@
+name: Authentication bug
+description: Report login, cookie, captcha, or publication-selection problems.
+title: "Auth: "
+labels: ["auth", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste passwords, session cookies, or full request headers.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened?
+      placeholder: The API fails when I authenticate with...
+    validations:
+      required: true
+  - type: dropdown
+    id: auth-method
+    attributes:
+      label: Auth method
+      options:
+        - EMAIL/PASSWORD
+        - COOKIES_PATH
+        - COOKIES_STRING
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: python-substack version
+      placeholder: 0.1.25
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: 3.11.15
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command or code
+      description: Paste the command or minimal code that failed, with secrets removed.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Error output
+      description: Paste the traceback or response, with secrets removed.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I removed passwords, cookies, and secrets from this issue.
+          required: true
+        - label: I tried `substack-auth-check`.
+          required: false
