@@ -20,7 +20,7 @@ if __name__ == "__main__":
         type=str,
     )
     parser.add_argument(
-        "--publish", help="Publish the draft.", action="store_false", default=False
+        "--publish", help="Publish the draft.", action="store_true", default=False
     )
     parser.add_argument(
         "--cookies",
