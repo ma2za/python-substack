@@ -60,7 +60,7 @@ plain code block without a language
 | Cell 1       | [link](https://example.com) |
 | Cell 2       | *italic*                    |
 
-A paragraph with inline math $E=mc^2$ and display-style inline $$\sum_{i=1}^n i$$ math.
+A paragraph with inline math $E=mc^2$ in it.
 
 $$
 E=mc^2

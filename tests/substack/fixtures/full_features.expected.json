@@ -686,18 +686,7 @@
       },
       {
         "type": "text",
-        "text": " and display-style inline "
-      },
-      {
-        "type": "latex",
-        "attrs": {
-          "expression": "\\sum_{i=1}^n i",
-          "persistentExpression": "\\sum_{i=1}^n i"
-        }
-      },
-      {
-        "type": "text",
-        "text": " math."
+        "text": " in it."
       }
     ]
   },

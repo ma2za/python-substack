@@ -39,7 +39,7 @@ def _make_parser() -> MarkdownIt:
     return (
         MarkdownIt("commonmark")
         .use(footnote_plugin)
-        .use(dollarmath_plugin, double_inline=True)
+        .use(dollarmath_plugin)
         .enable("strikethrough")
         .enable("table")
     )
@@ -71,7 +71,7 @@ def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[D
                 out.append(nodes.text(child.content, marks))
         elif t == "code_inline":
             out.append(nodes.text(child.content, marks + [nodes.code_mark()]))
-        elif t in ("math_inline", "math_inline_double"):
+        elif t == "math_inline":
             out.append(nodes.latex_inline(child.content.strip()))
         elif t in _MARK_FOR:
             out.extend(_render_inline(child, marks + [_MARK_FOR[t]], ctx))
