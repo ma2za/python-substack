@@ -60,6 +60,8 @@ plain code block without a language
 | Cell 1       | [link](https://example.com) |
 | Cell 2       | *italic*                    |
 
+A paragraph with inline math $E=mc^2$ and display-style inline $$\sum_{i=1}^n i$$ math.
+
 $$
 E=mc^2
 $$
@@ -83,6 +85,6 @@ An autolink to <https://example.com> becomes a link.
     a continuation line in the same paragraph.
 
     And a second paragraph after a blank line.
-
-e]: - list item one
+[^unused]: This definition is never referenced and should be dropped.
+[^listnote]: - list item one
     - list item two

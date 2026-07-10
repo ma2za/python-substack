@@ -34,6 +34,7 @@ class NodeType:
     CAPTIONED_IMAGE = "captionedImage"
     CAPTION = "caption"
     LATEX_BLOCK = "latex_block"
+    LATEX_INLINE = "latex"
     TABLE = "table"
     TABLE_ROW = "table_row"
     TABLE_HEADER = "table_header"
@@ -157,6 +158,13 @@ def latex_block(expression: str) -> Dict:
     return {
         "type": NodeType.LATEX_BLOCK,
         "attrs": {"persistentExpression": expression, "dirty": True},
+    }
+
+
+def latex_inline(expression: str) -> Dict:
+    return {
+        "type": NodeType.LATEX_INLINE,
+        "attrs": {"expression": expression, "persistentExpression": expression},
     }
 
 

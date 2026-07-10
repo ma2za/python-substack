@@ -183,6 +183,24 @@ class TestBlocks:
         assert block["attrs"]["persistentExpression"] == "E=mc^2"
         assert block["attrs"]["dirty"] is True
 
+    def test_latex_inline(self):
+        post = make_post()
+        post.from_markdown("A paragraph with $E=mc^2$ inline.")
+        para = body(post)[0]
+        assert para["type"] == "paragraph"
+        latex = [n for n in para["content"] if n["type"] == "latex"]
+        assert len(latex) == 1
+        assert latex[0]["attrs"]["expression"] == "E=mc^2"
+        assert latex[0]["attrs"]["persistentExpression"] == "E=mc^2"
+
+    def test_latex_inline_double_dollar(self):
+        post = make_post()
+        post.from_markdown("A paragraph with $$\\sum_i i$$ inline.")
+        para = body(post)[0]
+        latex = [n for n in para["content"] if n["type"] == "latex"]
+        assert len(latex) == 1
+        assert latex[0]["attrs"]["expression"] == "\\sum_i i"
+
     def test_table(self):
         post = make_post()
         post.from_markdown("| **A** | B |\n|---|---|\n| 1 | [x](https://example.com) |\n")
