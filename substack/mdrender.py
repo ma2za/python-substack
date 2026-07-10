@@ -22,6 +22,7 @@ from typing import Dict, List, Optional
 
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
+from mdit_py_plugins.dollarmath import dollarmath_plugin
 from mdit_py_plugins.footnote import footnote_plugin
 
 from substack import nodes
@@ -35,7 +36,13 @@ _MARK_FOR = {
 
 
 def _make_parser() -> MarkdownIt:
-    return MarkdownIt("commonmark").use(footnote_plugin).enable("strikethrough")
+    return (
+        MarkdownIt("commonmark")
+        .use(footnote_plugin)
+        .use(dollarmath_plugin)
+        .enable("strikethrough")
+        .enable("table")
+    )
 
 
 def _coalesce(out_nodes: List[Dict]) -> List[Dict]:
@@ -159,8 +166,30 @@ def _render_block(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     if t == "ordered_list":
         return [nodes.ordered_list(_render_list_items(node, api, ctx))]
 
+    if t == "math_block":
+        return [nodes.latex_block(node.content.strip())]
+
+    if t == "table":
+        return [_render_table(node, None, ctx)]
+
     # footnote_block is handled separately in markdown_to_doc; ignore it here.
     return []
+
+
+def _render_table(node: SyntaxTreeNode, _api, ctx: Dict) -> Dict:
+    rows = []
+    for section in node.children:  # thead, tbody
+        for tr in section.children:
+            cells = []
+            for cell in tr.children:  # th or td
+                inline = cell.children[0] if cell.children else None
+                content = _render_inline(inline, [], ctx) if inline else []
+                if cell.type == "th":
+                    cells.append(nodes.table_header([nodes.paragraph(content)]))
+                else:
+                    cells.append(nodes.table_cell([nodes.paragraph(content)]))
+            rows.append(nodes.table_row(cells))
+    return nodes.table(rows)
 
 
 def _render_list_items(list_node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:

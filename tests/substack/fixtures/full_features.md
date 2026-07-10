@@ -55,6 +55,15 @@ plain code block without a language
 
 ---
 
+| **Header A** | Header B                    |
+|:-------------|:----------------------------|
+| Cell 1       | [link](https://example.com) |
+| Cell 2       | *italic*                    |
+
+$$
+E=mc^2
+$$
+
 ![A captioned image](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)
 
 [![Linked image alt](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)](https://example.com/target)
@@ -74,6 +83,6 @@ An autolink to <https://example.com> becomes a link.
     a continuation line in the same paragraph.
 
     And a second paragraph after a blank line.
-[^unused]: This definition is never referenced and should be dropped.
-[^listnote]: - list item one
+
+e]: - list item one
     - list item two

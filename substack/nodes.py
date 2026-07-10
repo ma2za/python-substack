@@ -33,6 +33,11 @@ class NodeType:
     FOOTNOTE_ANCHOR = "footnoteAnchor"
     CAPTIONED_IMAGE = "captionedImage"
     CAPTION = "caption"
+    LATEX_BLOCK = "latex_block"
+    TABLE = "table"
+    TABLE_ROW = "table_row"
+    TABLE_HEADER = "table_header"
+    TABLE_CELL = "table_cell"
 
 
 class MarkType:
@@ -146,3 +151,26 @@ def footnote(number: int, paragraphs: List[Dict]) -> Dict:
         "attrs": {"number": number},
         "content": paragraphs or [paragraph()],
     }
+
+
+def latex_block(expression: str) -> Dict:
+    return {
+        "type": NodeType.LATEX_BLOCK,
+        "attrs": {"persistentExpression": expression, "dirty": True},
+    }
+
+
+def table(rows: List[Dict]) -> Dict:
+    return {"type": NodeType.TABLE, "content": rows}
+
+
+def table_row(cells: List[Dict]) -> Dict:
+    return {"type": NodeType.TABLE_ROW, "content": cells}
+
+
+def table_header(content: List[Dict]) -> Dict:
+    return {"type": NodeType.TABLE_HEADER, "content": content}
+
+
+def table_cell(content: List[Dict]) -> Dict:
+    return {"type": NodeType.TABLE_CELL, "content": content}

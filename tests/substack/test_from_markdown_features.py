@@ -174,3 +174,44 @@ class TestBlocks:
         attrs = block["content"][0]["attrs"]
         assert attrs["src"] == "https://i/x.png"
         assert attrs["href"] == "https://link"
+
+    def test_latex_block(self):
+        post = make_post()
+        post.from_markdown("$$\nE=mc^2\n$$\n")
+        block = body(post)[0]
+        assert block["type"] == "latex_block"
+        assert block["attrs"]["persistentExpression"] == "E=mc^2"
+        assert block["attrs"]["dirty"] is True
+
+    def test_table(self):
+        post = make_post()
+        post.from_markdown("| **A** | B |\n|---|---|\n| 1 | [x](https://example.com) |\n")
+        block = body(post)[0]
+        assert block["type"] == "table"
+        rows = block["content"]
+        assert len(rows) == 2
+
+        header_row = rows[0]
+        assert header_row["type"] == "table_row"
+        assert header_row["content"][0]["type"] == "table_header"
+        assert header_row["content"][1]["type"] == "table_header"
+        # header cell content is a paragraph with inline nodes
+        bold = header_row["content"][0]["content"][0]["content"][0]
+        assert bold["text"] == "A"
+        assert bold["marks"] == [{"type": "strong"}]
+
+        data_row = rows[1]
+        assert data_row["type"] == "table_row"
+        assert data_row["content"][0]["type"] == "table_cell"
+        assert data_row["content"][1]["type"] == "table_cell"
+        link_text = data_row["content"][1]["content"][0]["content"][0]
+        assert link_text["text"] == "x"
+        assert link_text["marks"][0]["attrs"]["href"] == "https://example.com"
+
+    def test_table_single_row(self):
+        post = make_post()
+        post.from_markdown("| A |\n|---|\n")
+        block = body(post)[0]
+        assert block["type"] == "table"
+        assert len(block["content"]) == 1
+        assert block["content"][0]["content"][0]["type"] == "table_header"
