@@ -193,35 +193,50 @@ class TestBlocks:
         assert latex[0]["attrs"]["expression"] == "E=mc^2"
         assert latex[0]["attrs"]["persistentExpression"] == "E=mc^2"
 
-    def test_table(self):
+    def test_superscript(self):
         post = make_post()
-        post.from_markdown("| **A** | B |\n|---|---|\n| 1 | [x](https://example.com) |\n")
-        block = body(post)[0]
-        assert block["type"] == "table"
-        rows = block["content"]
-        assert len(rows) == 2
+        post.from_markdown("E=mc^2^ here.")
+        para = body(post)[0]
+        sup = [n for n in para["content"] if n.get("marks")]
+        assert sup[0]["text"] == "2"
+        assert sup[0]["marks"] == [{"type": "superscript"}]
 
-        header_row = rows[0]
-        assert header_row["type"] == "table_row"
-        assert header_row["content"][0]["type"] == "table_header"
-        assert header_row["content"][1]["type"] == "table_header"
-        # header cell content is a paragraph with inline nodes
-        bold = header_row["content"][0]["content"][0]["content"][0]
-        assert bold["text"] == "A"
-        assert bold["marks"] == [{"type": "strong"}]
-
-        data_row = rows[1]
-        assert data_row["type"] == "table_row"
-        assert data_row["content"][0]["type"] == "table_cell"
-        assert data_row["content"][1]["type"] == "table_cell"
-        link_text = data_row["content"][1]["content"][0]["content"][0]
-        assert link_text["text"] == "x"
-        assert link_text["marks"][0]["attrs"]["href"] == "https://example.com"
-
-    def test_table_single_row(self):
+    def test_subscript(self):
         post = make_post()
-        post.from_markdown("| A |\n|---|\n")
+        post.from_markdown("H~2~O here.")
+        para = body(post)[0]
+        sub = [n for n in para["content"] if n.get("marks")]
+        assert sub[0]["text"] == "2"
+        assert sub[0]["marks"] == [{"type": "subscript"}]
+
+    def test_subscript_does_not_clash_with_strikethrough(self):
+        post = make_post()
+        post.from_markdown("~~struck~~ and H~2~O")
+        para = body(post)[0]
+        marks = {
+            m["type"]
+            for n in para["content"]
+            for m in n.get("marks", [])
+        }
+        assert marks == {"strikethrough", "subscript"}
+
+    def test_pullquote(self):
+        post = make_post()
+        post.from_markdown(":::pullquote\nA **bold** quote.\n:::\n")
         block = body(post)[0]
-        assert block["type"] == "table"
-        assert len(block["content"]) == 1
-        assert block["content"][0]["content"][0]["type"] == "table_header"
+        assert block["type"] == "pullquote"
+        assert block["attrs"] == {"align": None, "color": None}
+        para = block["content"][0]
+        assert para["type"] == "paragraph"
+        assert para["content"][1]["text"] == "bold"
+        assert para["content"][1]["marks"] == [{"type": "strong"}]
+
+    def test_callout(self):
+        post = make_post()
+        post.from_markdown(":::callout\nA callout with a [link](https://example.com).\n:::\n")
+        block = body(post)[0]
+        assert block["type"] == "calloutBlock"
+        para = block["content"][0]
+        assert para["type"] == "paragraph"
+        link = [n for n in para["content"] if n.get("marks")][0]
+        assert link["marks"][0]["attrs"]["href"] == "https://example.com"

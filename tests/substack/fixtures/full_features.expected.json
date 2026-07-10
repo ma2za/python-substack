@@ -549,128 +549,6 @@
     "type": "horizontal_rule"
   },
   {
-    "type": "table",
-    "content": [
-      {
-        "type": "table_row",
-        "content": [
-          {
-            "type": "table_header",
-            "content": [
-              {
-                "type": "paragraph",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Header A",
-                    "marks": [
-                      {
-                        "type": "strong"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "table_header",
-            "content": [
-              {
-                "type": "paragraph",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Header B"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "table_row",
-        "content": [
-          {
-            "type": "table_cell",
-            "content": [
-              {
-                "type": "paragraph",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Cell 1"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "table_cell",
-            "content": [
-              {
-                "type": "paragraph",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "link",
-                    "marks": [
-                      {
-                        "type": "link",
-                        "attrs": {
-                          "href": "https://example.com"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "table_row",
-        "content": [
-          {
-            "type": "table_cell",
-            "content": [
-              {
-                "type": "paragraph",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "Cell 2"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "table_cell",
-            "content": [
-              {
-                "type": "paragraph",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "italic",
-                    "marks": [
-                      {
-                        "type": "em"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
     "type": "paragraph",
     "content": [
       {
@@ -686,7 +564,33 @@
       },
       {
         "type": "text",
-        "text": " in it."
+        "text": ", H"
+      },
+      {
+        "type": "text",
+        "text": "2",
+        "marks": [
+          {
+            "type": "subscript"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": "O subscript, and x"
+      },
+      {
+        "type": "text",
+        "text": "2",
+        "marks": [
+          {
+            "type": "superscript"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": " superscript."
       }
     ]
   },
@@ -696,6 +600,67 @@
       "persistentExpression": "E=mc^2",
       "dirty": true
     }
+  },
+  {
+    "type": "pullquote",
+    "attrs": {
+      "align": null,
+      "color": null
+    },
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "A pull quote with "
+          },
+          {
+            "type": "text",
+            "text": "bold",
+            "marks": [
+              {
+                "type": "strong"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "text": " text."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "calloutBlock",
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "A callout block with a "
+          },
+          {
+            "type": "text",
+            "text": "link",
+            "marks": [
+              {
+                "type": "link",
+                "attrs": {
+                  "href": "https://example.com"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "text": "."
+          }
+        ]
+      }
+    ]
   },
   {
     "type": "captionedImage",

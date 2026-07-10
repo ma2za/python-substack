@@ -22,8 +22,11 @@ from typing import Dict, List, Optional
 
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
+from mdit_py_plugins.container import container_plugin
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 from mdit_py_plugins.footnote import footnote_plugin
+from mdit_py_plugins.subscript import sub_plugin
+from mdit_py_plugins.superscript import superscript_plugin
 
 from substack import nodes
 from substack.nodes import MarkType, NodeType
@@ -32,6 +35,8 @@ _MARK_FOR = {
     "strong": {"type": MarkType.STRONG},
     "em": {"type": MarkType.EM},
     "s": {"type": MarkType.STRIKETHROUGH},
+    "sup": {"type": MarkType.SUPERSCRIPT},
+    "sub": {"type": MarkType.SUBSCRIPT},
 }
 
 
@@ -40,8 +45,11 @@ def _make_parser() -> MarkdownIt:
         MarkdownIt("commonmark")
         .use(footnote_plugin)
         .use(dollarmath_plugin)
+        .use(sub_plugin)
+        .use(superscript_plugin)
+        .use(container_plugin, name="pullquote")
+        .use(container_plugin, name="callout")
         .enable("strikethrough")
-        .enable("table")
     )
 
 
@@ -171,27 +179,21 @@ def _render_block(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     if t == "math_block":
         return [nodes.latex_block(node.content.strip())]
 
-    if t == "table":
-        return [_render_table(node, None, ctx)]
+    if t == "container_pullquote":
+        return [nodes.pullquote(_render_container_body(node, api, ctx))]
+
+    if t == "container_callout":
+        return [nodes.callout_block(_render_container_body(node, api, ctx))]
 
     # footnote_block is handled separately in markdown_to_doc; ignore it here.
     return []
 
 
-def _render_table(node: SyntaxTreeNode, _api, ctx: Dict) -> Dict:
-    rows = []
-    for section in node.children:  # thead, tbody
-        for tr in section.children:
-            cells = []
-            for cell in tr.children:  # th or td
-                inline = cell.children[0] if cell.children else None
-                content = _render_inline(inline, [], ctx) if inline else []
-                if cell.type == "th":
-                    cells.append(nodes.table_header([nodes.paragraph(content)]))
-                else:
-                    cells.append(nodes.table_cell([nodes.paragraph(content)]))
-            rows.append(nodes.table_row(cells))
-    return nodes.table(rows)
+def _render_container_body(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
+    body: List[Dict] = []
+    for child in node.children:
+        body.extend(_render_block(child, api, ctx))
+    return body
 
 
 def _render_list_items(list_node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:

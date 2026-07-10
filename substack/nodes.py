@@ -35,10 +35,8 @@ class NodeType:
     CAPTION = "caption"
     LATEX_BLOCK = "latex_block"
     LATEX_INLINE = "latex"
-    TABLE = "table"
-    TABLE_ROW = "table_row"
-    TABLE_HEADER = "table_header"
-    TABLE_CELL = "table_cell"
+    PULLQUOTE = "pullquote"
+    CALLOUT_BLOCK = "calloutBlock"
 
 
 class MarkType:
@@ -46,6 +44,8 @@ class MarkType:
     EM = "em"
     CODE = "code"
     STRIKETHROUGH = "strikethrough"
+    SUPERSCRIPT = "superscript"
+    SUBSCRIPT = "subscript"
     LINK = "link"
 
 
@@ -168,17 +168,16 @@ def latex_inline(expression: str) -> Dict:
     }
 
 
-def table(rows: List[Dict]) -> Dict:
-    return {"type": NodeType.TABLE, "content": rows}
+def pullquote(paragraphs: List[Dict]) -> Dict:
+    return {
+        "type": NodeType.PULLQUOTE,
+        "attrs": {"align": None, "color": None},
+        "content": paragraphs or [paragraph()],
+    }
 
 
-def table_row(cells: List[Dict]) -> Dict:
-    return {"type": NodeType.TABLE_ROW, "content": cells}
-
-
-def table_header(content: List[Dict]) -> Dict:
-    return {"type": NodeType.TABLE_HEADER, "content": content}
-
-
-def table_cell(content: List[Dict]) -> Dict:
-    return {"type": NodeType.TABLE_CELL, "content": content}
+def callout_block(paragraphs: List[Dict]) -> Dict:
+    return {
+        "type": NodeType.CALLOUT_BLOCK,
+        "content": paragraphs or [paragraph()],
+    }
