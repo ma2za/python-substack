@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.1.25"
-description = "A Python wrapper around the Substack API."
+version = "0.1.26"
+description = "A Python SDK and CLI for managing Substack publications and drafts."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
 packages = [
@@ -14,7 +14,7 @@ readme = "README.md"
 repository = "https://github.com/ma2za/python-substack"
 homepage = "https://github.com/ma2za/python-substack"
 
-keywords = ["substack"]
+keywords = ["substack", "substack-api", "cli", "newsletter", "publishing", "automation", "mcp"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -48,6 +48,7 @@ mcp = ["fastmcp"]
 [tool.poetry.group.dev.dependencies]
 
 [tool.poetry.scripts]
+substack = "substack.cli:main"
 substack-auth-check = "substack.cli:auth_check"
 substack-publish-markdown = "substack.cli:publish_markdown"
 substack-publish-yaml = "substack.cli:publish_yaml"
