@@ -44,7 +44,10 @@ def _make_parser() -> MarkdownIt:
     return (
         MarkdownIt("commonmark")
         .use(footnote_plugin)
-        .use(dollarmath_plugin)
+        # Pandoc-style delimiters: no whitespace just inside the dollars and no
+        # digit just outside them, so paired currency amounts ("$5 ... $10")
+        # stay plain text instead of becoming math.
+        .use(dollarmath_plugin, allow_space=False, allow_digits=False)
         .use(sub_plugin)
         .use(superscript_plugin)
         .use(container_plugin, name="pullquote")
@@ -176,7 +179,9 @@ def _render_block(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     if t == "ordered_list":
         return [nodes.ordered_list(_render_list_items(node, api, ctx))]
 
-    if t == "math_block":
+    # "$$...$$ (label)" tokenizes as math_block_label; Substack has no equation
+    # labels, so it renders like an unlabeled block.
+    if t in ("math_block", "math_block_label"):
         return [nodes.latex_block(node.content.strip())]
 
     if t == "container_pullquote":

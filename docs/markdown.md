@@ -135,6 +135,12 @@ $$
 $$
 ```
 
+Delimiters follow Pandoc's rules: the opening `$` must not be followed by
+whitespace, and the closing `$` must not be preceded by whitespace or followed
+by a digit. Ordinary dollar amounts (`$5 million to $10 million`) therefore
+stay plain text. A label after a block (`$$ ... $$ (label)`) is accepted but
+discarded, since Substack has no equation labels.
+
 ## Pull quotes and callouts
 
 These use fenced-container syntax (`:::`), since they have no native Markdown

@@ -183,6 +183,13 @@ class TestBlocks:
         assert block["attrs"]["persistentExpression"] == "E=mc^2"
         assert block["attrs"]["dirty"] is True
 
+    def test_labeled_latex_block_is_preserved(self):
+        post = make_post()
+        post.from_markdown("$$\nE=mc^2\n$$ (mass-energy)\n\nAfter the equation.")
+        blocks = body(post)
+        assert [block["type"] for block in blocks] == ["latex_block", "paragraph"]
+        assert blocks[0]["attrs"]["persistentExpression"] == "E=mc^2"
+
     def test_latex_inline(self):
         post = make_post()
         post.from_markdown("A paragraph with $E=mc^2$ inline.")
@@ -192,6 +199,14 @@ class TestBlocks:
         assert len(latex) == 1
         assert latex[0]["attrs"]["expression"] == "E=mc^2"
         assert latex[0]["attrs"]["persistentExpression"] == "E=mc^2"
+
+    def test_currency_dollar_signs_are_not_parsed_as_latex(self):
+        post = make_post()
+        markdown = "Revenue grew from $5 million to $10 million this year."
+        post.from_markdown(markdown)
+        paragraph = body(post)[0]
+        assert [node["type"] for node in paragraph["content"]] == ["text"]
+        assert paragraph["content"][0]["text"] == markdown
 
     def test_superscript(self):
         post = make_post()
