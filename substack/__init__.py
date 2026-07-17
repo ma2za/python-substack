@@ -3,9 +3,9 @@
 __author__ = "Paolo Mazza"
 __email__ = "mazzapaolo2019@gmail.com"
 __license__ = "MIT License"
-__version__ = "0.1.25"
+__version__ = "0.1.26"
 __url__ = "https://github.com/ma2za/python-substack"
 __download_url__ = "https://pypi.python.org/pypi/python-substack"
-__description__ = "A Python wrapper around the Substack API"
+__description__ = "A Python SDK and CLI for managing Substack publications and drafts"
 
 from .api import Api
