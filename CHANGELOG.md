@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.26
+
+### Added
+
+- Unified `substack` CLI for publication status and draft operations.
+- Commands to list publications, inspect drafts, schedule, unschedule, publish, and delete.
+- Stable `--json` output for automation and `--publication-url` overrides.
+- Interactive confirmation and non-interactive `--yes` protection for publishing and deletion.
+- Pull-request CI across Python 3.10 through 3.14.
+
+### Improved
+
+- Clear CLI error output, exit codes, timezone validation, and secret redaction.
+- Package positioning, keywords, operational examples, and release validation.
+- PyPI publishing now uploads the exact tested wheel and source distribution.
+
 ## 0.1.25
 
 ### Added

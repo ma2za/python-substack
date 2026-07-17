@@ -29,7 +29,7 @@ body:
     id: version
     attributes:
       label: python-substack version
-      placeholder: 0.1.25
+      placeholder: 0.1.26
     validations:
       required: true
   - type: input
