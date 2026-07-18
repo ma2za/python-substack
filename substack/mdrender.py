@@ -22,7 +22,11 @@ from typing import Dict, List, Optional
 
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
+from mdit_py_plugins.container import container_plugin
+from mdit_py_plugins.dollarmath import dollarmath_plugin
 from mdit_py_plugins.footnote import footnote_plugin
+from mdit_py_plugins.subscript import sub_plugin
+from mdit_py_plugins.superscript import superscript_plugin
 
 from substack import nodes
 from substack.nodes import MarkType, NodeType
@@ -31,11 +35,25 @@ _MARK_FOR = {
     "strong": {"type": MarkType.STRONG},
     "em": {"type": MarkType.EM},
     "s": {"type": MarkType.STRIKETHROUGH},
+    "sup": {"type": MarkType.SUPERSCRIPT},
+    "sub": {"type": MarkType.SUBSCRIPT},
 }
 
 
 def _make_parser() -> MarkdownIt:
-    return MarkdownIt("commonmark").use(footnote_plugin).enable("strikethrough")
+    return (
+        MarkdownIt("commonmark")
+        .use(footnote_plugin)
+        # Pandoc-style delimiters: no whitespace just inside the dollars and no
+        # digit just outside them, so paired currency amounts ("$5 ... $10")
+        # stay plain text instead of becoming math.
+        .use(dollarmath_plugin, allow_space=False, allow_digits=False)
+        .use(sub_plugin)
+        .use(superscript_plugin)
+        .use(container_plugin, name="pullquote")
+        .use(container_plugin, name="callout")
+        .enable("strikethrough")
+    )
 
 
 def _coalesce(out_nodes: List[Dict]) -> List[Dict]:
@@ -64,6 +82,8 @@ def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[D
                 out.append(nodes.text(child.content, marks))
         elif t == "code_inline":
             out.append(nodes.text(child.content, marks + [nodes.code_mark()]))
+        elif t == "math_inline":
+            out.append(nodes.latex_inline(child.content.strip()))
         elif t in _MARK_FOR:
             out.extend(_render_inline(child, marks + [_MARK_FOR[t]], ctx))
         elif t == "link":
@@ -159,8 +179,26 @@ def _render_block(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     if t == "ordered_list":
         return [nodes.ordered_list(_render_list_items(node, api, ctx))]
 
+    # "$$...$$ (label)" tokenizes as math_block_label; Substack has no equation
+    # labels, so it renders like an unlabeled block.
+    if t in ("math_block", "math_block_label"):
+        return [nodes.latex_block(node.content.strip())]
+
+    if t == "container_pullquote":
+        return [nodes.pullquote(_render_container_body(node, api, ctx))]
+
+    if t == "container_callout":
+        return [nodes.callout_block(_render_container_body(node, api, ctx))]
+
     # footnote_block is handled separately in markdown_to_doc; ignore it here.
     return []
+
+
+def _render_container_body(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
+    body: List[Dict] = []
+    for child in node.children:
+        body.extend(_render_block(child, api, ctx))
+    return body
 
 
 def _render_list_items(list_node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:

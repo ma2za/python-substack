@@ -305,7 +305,7 @@ Paragraph with **bold**, *italic*, `code`, [links](https://example.com), and foo
 )
 ```
 
-Supported Markdown includes headings, paragraphs, bold, italic, inline code, strikethrough, links, images, linked images, image captions, code blocks, blockquotes, ordered lists, unordered lists, horizontal rules, and footnotes.
+Supported Markdown includes headings, paragraphs, bold, italic, inline code, strikethrough, superscript, subscript, links, images, linked images, image captions, code blocks, blockquotes, ordered lists, unordered lists, horizontal rules, footnotes, LaTeX math, pull quotes, and callouts. See [docs/markdown.md](docs/markdown.md) for the full reference with examples.
 
 When an `Api` instance is passed to `from_markdown`, local image paths are uploaded before the draft is created:
 
