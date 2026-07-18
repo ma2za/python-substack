@@ -549,6 +549,120 @@
     "type": "horizontal_rule"
   },
   {
+    "type": "paragraph",
+    "content": [
+      {
+        "type": "text",
+        "text": "A paragraph with inline math "
+      },
+      {
+        "type": "latex",
+        "attrs": {
+          "expression": "E=mc^2",
+          "persistentExpression": "E=mc^2"
+        }
+      },
+      {
+        "type": "text",
+        "text": ", H"
+      },
+      {
+        "type": "text",
+        "text": "2",
+        "marks": [
+          {
+            "type": "subscript"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": "O subscript, and x"
+      },
+      {
+        "type": "text",
+        "text": "2",
+        "marks": [
+          {
+            "type": "superscript"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": " superscript."
+      }
+    ]
+  },
+  {
+    "type": "latex_block",
+    "attrs": {
+      "persistentExpression": "E=mc^2",
+      "dirty": true
+    }
+  },
+  {
+    "type": "pullquote",
+    "attrs": {
+      "align": null,
+      "color": null
+    },
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "A pull quote with "
+          },
+          {
+            "type": "text",
+            "text": "bold",
+            "marks": [
+              {
+                "type": "strong"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "text": " text."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "calloutBlock",
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "A callout block with a "
+          },
+          {
+            "type": "text",
+            "text": "link",
+            "marks": [
+              {
+                "type": "link",
+                "attrs": {
+                  "href": "https://example.com"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "text": "."
+          }
+        ]
+      }
+    ]
+  },
+  {
     "type": "captionedImage",
     "content": [
       {

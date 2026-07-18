@@ -33,6 +33,10 @@ class NodeType:
     FOOTNOTE_ANCHOR = "footnoteAnchor"
     CAPTIONED_IMAGE = "captionedImage"
     CAPTION = "caption"
+    LATEX_BLOCK = "latex_block"
+    LATEX_INLINE = "latex"
+    PULLQUOTE = "pullquote"
+    CALLOUT_BLOCK = "calloutBlock"
 
 
 class MarkType:
@@ -40,6 +44,8 @@ class MarkType:
     EM = "em"
     CODE = "code"
     STRIKETHROUGH = "strikethrough"
+    SUPERSCRIPT = "superscript"
+    SUBSCRIPT = "subscript"
     LINK = "link"
 
 
@@ -144,5 +150,34 @@ def footnote(number: int, paragraphs: List[Dict]) -> Dict:
     return {
         "type": NodeType.FOOTNOTE,
         "attrs": {"number": number},
+        "content": paragraphs or [paragraph()],
+    }
+
+
+def latex_block(expression: str) -> Dict:
+    return {
+        "type": NodeType.LATEX_BLOCK,
+        "attrs": {"persistentExpression": expression, "dirty": True},
+    }
+
+
+def latex_inline(expression: str) -> Dict:
+    return {
+        "type": NodeType.LATEX_INLINE,
+        "attrs": {"expression": expression, "persistentExpression": expression},
+    }
+
+
+def pullquote(paragraphs: List[Dict]) -> Dict:
+    return {
+        "type": NodeType.PULLQUOTE,
+        "attrs": {"align": None, "color": None},
+        "content": paragraphs or [paragraph()],
+    }
+
+
+def callout_block(paragraphs: List[Dict]) -> Dict:
+    return {
+        "type": NodeType.CALLOUT_BLOCK,
         "content": paragraphs or [paragraph()],
     }
