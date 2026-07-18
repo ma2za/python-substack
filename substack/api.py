@@ -346,7 +346,10 @@ class Api:
             f"{self.publication_url}/publication_launch_checklist"
         )
 
-        return Api._handle_response(response=response)["subscriberCount"]
+        data = Api._handle_response(response=response)
+        if "subscriberCount" in data:
+            return data["subscriberCount"]
+        return len(data["subscribers"])
 
     def get_published_posts(
         self, offset=0, limit=25, order_by="post_date", order_direction="desc"
