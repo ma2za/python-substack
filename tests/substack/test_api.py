@@ -40,6 +40,26 @@ class ApiTest(unittest.TestCase):
             with patch("requests.Session.post", return_value=response):
                 Api(email="", password="")
 
+    def test_get_publication_subscriber_count_from_legacy_response(self):
+        api = Api.__new__(Api)
+        api.publication_url = "https://writer.substack.com/api/v1"
+        api._session = Mock()
+        response = Mock(status_code=200)
+        response.json.return_value = {"subscriberCount": 123}
+        api._session.get.return_value = response
+
+        self.assertEqual(api.get_publication_subscriber_count(), 123)
+
+    def test_get_publication_subscriber_count_from_subscribers(self):
+        api = Api.__new__(Api)
+        api.publication_url = "https://writer.substack.com/api/v1"
+        api._session = Mock()
+        response = Mock(status_code=200)
+        response.json.return_value = {"subscribers": [{"id": 1}, {"id": 2}]}
+        api._session.get.return_value = response
+
+        self.assertEqual(api.get_publication_subscriber_count(), 2)
+
     @_e2e
     def test_get_posts(self):
         api = _api_from_env()
