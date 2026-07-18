@@ -55,6 +55,20 @@ plain code block without a language
 
 ---
 
+A paragraph with inline math $E=mc^2$, H~2~O subscript, and x^2^ superscript.
+
+$$
+E=mc^2
+$$
+
+:::pullquote
+A pull quote with **bold** text.
+:::
+
+:::callout
+A callout block with a [link](https://example.com).
+:::
+
 ![A captioned image](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)
 
 [![Linked image alt](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)](https://example.com/target)

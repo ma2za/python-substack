@@ -1061,23 +1061,23 @@ ws = ["websockets (>=15.0.1)"]
 
 [[package]]
 name = "mdit-py-plugins"
-version = "0.4.2"
+version = "0.6.1"
 description = "Collection of plugins for markdown-it-py"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mdit_py_plugins-0.4.2-py3-none-any.whl", hash = "sha256:0c673c3f889399a33b95e88d2f0d111b4447bdfea7f237dab2d488f459835636"},
-    {file = "mdit_py_plugins-0.4.2.tar.gz", hash = "sha256:5f2cd1fdb606ddf152d37ec30e46101a60512bc0e5fa1a7002c36647b09e26b5"},
+    {file = "mdit_py_plugins-0.6.1-py3-none-any.whl", hash = "sha256:214c82fb2ac524472ab6a5bcab1de80f73b50443e187f401bfd77efbc7c6481d"},
+    {file = "mdit_py_plugins-0.6.1.tar.gz", hash = "sha256:a2bca0f039f39dbd35fb74ae1b5f998608c437463371f0ff7f49a19a17a114d0"},
 ]
 
 [package.dependencies]
-markdown-it-py = ">=1.0.0,<4.0.0"
+markdown-it-py = ">=2.0.0,<5.0.0"
 
 [package.extras]
 code-style = ["pre-commit"]
 rtd = ["myst-parser", "sphinx-book-theme"]
-testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
+testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions", "pytest-timeout"]
 
 [[package]]
 name = "mdurl"
@@ -2290,4 +2290,4 @@ mcp = ["fastmcp"]
 [metadata]
 lock-version = "2.1"
 python-versions = "<4.0,>=3.10"
-content-hash = "dc6eed4bd86907d6daf1c8f82f59d1f02a34ce4f08d09b40d2943a82bdd0d3ae"
+content-hash = "5060b1c1d084c9538b2aca2084081085c532b022ec97cbb1582dfc6b193a9e22"

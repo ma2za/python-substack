@@ -174,3 +174,84 @@ class TestBlocks:
         attrs = block["content"][0]["attrs"]
         assert attrs["src"] == "https://i/x.png"
         assert attrs["href"] == "https://link"
+
+    def test_latex_block(self):
+        post = make_post()
+        post.from_markdown("$$\nE=mc^2\n$$\n")
+        block = body(post)[0]
+        assert block["type"] == "latex_block"
+        assert block["attrs"]["persistentExpression"] == "E=mc^2"
+        assert block["attrs"]["dirty"] is True
+
+    def test_labeled_latex_block_is_preserved(self):
+        post = make_post()
+        post.from_markdown("$$\nE=mc^2\n$$ (mass-energy)\n\nAfter the equation.")
+        blocks = body(post)
+        assert [block["type"] for block in blocks] == ["latex_block", "paragraph"]
+        assert blocks[0]["attrs"]["persistentExpression"] == "E=mc^2"
+
+    def test_latex_inline(self):
+        post = make_post()
+        post.from_markdown("A paragraph with $E=mc^2$ inline.")
+        para = body(post)[0]
+        assert para["type"] == "paragraph"
+        latex = [n for n in para["content"] if n["type"] == "latex"]
+        assert len(latex) == 1
+        assert latex[0]["attrs"]["expression"] == "E=mc^2"
+        assert latex[0]["attrs"]["persistentExpression"] == "E=mc^2"
+
+    def test_currency_dollar_signs_are_not_parsed_as_latex(self):
+        post = make_post()
+        markdown = "Revenue grew from $5 million to $10 million this year."
+        post.from_markdown(markdown)
+        paragraph = body(post)[0]
+        assert [node["type"] for node in paragraph["content"]] == ["text"]
+        assert paragraph["content"][0]["text"] == markdown
+
+    def test_superscript(self):
+        post = make_post()
+        post.from_markdown("E=mc^2^ here.")
+        para = body(post)[0]
+        sup = [n for n in para["content"] if n.get("marks")]
+        assert sup[0]["text"] == "2"
+        assert sup[0]["marks"] == [{"type": "superscript"}]
+
+    def test_subscript(self):
+        post = make_post()
+        post.from_markdown("H~2~O here.")
+        para = body(post)[0]
+        sub = [n for n in para["content"] if n.get("marks")]
+        assert sub[0]["text"] == "2"
+        assert sub[0]["marks"] == [{"type": "subscript"}]
+
+    def test_subscript_does_not_clash_with_strikethrough(self):
+        post = make_post()
+        post.from_markdown("~~struck~~ and H~2~O")
+        para = body(post)[0]
+        marks = {
+            m["type"]
+            for n in para["content"]
+            for m in n.get("marks", [])
+        }
+        assert marks == {"strikethrough", "subscript"}
+
+    def test_pullquote(self):
+        post = make_post()
+        post.from_markdown(":::pullquote\nA **bold** quote.\n:::\n")
+        block = body(post)[0]
+        assert block["type"] == "pullquote"
+        assert block["attrs"] == {"align": None, "color": None}
+        para = block["content"][0]
+        assert para["type"] == "paragraph"
+        assert para["content"][1]["text"] == "bold"
+        assert para["content"][1]["marks"] == [{"type": "strong"}]
+
+    def test_callout(self):
+        post = make_post()
+        post.from_markdown(":::callout\nA callout with a [link](https://example.com).\n:::\n")
+        block = body(post)[0]
+        assert block["type"] == "calloutBlock"
+        para = block["content"][0]
+        assert para["type"] == "paragraph"
+        link = [n for n in para["content"] if n.get("marks")][0]
+        assert link["marks"][0]["attrs"]["href"] == "https://example.com"
