@@ -1,12 +1,19 @@
 # Python Substack
 
-Unofficial Python tools for publishing to [Substack](https://substack.com/).
+An unofficial Python SDK and CLI for managing [Substack](https://substack.com/) publications and drafts.
 
+[![PyPI](https://img.shields.io/pypi/v/python-substack)](https://pypi.org/project/python-substack/)
+[![Python](https://img.shields.io/pypi/pyversions/python-substack)](https://pypi.org/project/python-substack/)
+[![Tests](https://github.com/ma2za/python-substack/actions/workflows/ci.yml/badge.svg)](https://github.com/ma2za/python-substack/actions/workflows/ci.yml)
+[![Release](https://github.com/ma2za/python-substack/actions/workflows/ci_publish.yml/badge.svg)](https://github.com/ma2za/python-substack/actions/workflows/ci_publish.yml)
+[![License](https://img.shields.io/pypi/l/python-substack)](LICENSE)
 [![Downloads](https://static.pepy.tech/badge/python-substack/month)](https://pepy.tech/project/python-substack)
-![Release Build](https://github.com/ma2za/python-substack/actions/workflows/ci_publish.yml/badge.svg)
 
 ## Features
 
+- Inspect authentication and publication status from the terminal.
+- List publications and inspect, schedule, publish, or delete drafts.
+- Use stable JSON output in scripts and automation.
 - Create drafts and publish posts from Python.
 - Convert Markdown into Substack's editor document format.
 - Upload local images while rendering Markdown.
@@ -43,6 +50,49 @@ Use either `EMAIL` and `PASSWORD`, or cookie-based authentication with `COOKIES_
 
 Newer Substack accounts may only have magic-link sign-in enabled. To set a password, sign out of Substack, choose "Sign in with password", then choose "Set a new password".
 
+## CLI Operations
+
+Check authentication, the selected publication, and subscriber count:
+
+```bash
+substack status
+```
+
+List available publications or target one without changing `.env`:
+
+```bash
+substack publications list
+substack --publication-url https://example.substack.com drafts list
+```
+
+List and inspect drafts:
+
+```bash
+substack drafts list --limit 10
+substack drafts get 12345
+```
+
+Schedule with a timezone-aware ISO 8601 timestamp, or remove a schedule:
+
+```bash
+substack drafts schedule 12345 --at 2026-08-01T09:00:00+03:00
+substack drafts unschedule 12345
+```
+
+Publishing and deletion prompt for confirmation. Use `--yes` for intentional non-interactive execution:
+
+```bash
+substack drafts publish 12345 --no-send
+substack drafts delete 12345 --yes
+```
+
+Global options must appear before the command. `--json` returns stable envelopes containing the raw Substack responses:
+
+```bash
+substack --json drafts list
+substack --cookies cookies.json --json status
+```
+
 ## Quickstart
 
 ```python
@@ -78,7 +128,7 @@ print(result["draft"]["id"])
 
 `create_draft_from_markdown` creates a draft by default. It only publishes when `publish=True` is passed.
 
-## CLI
+## Content Publishing CLI
 
 Check authentication without creating a draft:
 
@@ -337,6 +387,8 @@ pytest
 ```
 
 Live Substack tests are opt-in. Set `RUN_SUBSTACK_E2E=1` and configure credentials before running them.
+
+The CLI operations smoke test is separately opt-in. Set `RUN_SUBSTACK_CLI_E2E=1` to create, schedule, unschedule, inspect, and delete a disposable draft. It never publishes the draft.
 
 Release changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
