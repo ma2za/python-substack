@@ -2,6 +2,7 @@ import json
 from unittest.mock import Mock
 
 from substack import Api
+from substack.exceptions import SubstackAPIException
 
 
 def make_api():
@@ -73,6 +74,29 @@ def test_create_draft_from_markdown_skips_optional_calls_by_default():
         "prepublish": None,
         "publish": None,
     }
+
+
+def test_create_draft_from_markdown_leaves_created_draft_when_tagging_fails():
+    api = make_api()
+    api.add_tags_to_post.side_effect = SubstackAPIException(
+        400, '{"error":"Tagging failed"}'
+    )
+
+    try:
+        api.create_draft_from_markdown(
+            title="Title",
+            markdown="Body",
+            tags=["python"],
+        )
+    except SubstackAPIException:
+        pass
+    else:
+        raise AssertionError("tagging failure was not propagated")
+
+    api.post_draft.assert_called_once()
+    api.add_tags_to_post.assert_called_once_with(123, ["python"])
+    api.prepublish_draft.assert_not_called()
+    api.publish_draft.assert_not_called()
 
 
 def test_normalize_tags_accepts_none_string_and_iterable():

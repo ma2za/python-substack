@@ -139,7 +139,8 @@ Delimiters follow Pandoc's rules: the opening `$` must not be followed by
 whitespace, and the closing `$` must not be preceded by whitespace or followed
 by a digit. Ordinary dollar amounts (`$5 million to $10 million`) therefore
 stay plain text. A label after a block (`$$ ... $$ (label)`) is accepted but
-discarded, since Substack has no equation labels.
+discarded, since Substack has no equation labels. Unclosed math delimiters remain
+plain text.
 
 ## Pull quotes and callouts
 
@@ -155,6 +156,9 @@ A highlighted pull quote. **Formatting** works inside.
 A callout block, e.g. an aside or note.
 :::
 ```
+
+Empty pull quotes and callouts produce an empty paragraph so the resulting
+document remains valid. Unknown `:::` container names remain ordinary text.
 
 ## Not supported
 

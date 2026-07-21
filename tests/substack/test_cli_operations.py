@@ -3,6 +3,8 @@ import json
 import sys
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from substack import cli
 from substack.exceptions import SubstackAPIException
 
@@ -47,6 +49,15 @@ class OperationsApi:
     def get_draft(self, draft_id):
         self.calls.append(("get", draft_id))
         return {"id": draft_id, "draft_title": "Draft title", "slug": "draft-title"}
+
+    def create_draft_from_markdown(self, **kwargs):
+        self.calls.append(("create", kwargs))
+        return {
+            "draft": {"id": 43, "draft_title": kwargs["title"]},
+            "tags": {"tags_added": kwargs["tags"]} if kwargs["tags"] else None,
+            "prepublish": None,
+            "publish": None,
+        }
 
     def schedule_draft(self, draft_id, scheduled_at):
         self.calls.append(("schedule", draft_id, scheduled_at))
@@ -152,6 +163,178 @@ def test_drafts_get_human_output(monkeypatch, capsys):
     assert "ID: 42" in output
     assert "Title: Draft title" in output
     assert "Slug: draft-title" in output
+
+
+def test_drafts_create_infers_title_and_preserves_safe_defaults(
+    tmp_path, monkeypatch, capsys
+):
+    markdown = tmp_path / "release-notes.md"
+    markdown.write_text("# Inferred title\n\nBody", encoding="utf-8")
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert cli.main(["drafts", "create", str(markdown)]) == 0
+
+    assert capsys.readouterr().out == "Created draft 43: Inferred title\n"
+    kwargs = api.calls[0][1]
+    assert kwargs == {
+        "title": "Inferred title",
+        "markdown": "# Inferred title\n\nBody",
+        "subtitle": "",
+        "audience": "everyone",
+        "write_comment_permissions": "everyone",
+        "search_engine_title": None,
+        "search_engine_description": None,
+        "slug": None,
+        "draft_section_id": None,
+        "tags": None,
+        "prepublish": False,
+        "publish": False,
+    }
+    assert not any(
+        call[0] in {"prepublish", "publish", "schedule", "delete"} for call in api.calls
+    )
+
+
+def test_drafts_create_help_lists_supported_options(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        cli._build_parser().parse_args(["drafts", "create", "--help"])
+
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    for option in (
+        "--title",
+        "--subtitle",
+        "--audience",
+        "--write-comment-permissions",
+        "--search-engine-title",
+        "--search-engine-description",
+        "--slug",
+        "--draft-section-id",
+        "--tag",
+    ):
+        assert option in output
+
+
+def test_drafts_create_json_contract_and_options(tmp_path, monkeypatch, capsys):
+    markdown = tmp_path / "post.md"
+    markdown.write_text("Body", encoding="utf-8")
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert (
+        cli.main(
+            [
+                "--json",
+                "drafts",
+                "create",
+                str(markdown),
+                "--title",
+                "Explicit title",
+                "--subtitle",
+                "Subtitle",
+                "--audience",
+                "only_paid",
+                "--write-comment-permissions",
+                "only_paid",
+                "--search-engine-title",
+                "Search title",
+                "--search-engine-description",
+                "Search description",
+                "--slug",
+                "explicit-title",
+                "--draft-section-id",
+                "9",
+                "--tag",
+                "python",
+                "--tag",
+                "automation",
+            ]
+        )
+        == 0
+    )
+
+    kwargs = api.calls[0][1]
+    assert kwargs["title"] == "Explicit title"
+    assert kwargs["subtitle"] == "Subtitle"
+    assert kwargs["audience"] == "only_paid"
+    assert kwargs["write_comment_permissions"] == "only_paid"
+    assert kwargs["search_engine_title"] == "Search title"
+    assert kwargs["search_engine_description"] == "Search description"
+    assert kwargs["slug"] == "explicit-title"
+    assert kwargs["draft_section_id"] == 9
+    assert kwargs["tags"] == ["python", "automation"]
+    assert json.loads(capsys.readouterr().out) == {
+        "action": "create",
+        "draft_id": 43,
+        "draft": {"id": 43, "draft_title": "Explicit title"},
+        "tags": {"tags_added": ["python", "automation"]},
+    }
+
+
+def test_drafts_create_uses_filename_when_heading_is_missing(
+    tmp_path, monkeypatch, capsys
+):
+    markdown = tmp_path / "file-title.md"
+    markdown.write_text("Body", encoding="utf-8")
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert cli.main(["drafts", "create", str(markdown)]) == 0
+
+    assert api.calls[0][1]["title"] == "file-title"
+    assert capsys.readouterr().out == "Created draft 43: file-title\n"
+
+
+def test_drafts_create_missing_file_uses_existing_error_contract(
+    tmp_path, monkeypatch, capsys
+):
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert cli.main(["--json", "drafts", "create", str(tmp_path / "missing.md")]) == 1
+
+    error = json.loads(capsys.readouterr().err)
+    assert error["error"]["type"] == "io_error"
+    assert api.calls == []
+
+
+def test_drafts_create_invalid_utf8_uses_existing_error_contract(
+    tmp_path, monkeypatch, capsys
+):
+    markdown = tmp_path / "invalid.md"
+    markdown.write_bytes(b"\xff")
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert cli.main(["--json", "drafts", "create", str(markdown)]) == 1
+
+    error = json.loads(capsys.readouterr().err)
+    assert error["error"]["type"] == "configuration_error"
+    assert api.calls == []
+
+
+def test_drafts_create_api_error_is_redacted(tmp_path, monkeypatch, capsys):
+    markdown = tmp_path / "post.md"
+    markdown.write_text("Body", encoding="utf-8")
+    secret = "draft-secret"
+    api = OperationsApi()
+    monkeypatch.setenv("PASSWORD", secret)
+    monkeypatch.setattr(
+        api,
+        "create_draft_from_markdown",
+        lambda **kwargs: (_ for _ in ()).throw(
+            SubstackAPIException(400, json.dumps({"error": f"failed {secret}"}))
+        ),
+    )
+    use_api(monkeypatch, api)
+
+    assert cli.main(["--json", "drafts", "create", str(markdown)]) == 1
+
+    error_text = capsys.readouterr().err
+    assert secret not in error_text
+    assert "[redacted]" in error_text
+    assert json.loads(error_text)["error"]["type"] == "api_error"
 
 
 def test_schedule_accepts_z_timestamp(monkeypatch, capsys):
