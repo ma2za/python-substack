@@ -12,6 +12,7 @@ from datetime import datetime
 from urllib.parse import unquote, urljoin
 
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 from substack.exceptions import SubstackAPIException, SubstackRequestException
 
@@ -65,6 +66,18 @@ class Api:
             logging.getLogger().setLevel(logging.DEBUG)
 
         self._session = requests.Session()
+        retry = Retry(
+            total=4,
+            status=4,
+            backoff_factor=1,
+            status_forcelist=(429,),
+            allowed_methods=frozenset({"GET", "DELETE"}),
+            respect_retry_after_header=True,
+            raise_on_status=False,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        self._session.mount("http://", adapter)
+        self._session.mount("https://", adapter)
 
         # Load cookies from file if provided
         # Helps with Captcha errors by reusing cookies from "local" auth, then switching to running code in the cloud
@@ -556,8 +569,8 @@ class Api:
 
         """
         response = self._session.post(
-            f"{self.publication_url}/drafts/{draft}/schedule",
-            json={"post_date": draft_datetime.isoformat()},
+            f"{self.publication_url}/drafts/{draft}/scheduled_release",
+            json={"trigger_at": draft_datetime.isoformat()},
         )
         return Api._handle_response(response=response)
 
@@ -570,8 +583,8 @@ class Api:
         Returns:
 
         """
-        response = self._session.post(
-            f"{self.publication_url}/drafts/{draft}/schedule", json={"post_date": None}
+        response = self._session.delete(
+            f"{self.publication_url}/drafts/{draft}/scheduled_release"
         )
         return Api._handle_response(response=response)
 

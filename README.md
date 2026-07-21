@@ -52,6 +52,33 @@ Newer Substack accounts may only have magic-link sign-in enabled. To set a passw
 
 ## CLI Operations
 
+Create a draft from Markdown without publishing it:
+
+```bash
+substack drafts create post.md
+```
+
+Set metadata and repeat `--tag` to attach multiple tags:
+
+```bash
+substack --json drafts create post.md \
+  --title "My Post" \
+  --subtitle "Optional subtitle" \
+  --tag python \
+  --tag substack \
+  --slug my-post \
+  --search-engine-title "SEO title" \
+  --search-engine-description "SEO description"
+```
+
+Creation and publishing are intentionally separate. Use the returned draft ID
+when the draft is ready:
+
+```bash
+substack drafts create post.md
+substack drafts publish 12345 --no-send
+```
+
 Check authentication, the selected publication, and subscriber count:
 
 ```bash
@@ -128,7 +155,9 @@ print(result["draft"]["id"])
 
 `create_draft_from_markdown` creates a draft by default. It only publishes when `publish=True` is passed.
 
-## Content Publishing CLI
+## Legacy Content Publishing CLI
+
+The existing standalone commands remain supported for compatibility.
 
 Check authentication without creating a draft:
 
@@ -386,11 +415,28 @@ pre-commit install
 pytest
 ```
 
-Live Substack tests are opt-in. Set `RUN_SUBSTACK_E2E=1` and configure credentials before running them.
+Run the offline suite with:
 
-The CLI operations smoke test is separately opt-in. Set `RUN_SUBSTACK_CLI_E2E=1` to create, schedule, unschedule, inspect, and delete a disposable draft. It never publishes the draft.
+```bash
+pytest -m "not live"
+```
+
+Live Substack tests are not part of normal CI. They are opt-in and require
+configured credentials:
+
+```bash
+RUN_SUBSTACK_E2E=1 pytest -m live
+```
+
+The CLI operations smoke tests are separately opt-in. They create, inspect, and
+delete disposable drafts but never publish them:
+
+```bash
+RUN_SUBSTACK_CLI_E2E=1 pytest -m live tests/substack/test_cli_end_to_end.py
+```
 
 Release changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+The maintainer release process is documented in [docs/releasing.md](docs/releasing.md).
 
 ## Disclaimer
 

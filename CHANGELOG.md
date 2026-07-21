@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.27
+
+### Added
+
+- Unified `substack drafts create MARKDOWN_FILE` command for safe draft-only Markdown creation.
+- Markdown rendering for LaTeX, superscript, subscript, pull quotes, and callouts.
+- Registered `live` test marker with documented opt-in API and CLI smoke commands.
+
+### Fixed
+
+- Support Substack subscriber responses that provide a `subscribers` list instead of `subscriberCount`.
+- Use Substack's current scheduled-release endpoint for scheduling and unscheduling drafts.
+- Retry rate-limited GET and DELETE requests with bounded backoff without retrying write-producing POST requests.
+
+### Improved
+
+- Validate offline tests separately from live integrations.
+- Validate wheel metadata, console entry points, base installations, and MCP-extra installations on Python 3.10 and 3.14.
+- Require release tags, package metadata, and `substack.__version__` to agree before publishing.
+
 ## 0.1.26
 
 ### Added

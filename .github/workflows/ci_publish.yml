@@ -20,15 +20,39 @@ jobs:
           cache: pip
       - name: Install release tools
         run: python -m pip install poetry==2.3.2 twine==6.2.0
+      - name: Validate tag and package versions
+        run: |
+          VERSION=$(poetry version -s)
+          PACKAGE_VERSION=$(python -c "import pathlib, re; print(re.search(r'__version__ = \"([^\"]+)\"', pathlib.Path('substack/__init__.py').read_text()).group(1))")
+          test "$VERSION" = "$PACKAGE_VERSION"
+          test "$GITHUB_REF_TYPE" = "tag"
+          test "$GITHUB_REF_NAME" = "v$VERSION"
       - name: Test release source
         run: |
           poetry install --all-extras
-          poetry run pytest -q
+          poetry run pytest -q -m "not live" --strict-markers
+          poetry run pytest --collect-only -q --strict-markers
           poetry check
       - name: Build and validate distributions
         run: |
           poetry build
           python -m twine check dist/*
+      - name: Smoke test base wheel installation
+        run: |
+          WHEEL=$(find dist -name '*.whl' -print -quit)
+          python -m venv /tmp/python-substack-base
+          /tmp/python-substack-base/bin/pip install "$WHEEL"
+          /tmp/python-substack-base/bin/pip check
+          /tmp/python-substack-base/bin/substack --version
+          /tmp/python-substack-base/bin/python -c "import importlib.util; assert importlib.util.find_spec('fastmcp') is None"
+          /tmp/python-substack-base/bin/python -c "from importlib import metadata; import substack; expected={'substack':'substack.cli:main','substack-auth-check':'substack.cli:auth_check','substack-publish-markdown':'substack.cli:publish_markdown','substack-publish-yaml':'substack.cli:publish_yaml','substack-mcp':'substack_mcp.mcp_server:main'}; actual={entry.name:entry.value for entry in metadata.entry_points(group='console_scripts') if entry.name in expected}; package=metadata.metadata('python-substack'); requirements=metadata.requires('python-substack'); assert actual == expected; assert metadata.version('python-substack') == substack.__version__; assert package['Requires-Python'] == '>=3.10,<4.0'; assert package.get_all('Provides-Extra') == ['mcp']; assert all(any(requirement.startswith(name) for requirement in requirements) for name in ['PyYAML','fastmcp','markdown-it-py','mdit-py-plugins','python-dotenv','requests'])"
+      - name: Smoke test MCP wheel installation
+        run: |
+          WHEEL=$(find dist -name '*.whl' -print -quit)
+          python -m venv /tmp/python-substack-mcp
+          /tmp/python-substack-mcp/bin/pip install "${WHEEL}[mcp]"
+          /tmp/python-substack-mcp/bin/pip check
+          /tmp/python-substack-mcp/bin/python -c "import substack_mcp.mcp_server"
       - name: Publish validated distributions
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

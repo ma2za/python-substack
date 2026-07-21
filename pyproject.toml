@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.1.26"
+version = "0.1.27"
 description = "A Python SDK and CLI for managing Substack publications and drafts."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
@@ -47,6 +47,11 @@ mcp = ["fastmcp"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"
+
+[tool.pytest.ini_options]
+markers = [
+    "live: opt-in tests that call the live Substack service",
+]
 
 [tool.poetry.scripts]
 substack = "substack.cli:main"

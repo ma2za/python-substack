@@ -276,6 +276,37 @@ def _drafts_get(api, args):
             print(f"{label}: {_display(value)}")
 
 
+def _drafts_create(api, args):
+    markdown_path = Path(args.markdown_file)
+    markdown = markdown_path.read_text(encoding="utf-8")
+    title = args.title or _title_from_markdown(markdown, markdown_path.stem)
+    result = api.create_draft_from_markdown(
+        title=title,
+        markdown=markdown,
+        subtitle=args.subtitle,
+        audience=args.audience,
+        write_comment_permissions=args.write_comment_permissions,
+        search_engine_title=args.search_engine_title,
+        search_engine_description=args.search_engine_description,
+        slug=args.slug,
+        draft_section_id=args.draft_section_id,
+        tags=args.tags,
+        prepublish=False,
+        publish=False,
+    )
+    draft = result["draft"]
+    payload = {
+        "action": "create",
+        "draft_id": draft.get("id"),
+        "draft": draft,
+        "tags": result.get("tags"),
+    }
+    if args.json_output:
+        _print_json(payload)
+    else:
+        print(f"Created draft {draft.get('id')}: {title}")
+
+
 def _drafts_schedule(api, args):
     scheduled_at = _parse_schedule(args.at)
     result = api.schedule_draft(args.draft_id, scheduled_at)
@@ -369,6 +400,21 @@ def _build_parser():
     drafts_get = draft_commands.add_parser("get", help="Inspect a draft.")
     drafts_get.add_argument("draft_id", type=int)
     drafts_get.set_defaults(handler=_drafts_get)
+
+    drafts_create = draft_commands.add_parser(
+        "create", help="Create a draft from a Markdown file."
+    )
+    drafts_create.add_argument("markdown_file", metavar="MARKDOWN_FILE")
+    drafts_create.add_argument("--title")
+    drafts_create.add_argument("--subtitle", default="")
+    drafts_create.add_argument("--audience", default="everyone")
+    drafts_create.add_argument("--write-comment-permissions", default="everyone")
+    drafts_create.add_argument("--search-engine-title")
+    drafts_create.add_argument("--search-engine-description")
+    drafts_create.add_argument("--slug")
+    drafts_create.add_argument("--draft-section-id", type=int)
+    drafts_create.add_argument("--tag", action="append", dest="tags", metavar="TAG")
+    drafts_create.set_defaults(handler=_drafts_create)
 
     drafts_schedule = draft_commands.add_parser("schedule", help="Schedule a draft.")
     drafts_schedule.add_argument("draft_id", type=int)

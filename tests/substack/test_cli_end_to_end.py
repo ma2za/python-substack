@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -22,6 +23,7 @@ def _enabled():
     not _enabled(),
     reason="Set RUN_SUBSTACK_CLI_E2E=1 and configure Substack credentials.",
 )
+@pytest.mark.live
 def test_cli_draft_lifecycle(monkeypatch, capsys):
     api = cli._api_from_env()
     post = Post("python-substack CLI smoke test", "Disposable draft", api.get_user_id())
@@ -59,3 +61,30 @@ def test_cli_draft_lifecycle(monkeypatch, capsys):
     finally:
         assert cli.main(["--json", "drafts", "delete", str(draft_id), "--yes"]) == 0
         capsys.readouterr()
+
+
+@pytest.mark.skipif(
+    not _enabled(),
+    reason="Set RUN_SUBSTACK_CLI_E2E=1 and configure Substack credentials.",
+)
+@pytest.mark.live
+def test_cli_create_markdown_draft(tmp_path, monkeypatch, capsys):
+    api = cli._api_from_env()
+    markdown = tmp_path / "cli-create.md"
+    markdown.write_text(
+        "# CLI create smoke test\n\nDisposable draft.", encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        cli,
+        "_api_from_env",
+        lambda cookies_path=None, publication_url=None: api,
+    )
+
+    assert cli.main(["--json", "drafts", "create", str(markdown)]) == 0
+    created = json.loads(capsys.readouterr().out)
+    draft_id = created["draft_id"]
+    try:
+        stored = api.get_draft(draft_id)
+        assert stored["id"] == draft_id
+    finally:
+        api.delete_draft(draft_id)

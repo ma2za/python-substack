@@ -119,7 +119,11 @@ class TestBlocks:
     def test_horizontal_rule(self):
         post = make_post()
         post.from_markdown("a\n\n---\n\nb")
-        assert [n["type"] for n in body(post)] == ["paragraph", "horizontal_rule", "paragraph"]
+        assert [n["type"] for n in body(post)] == [
+            "paragraph",
+            "horizontal_rule",
+            "paragraph",
+        ]
 
     def test_blockquote(self):
         post = make_post()
@@ -208,6 +212,14 @@ class TestBlocks:
         assert [node["type"] for node in paragraph["content"]] == ["text"]
         assert paragraph["content"][0]["text"] == markdown
 
+    def test_unclosed_inline_math_is_plain_text(self):
+        post = make_post()
+        post.from_markdown("An unclosed $expression remains text.")
+        paragraph = body(post)[0]
+        assert paragraph["content"] == [
+            {"type": "text", "text": "An unclosed $expression remains text."}
+        ]
+
     def test_superscript(self):
         post = make_post()
         post.from_markdown("E=mc^2^ here.")
@@ -228,11 +240,7 @@ class TestBlocks:
         post = make_post()
         post.from_markdown("~~struck~~ and H~2~O")
         para = body(post)[0]
-        marks = {
-            m["type"]
-            for n in para["content"]
-            for m in n.get("marks", [])
-        }
+        marks = {m["type"] for n in para["content"] for m in n.get("marks", [])}
         assert marks == {"strikethrough", "subscript"}
 
     def test_pullquote(self):
@@ -248,10 +256,42 @@ class TestBlocks:
 
     def test_callout(self):
         post = make_post()
-        post.from_markdown(":::callout\nA callout with a [link](https://example.com).\n:::\n")
+        post.from_markdown(
+            ":::callout\nA callout with a [link](https://example.com).\n:::\n"
+        )
         block = body(post)[0]
         assert block["type"] == "calloutBlock"
         para = block["content"][0]
         assert para["type"] == "paragraph"
         link = [n for n in para["content"] if n.get("marks")][0]
         assert link["marks"][0]["attrs"]["href"] == "https://example.com"
+
+    def test_empty_containers_remain_valid_blocks(self):
+        pullquote = make_post()
+        pullquote.from_markdown(":::pullquote\n:::\n")
+        assert body(pullquote) == [
+            {
+                "type": "pullquote",
+                "attrs": {"align": None, "color": None},
+                "content": [{"type": "paragraph", "content": []}],
+            }
+        ]
+
+        callout = make_post()
+        callout.from_markdown(":::callout\n:::\n")
+        assert body(callout) == [
+            {
+                "type": "calloutBlock",
+                "content": [{"type": "paragraph", "content": []}],
+            }
+        ]
+
+    def test_unknown_container_is_plain_text(self):
+        post = make_post()
+        post.from_markdown(":::unknown\ntext\n:::\n")
+        assert body(post) == [
+            {
+                "type": "paragraph",
+                "content": [{"type": "text", "text": ":::unknown text :::"}],
+            }
+        ]
