@@ -155,6 +155,7 @@ def _roundtrip(api: Api):
     not _e2e_enabled(),
     reason="set RUN_SUBSTACK_E2E=1 and configure credentials to run the live e2e test",
 )
+@pytest.mark.live
 def test_full_features_roundtrip():
     api = _api_from_env()
     content = _roundtrip(api)
@@ -163,9 +164,9 @@ def test_full_features_roundtrip():
     # rather than left as the local file path.
     local_srcs = _image_srcs_by_alt(content, LOCAL_IMAGE_ALT)
     assert local_srcs, "local image node not found in stored draft"
-    assert local_srcs[0].startswith("http"), (
-        f"local image was not uploaded: {local_srcs[0]!r}"
-    )
+    assert local_srcs[0].startswith(
+        "http"
+    ), f"local image was not uploaded: {local_srcs[0]!r}"
 
     expected = json.loads(EXPECTED_FILE.read_text(encoding="utf-8"))
     assert _normalize(content) == expected
