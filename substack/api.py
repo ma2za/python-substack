@@ -348,7 +348,6 @@ class Api:
         return Api._handle_response(response=response)
 
     def get_publication_subscriber_count(self):
-
         """
         Get subscriber count.
 

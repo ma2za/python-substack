@@ -3,12 +3,13 @@
 import json
 
 import pytest
-from substack.post import Post, parse_inline
 
+from substack.post import Post, parse_inline
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_post():
     """Create a fresh Post instance for testing."""
@@ -23,6 +24,7 @@ def body_content(post):
 # ---------------------------------------------------------------------------
 # TestParseInlineCode
 # ---------------------------------------------------------------------------
+
 
 class TestParseInlineCode:
     def test_inline_code_basic(self):
@@ -61,6 +63,7 @@ class TestParseInlineCode:
 # ---------------------------------------------------------------------------
 # TestParseInlineBoldItalic
 # ---------------------------------------------------------------------------
+
 
 class TestParseInlineBoldItalic:
     def test_bold_italic_combo(self):
@@ -102,6 +105,7 @@ class TestParseInlineBoldItalic:
 # TestParseInlineStrikethrough
 # ---------------------------------------------------------------------------
 
+
 class TestParseInlineStrikethrough:
     def test_strikethrough_basic(self):
         tokens = parse_inline("~~struck~~")
@@ -127,6 +131,7 @@ class TestParseInlineStrikethrough:
 # TestOrderedListFromMarkdown
 # ---------------------------------------------------------------------------
 
+
 class TestOrderedListFromMarkdown:
     def test_basic_ordered_list(self):
         post = make_post()
@@ -145,10 +150,7 @@ class TestOrderedListFromMarkdown:
         content = body_content(post)
         ol = content[0]
         first_item_tokens = ol["content"][0]["content"][0]["content"]
-        assert any(
-            t.get("marks") == [{"type": "strong"}]
-            for t in first_item_tokens
-        )
+        assert any(t.get("marks") == [{"type": "strong"}] for t in first_item_tokens)
 
     def test_ordered_list_single_item(self):
         post = make_post()
@@ -197,6 +199,7 @@ class TestOrderedListFromMarkdown:
 # ---------------------------------------------------------------------------
 # TestHorizontalRuleFromMarkdown
 # ---------------------------------------------------------------------------
+
 
 class TestHorizontalRuleFromMarkdown:
     def test_horizontal_rule_dashes(self):
@@ -249,6 +252,7 @@ class TestHorizontalRuleFromMarkdown:
 # TestExistingFeaturesUnchanged
 # ---------------------------------------------------------------------------
 
+
 class TestExistingFeaturesUnchanged:
     def test_bold(self):
         tokens = parse_inline("**bold**")
@@ -266,7 +270,9 @@ class TestExistingFeaturesUnchanged:
         tokens = parse_inline("[text](https://example.com)")
         assert len(tokens) == 1
         assert tokens[0]["content"] == "text"
-        assert tokens[0]["marks"] == [{"type": "link", "attrs": {"href": "https://example.com"}}]
+        assert tokens[0]["marks"] == [
+            {"type": "link", "attrs": {"href": "https://example.com"}}
+        ]
 
     def test_bullet_list(self):
         post = make_post()

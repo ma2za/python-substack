@@ -12,6 +12,12 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/python-substack
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -55,6 +61,3 @@ jobs:
           /tmp/python-substack-mcp/bin/python -c "import substack_mcp.mcp_server"
       - name: Publish validated distributions
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
