@@ -10,8 +10,8 @@ from typing import Dict, List
 
 __all__ = ["Post", "parse_inline", "tokens_to_text_nodes"]
 
-from substack.exceptions import SectionNotExistsException
 from substack import nodes
+from substack.exceptions import SectionNotExistsException
 
 
 def tokens_to_text_nodes(tokens: List[Dict]) -> List[Dict]:
@@ -61,12 +61,12 @@ def parse_inline(text: str) -> List[Dict]:
     tokens = []
 
     # Pattern order matters: code > links > bold+italic > bold > italic > strikethrough
-    code_pattern = r'`([^`]+)`'
-    link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
-    bold_italic_pattern = r'\*\*\*([^*]+)\*\*\*'
-    bold_pattern = r'\*\*([^*]+)\*\*'
-    italic_pattern = r'(?<!\*)\*([^*]+)\*(?!\*)'  # Not preceded or followed by *
-    strikethrough_pattern = r'~~([^~]+)~~'
+    code_pattern = r"`([^`]+)`"
+    link_pattern = r"\[([^\]]+)\]\(([^)]+)\)"
+    bold_italic_pattern = r"\*\*\*([^*]+)\*\*\*"
+    bold_pattern = r"\*\*([^*]+)\*\*"
+    italic_pattern = r"(?<!\*)\*([^*]+)\*(?!\*)"  # Not preceded or followed by *
+    strikethrough_pattern = r"~~([^~]+)~~"
 
     # Find all matches with their positions
     matches = []
@@ -79,14 +79,18 @@ def parse_inline(text: str) -> List[Dict]:
     for match in re.finditer(link_pattern, text):
         # Skip if it's an image link (starts with ![)
         # But do NOT skip normal links at position 0.
-        if match.start() == 0 or text[match.start()-1:match.start()+1] != "![":
+        if match.start() == 0 or text[match.start() - 1 : match.start() + 1] != "![":
             if not any(start <= match.start() < end for start, end, _, _, _ in matches):
-                matches.append((match.start(), match.end(), "link", match.group(1), match.group(2)))
+                matches.append(
+                    (match.start(), match.end(), "link", match.group(1), match.group(2))
+                )
 
     # Bold+italic combo
     for match in re.finditer(bold_italic_pattern, text):
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
-            matches.append((match.start(), match.end(), "bold_italic", match.group(1), None))
+            matches.append(
+                (match.start(), match.end(), "bold_italic", match.group(1), None)
+            )
 
     # Bold
     for match in re.finditer(bold_pattern, text):
@@ -101,7 +105,9 @@ def parse_inline(text: str) -> List[Dict]:
     # Strikethrough
     for match in re.finditer(strikethrough_pattern, text):
         if not any(start <= match.start() < end for start, end, _, _, _ in matches):
-            matches.append((match.start(), match.end(), "strikethrough", match.group(1), None))
+            matches.append(
+                (match.start(), match.end(), "strikethrough", match.group(1), None)
+            )
 
     # Sort matches by position
     matches.sort(key=lambda x: x[0])
@@ -115,35 +121,24 @@ def parse_inline(text: str) -> List[Dict]:
 
         # Add the formatted content
         if match_type == "code":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "code"}]
-            })
+            tokens.append({"content": content, "marks": [{"type": "code"}]})
         elif match_type == "link":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "link", "attrs": {"href": url}}]
-            })
+            tokens.append(
+                {
+                    "content": content,
+                    "marks": [{"type": "link", "attrs": {"href": url}}],
+                }
+            )
         elif match_type == "bold_italic":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "strong"}, {"type": "em"}]
-            })
+            tokens.append(
+                {"content": content, "marks": [{"type": "strong"}, {"type": "em"}]}
+            )
         elif match_type == "bold":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "strong"}]
-            })
+            tokens.append({"content": content, "marks": [{"type": "strong"}]})
         elif match_type == "italic":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "em"}]
-            })
+            tokens.append({"content": content, "marks": [{"type": "em"}]})
         elif match_type == "strikethrough":
-            tokens.append({
-                "content": content,
-                "marks": [{"type": "strikethrough"}]
-            })
+            tokens.append({"content": content, "marks": [{"type": "strikethrough"}]})
 
         last_pos = end
 
@@ -583,7 +578,9 @@ class Post:
             for chunk in re.split(r"\n\s*\n", content):
                 chunk = chunk.strip()
                 if chunk:
-                    paragraphs.append(nodes.paragraph(tokens_to_text_nodes(parse_inline(chunk))))
+                    paragraphs.append(
+                        nodes.paragraph(tokens_to_text_nodes(parse_inline(chunk)))
+                    )
         elif isinstance(content, list):
             # Accept either parse_inline tokens ({"content": ...}) or text nodes.
             if content and content[0].get("type") == "text":
