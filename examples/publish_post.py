@@ -38,9 +38,9 @@ if __name__ == "__main__":
 
     api = Api(
         email=os.getenv("EMAIL") if not cookies_path and not cookies_string else None,
-        password=os.getenv("PASSWORD")
-        if not cookies_path and not cookies_string
-        else None,
+        password=(
+            os.getenv("PASSWORD") if not cookies_path and not cookies_string else None
+        ),
         cookies_path=cookies_path,
         cookies_string=cookies_string,
         publication_url=os.getenv("PUBLICATION_URL"),

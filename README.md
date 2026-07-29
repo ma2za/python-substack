@@ -1,6 +1,7 @@
 # Python Substack
 
-An unofficial Python SDK and CLI for managing [Substack](https://substack.com/) publications and drafts.
+Write Substack posts in Markdown and safely create, inspect, schedule, and
+publish them through Python, a command-line interface, or MCP.
 
 [![PyPI](https://img.shields.io/pypi/v/python-substack)](https://pypi.org/project/python-substack/)
 [![Python](https://img.shields.io/pypi/pyversions/python-substack)](https://pypi.org/project/python-substack/)
@@ -9,34 +10,57 @@ An unofficial Python SDK and CLI for managing [Substack](https://substack.com/) 
 [![License](https://img.shields.io/pypi/l/python-substack)](LICENSE)
 [![Downloads](https://static.pepy.tech/badge/python-substack/month)](https://pepy.tech/project/python-substack)
 
-## Features
+> [!IMPORTANT]
+> Creating and publishing are separate operations. `substack drafts create`
+> always creates an unpublished draft. It never schedules, sends, publishes,
+> or deletes content.
 
-- Inspect authentication and publication status from the terminal.
-- List publications and inspect, schedule, publish, or delete drafts.
-- Use stable JSON output in scripts and automation.
-- Create drafts and publish posts from Python.
-- Convert Markdown into Substack's editor document format.
-- Upload local images while rendering Markdown.
-- Set audience, comment permissions, SEO title, SEO description, slug, sections, and tags.
-- Publish now, schedule drafts, or keep drafts unpublished by default.
-- Authenticate with email/password, cookies JSON, or a browser cookie string.
-- Run a FastMCP server for AI-assisted publishing workflows.
+## From Markdown to a Substack draft
 
-## Installation
+Install the package:
 
 ```bash
 pip install python-substack
 ```
 
-Install the MCP server extra:
+Check the selected account and publication:
 
 ```bash
-pip install "python-substack[mcp]"
+substack status
 ```
+
+Create a safe unpublished draft, then publish only when it is ready:
+
+```bash
+substack drafts create post.md
+substack drafts publish 12345 --no-send
+```
+
+Publishing and deletion require confirmation. Noninteractive and JSON
+workflows must pass `--yes` explicitly.
+
+Markdown source:
+
+![Markdown before conversion](docs/before.png)
+
+Substack result:
+
+![Substack after conversion](docs/after.png)
+
+## What it supports
+
+- Create rich Substack drafts from Markdown.
+- Upload local images referenced by Markdown.
+- Set audience, comment permissions, SEO metadata, slug, sections, and tags.
+- List and inspect publications and drafts.
+- Schedule, unschedule, publish, and delete drafts with explicit safeguards.
+- Use stable JSON envelopes in scripts and automation.
+- Authenticate with browser cookies or email and password.
+- Use the same publishing workflow from Python or an optional MCP server.
 
 ## Setup
 
-Copy `.env.example` to `.env` and fill in one authentication method:
+Copy `.env.example` to `.env` and configure one authentication method:
 
 ```env
 EMAIL=
@@ -46,19 +70,21 @@ COOKIES_PATH=
 COOKIES_STRING=
 ```
 
-Use either `EMAIL` and `PASSWORD`, or cookie-based authentication with `COOKIES_PATH` or `COOKIES_STRING`. Cookie authentication is usually the better option if Substack prompts for captcha or magic-link sign-in.
+Cookie authentication is usually more reliable when Substack requires captcha
+or magic-link sign-in. See
+[Authentication](docs/authentication.md) for cookie export instructions and
+account-selection details.
 
-Newer Substack accounts may only have magic-link sign-in enabled. To set a password, sign out of Substack, choose "Sign in with password", then choose "Set a new password".
-
-## CLI Operations
-
-Create a draft from Markdown without publishing it:
+Verify the installation without authenticating:
 
 ```bash
-substack drafts create post.md
+substack --version
+substack --help
 ```
 
-Set metadata and repeat `--tag` to attach multiple tags:
+## CLI
+
+Create a draft with metadata:
 
 ```bash
 substack --json drafts create post.md \
@@ -71,56 +97,41 @@ substack --json drafts create post.md \
   --search-engine-description "SEO description"
 ```
 
-Creation and publishing are intentionally separate. Use the returned draft ID
-when the draft is ready:
-
-```bash
-substack drafts create post.md
-substack drafts publish 12345 --no-send
-```
-
-Check authentication, the selected publication, and subscriber count:
-
-```bash
-substack status
-```
-
-List available publications or target one without changing `.env`:
+Inspect publications and drafts:
 
 ```bash
 substack publications list
+substack drafts list --limit 10
+substack drafts get 12345
 substack --publication-url https://example.substack.com drafts list
 ```
 
-List and inspect drafts:
-
-```bash
-substack drafts list --limit 10
-substack drafts get 12345
-```
-
-Schedule with a timezone-aware ISO 8601 timestamp, or remove a schedule:
+Manage scheduling:
 
 ```bash
 substack drafts schedule 12345 --at 2026-08-01T09:00:00+03:00
 substack drafts unschedule 12345
 ```
 
-Publishing and deletion prompt for confirmation. Use `--yes` for intentional non-interactive execution:
+Publish or delete intentionally:
 
 ```bash
 substack drafts publish 12345 --no-send
 substack drafts delete 12345 --yes
 ```
 
-Global options must appear before the command. `--json` returns stable envelopes containing the raw Substack responses:
+Global options such as `--json`, `--cookies`, and `--publication-url` must
+appear before the command:
 
 ```bash
 substack --json drafts list
 substack --cookies cookies.json --json status
 ```
 
-## Quickstart
+The original standalone commands remain supported. See
+[Legacy CLI commands](docs/legacy-cli.md).
+
+## Python
 
 ```python
 import os
@@ -153,166 +164,19 @@ This draft was created from **Markdown**.
 print(result["draft"]["id"])
 ```
 
-`create_draft_from_markdown` creates a draft by default. It only publishes when `publish=True` is passed.
+`create_draft_from_markdown` creates a draft by default. It publishes only when
+`publish=True` is passed.
 
-## Legacy Content Publishing CLI
+For direct ProseMirror node construction, see the
+[low-level Python API](docs/low-level-api.md). YAML workflows are documented in
+[YAML drafts](docs/yaml.md).
 
-The existing standalone commands remain supported for compatibility.
+## Markdown
 
-Check authentication without creating a draft:
-
-```bash
-substack-auth-check
-```
-
-With a cookies JSON file:
-
-```bash
-substack-auth-check --cookies cookies.json
-```
-
-Publish a Markdown file as a draft:
-
-```bash
-substack-publish-markdown post.md --title "My Post"
-```
-
-Create and publish:
-
-```bash
-substack-publish-markdown post.md --title "My Post" --publish
-```
-
-Publish from YAML:
-
-```bash
-substack-publish-yaml draft.yaml
-```
-
-Useful options:
-
-```bash
-substack-publish-markdown post.md \
-  --title "My Post" \
-  --subtitle "Optional subtitle" \
-  --tag python \
-  --tag substack \
-  --slug my-post \
-  --search-engine-title "SEO title" \
-  --search-engine-description "SEO description"
-```
-
-## Cookie Authentication
-
-Cookie authentication avoids logging in with email/password on every run and helps when Substack requires captcha or magic-link sign-in.
-
-Use a cookies JSON file:
-
-```python
-import os
-
-from dotenv import load_dotenv
-from substack import Api
-
-load_dotenv()
-
-api = Api(
-    cookies_path=os.getenv("COOKIES_PATH"),
-    publication_url=os.getenv("PUBLICATION_URL"),
-)
-```
-
-Or paste a browser cookie header into `COOKIES_STRING`:
-
-```python
-import os
-
-from dotenv import load_dotenv
-from substack import Api
-
-load_dotenv()
-
-api = Api(
-    cookies_string=os.getenv("COOKIES_STRING"),
-    publication_url=os.getenv("PUBLICATION_URL"),
-)
-```
-
-To get a cookie string:
-
-1. Sign in to Substack in your browser.
-2. Open developer tools.
-3. Go to the network tab and refresh Substack.
-4. Select a request such as `subscription/unred/subscriptions`.
-5. Copy the full `cookie` request header value into `COOKIES_STRING`.
-
-To export a working session to a cookies JSON file:
-
-```python
-api.export_cookies("cookies.json")
-```
-
-Then set:
-
-```env
-COOKIES_PATH=cookies.json
-```
-
-The CLI also accepts a cookie JSON path:
-
-```bash
-substack-publish-markdown post.md --cookies cookies.json
-```
-
-## Low-Level Post Builder
-
-```python
-import os
-
-from dotenv import load_dotenv
-from substack import Api
-from substack.post import Post
-
-load_dotenv()
-
-api = Api(
-    email=os.getenv("EMAIL"),
-    password=os.getenv("PASSWORD"),
-    publication_url=os.getenv("PUBLICATION_URL"),
-)
-
-user_id = api.get_user_id()
-
-post = Post(
-    title="How to publish a Substack post using Python",
-    subtitle="Created with python-substack",
-    user_id=user_id,
-    audience="everyone",
-    write_comment_permissions="everyone",
-)
-
-post.paragraph("This is a paragraph.")
-post.add(
-    {
-        "type": "paragraph",
-        "content": [
-            {"content": "A link to "},
-            {
-                "content": "Substack",
-                "marks": [{"type": "link", "href": "https://substack.com"}],
-            },
-        ],
-    }
-)
-post.add({"type": "paywall"})
-post.add({"type": "captionedImage", "src": "https://example.com/image.png"})
-
-draft = api.post_draft(post.get_draft())
-api.prepublish_draft(draft.get("id"))
-api.publish_draft(draft.get("id"))
-```
-
-## Markdown Support
+Supported Markdown includes headings, paragraphs, bold, italic, inline code,
+strikethrough, superscript, subscript, links, images, linked images, image
+captions, code blocks, blockquotes, ordered and unordered lists, horizontal
+rules, footnotes, LaTeX math, pull quotes, and callouts.
 
 ```python
 from substack.post import Post
@@ -322,122 +186,52 @@ post.from_markdown(
     """
 # Heading
 
-Paragraph with **bold**, *italic*, `code`, [links](https://example.com), and footnotes.[^1]
-
-- Lists
-- Images
-
-![Alt](local-image.png "Caption")
-
-[^1]: Footnote text.
+Paragraph with **bold**, *italic*, `code`, and [links](https://example.com).
 """
 )
 ```
 
-Supported Markdown includes headings, paragraphs, bold, italic, inline code, strikethrough, superscript, subscript, links, images, linked images, image captions, code blocks, blockquotes, ordered lists, unordered lists, horizontal rules, footnotes, LaTeX math, pull quotes, and callouts. See [docs/markdown.md](docs/markdown.md) for the full reference with examples.
-
-When an `Api` instance is passed to `from_markdown`, local image paths are uploaded before the draft is created:
+Pass `api=` to upload local images while rendering:
 
 ```python
 post.from_markdown(markdown_content, api=api)
 ```
 
-## YAML Drafts
+See the complete [Markdown reference](docs/markdown.md).
 
-```yaml
-title: "My Post Title"
-subtitle: "My Post Subtitle"
-audience: "everyone"
-write_comment_permissions: "everyone"
-search_engine_title: "SEO title"
-search_engine_description: "SEO description"
-slug: "my-post-title"
-tags:
-  - python
-  - substack
-markdown: |
-  # Introduction
+## MCP
 
-  This post body is Markdown.
-```
-
-The lower-level node format is also supported:
-
-```yaml
-title: "My Post Title"
-subtitle: "My Post Subtitle"
-body:
-  0:
-    type: "heading"
-    level: 1
-    content: "Introduction"
-  1:
-    type: "paragraph"
-    content: "This is a paragraph."
-  2:
-    type: "captionedImage"
-    src: "local_image.jpg"
-```
-
-## MCP Server
-
-Install the MCP extra:
+Install and run the optional MCP server:
 
 ```bash
 pip install "python-substack[mcp]"
-```
-
-Run the server over stdio:
-
-```bash
 substack-mcp
 ```
 
-Equivalent Python entry point:
+The MCP tools use the same environment variables and SDK behavior as the CLI.
+See [MCP server](docs/mcp.md) for the tool list and safety notes.
 
-```bash
-python -c "from substack_mcp.mcp_server import main; main()"
-```
+## Project documentation
 
-Available tools:
+- [Authentication](docs/authentication.md)
+- [Markdown reference](docs/markdown.md)
+- [Legacy CLI commands](docs/legacy-cli.md)
+- [Low-level Python API](docs/low-level-api.md)
+- [YAML drafts](docs/yaml.md)
+- [MCP server](docs/mcp.md)
+- [Compatibility policy](docs/compatibility.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
-- `post_draft_from_markdown(...)`
-- `put_draft(draft_id, update_payload)`
-- `add_tags(draft_id, tags)`
-- `prepublish_draft(draft_id)`
-- `publish_draft(draft_id, send=True, share_automatically=False)`
+## Compatibility
 
-## Development
-
-```bash
-pip install pre-commit
-pre-commit install
-pytest
-```
-
-Run the offline suite with:
-
-```bash
-pytest -m "not live"
-```
-
-Live Substack tests are not part of normal CI. They are opt-in and require
-configured credentials:
-
-```bash
-RUN_SUBSTACK_E2E=1 pytest -m live
-```
-
-The CLI operations smoke tests are separately opt-in. They create, inspect, and
-delete disposable drafts but never publish them:
-
-```bash
-RUN_SUBSTACK_CLI_E2E=1 pytest -m live tests/substack/test_cli_end_to_end.py
-```
-
-Release changes are tracked in [CHANGELOG.md](CHANGELOG.md).
-The maintainer release process is documented in [docs/releasing.md](docs/releasing.md).
+The project preserves existing Python APIs, console commands, CLI behavior,
+environment variables, JSON keys, and MCP tool signatures through the 1.x
+series. Additive capabilities may be introduced. See the
+[compatibility policy](docs/compatibility.md).
 
 ## Disclaimer
 
-This project is not affiliated with Substack.
+This project is not affiliated with Substack. It uses undocumented Substack
+interfaces that may change without notice.

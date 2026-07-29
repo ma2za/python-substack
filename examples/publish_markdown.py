@@ -10,6 +10,7 @@ This example reads from README.md to test the Markdown parsing.
 import argparse
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 from substack import Api
@@ -44,7 +45,9 @@ if __name__ == "__main__":
     # Initialize API
     api = Api(
         email=os.getenv("EMAIL") if not cookies_path and not cookies_string else None,
-        password=os.getenv("PASSWORD") if not cookies_path and not cookies_string else None,
+        password=(
+            os.getenv("PASSWORD") if not cookies_path and not cookies_string else None
+        ),
         cookies_path=cookies_path,
         cookies_string=cookies_string,
         publication_url=os.getenv("PUBLICATION_URL"),
@@ -61,18 +64,18 @@ if __name__ == "__main__":
         else:
             # Try relative to parent directory (for README.md in project root)
             markdown_path = Path(__file__).parent.parent / args.markdown
-    
+
     if not markdown_path.exists():
         print(f"Error: Markdown file not found at {markdown_path}")
         exit(1)
-    
+
     with open(markdown_path, "r", encoding="utf-8") as f:
         markdown_content = f.read()
-    
+
     # Extract title from first heading (if it starts with #)
     title = "Python Substack"
     subtitle = "Markdown Test Post"
-    
+
     lines = markdown_content.split("\n")
     for line in lines:
         if line.startswith("# "):
@@ -81,7 +84,7 @@ if __name__ == "__main__":
         elif line.startswith("#"):
             # Skip badge lines and other non-title content
             continue
-    
+
     # Create a post
     post = Post(
         title=title,
@@ -108,4 +111,3 @@ if __name__ == "__main__":
         print(f"Title: {title}")
         print(f"Subtitle: {subtitle}")
         print("Use --publish flag to publish the draft.")
-
