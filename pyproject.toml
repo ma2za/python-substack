@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.2.0"
+version = "0.3.0"
 description = "Write and safely manage Substack drafts from Markdown with Python, CLI, and MCP."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
@@ -29,6 +29,7 @@ classifiers = [
 ]
 
 [tool.poetry.urls]
+"Documentation" = "https://ma2za.github.io/python-substack/"
 "Changelog" = "https://github.com/ma2za/python-substack/blob/main/CHANGELOG.md"
 "Issues" = "https://github.com/ma2za/python-substack/issues"
 

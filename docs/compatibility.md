@@ -1,3 +1,8 @@
+---
+layout: default
+title: Compatibility policy
+---
+
 # Compatibility policy
 
 python-substack preserves its established public interfaces while progressing

@@ -1,3 +1,8 @@
+---
+layout: default
+title: Legacy CLI commands
+---
+
 # Legacy CLI commands
 
 The original standalone console commands remain supported for compatibility.

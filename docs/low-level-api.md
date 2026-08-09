@@ -1,3 +1,8 @@
+---
+layout: default
+title: Low-level Python API
+---
+
 # Low-level Python API
 
 Most callers should use `Api.create_draft_from_markdown`. The `Post` builder is

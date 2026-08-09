@@ -1,0 +1,10 @@
+title: python-substack
+description: Safe Substack draft automation from Markdown with Python, CLI, and MCP.
+theme: jekyll-theme-minimal
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: true
+include:
+  - README.md

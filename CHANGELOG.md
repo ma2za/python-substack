@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- GitHub Pages documentation with a task-oriented index for installation,
+  authentication, CLI, Python, Markdown, MCP, safety, and troubleshooting.
+- A five-minute Markdown-to-unpublished-draft walkthrough using the existing
+  before and after images.
+- Tested examples for draft creation, scheduling, publication selection,
+  stable JSON automation, and cookie authentication verification.
+- A documentation project link in package metadata and repository navigation.
+
+### Improved
+
+- Add Jekyll front matter to existing documentation while preserving every
+  previous documentation path.
+- Keep creating, scheduling, publishing, and deleting clearly separated in the
+  onboarding and safety guides.
+
+No runtime interface changed in this release.
+
 ## 0.2.0
 
 ### Added

@@ -1,3 +1,8 @@
+---
+layout: default
+title: Authentication
+---
+
 # Authentication
 
 python-substack accepts email and password credentials, a cookies JSON file, or

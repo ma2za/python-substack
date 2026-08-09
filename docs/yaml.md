@@ -1,3 +1,8 @@
+---
+layout: default
+title: YAML drafts
+---
+
 # YAML drafts
 
 The compatibility command `substack-publish-yaml` accepts Markdown-oriented
