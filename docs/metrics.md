@@ -1,3 +1,8 @@
+---
+layout: default
+title: Adoption metrics
+---
+
 # Adoption metrics
 
 Metrics are recorded without adding telemetry to the package.

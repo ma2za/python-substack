@@ -1,3 +1,8 @@
+---
+layout: default
+title: Markdown support
+---
+
 # Markdown support
 
 `Post.from_markdown(markdown_content, api=None)` converts a Markdown document

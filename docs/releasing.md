@@ -1,3 +1,8 @@
+---
+layout: default
+title: Release checklist
+---
+
 # Release checklist
 
 1. Keep `pyproject.toml` and `substack/__init__.py` on the previous version
