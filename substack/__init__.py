@@ -3,7 +3,7 @@
 __author__ = "Paolo Mazza"
 __email__ = "mazzapaolo2019@gmail.com"
 __license__ = "MIT License"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __url__ = "https://github.com/ma2za/python-substack"
 __download_url__ = "https://pypi.python.org/pypi/python-substack"
 __description__ = (

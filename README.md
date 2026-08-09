@@ -10,6 +10,10 @@ publish them through Python, a command-line interface, or MCP.
 [![License](https://img.shields.io/pypi/l/python-substack)](LICENSE)
 [![Downloads](https://static.pepy.tech/badge/python-substack/month)](https://pepy.tech/project/python-substack)
 
+[Documentation](https://ma2za.github.io/python-substack/) ·
+[Getting started](https://ma2za.github.io/python-substack/getting-started.html) ·
+[PyPI](https://pypi.org/project/python-substack/)
+
 > [!IMPORTANT]
 > Creating and publishing are separate operations. `substack drafts create`
 > always creates an unpublished draft. It never schedules, sends, publishes,
@@ -213,12 +217,18 @@ See [MCP server](docs/mcp.md) for the tool list and safety notes.
 
 ## Project documentation
 
+- [Documentation site](https://ma2za.github.io/python-substack/)
+- [Installation and first draft](docs/getting-started.md)
+- [Unified CLI](docs/cli.md)
+- [Python SDK](docs/python-sdk.md)
 - [Authentication](docs/authentication.md)
 - [Markdown reference](docs/markdown.md)
 - [Legacy CLI commands](docs/legacy-cli.md)
 - [Low-level Python API](docs/low-level-api.md)
 - [YAML drafts](docs/yaml.md)
 - [MCP server](docs/mcp.md)
+- [Safety and publishing behavior](docs/safety.md)
+- [Troubleshooting](docs/troubleshooting.md)
 - [Compatibility policy](docs/compatibility.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)

@@ -1,3 +1,8 @@
+---
+layout: default
+title: MCP server
+---
+
 # MCP server
 
 Install the optional dependency and start the stdio server:
