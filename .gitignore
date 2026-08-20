@@ -110,6 +110,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# removed-provider CLI and Testing artifacts
+tmp_pytest/
+
 # Spyder project settings
 .spyderproject
 .spyproject
