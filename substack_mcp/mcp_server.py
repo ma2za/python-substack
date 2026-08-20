@@ -163,54 +163,23 @@ async def post_draft_from_markdown(
         This docstring example is meant to mirror the YAML-driven workflow and show how to decompose the same operations into explicit tool calls.
     """
     client = get_api()
-    user_id = client.get_user_id()
 
-    post = Post(
+    return client.create_draft_from_markdown(
         title=title,
-        subtitle=subtitle or "",
-        user_id=user_id,
+        markdown=markdown,
+        subtitle=subtitle,
         audience=audience,
         write_comment_permissions=write_comment_permissions,
+        search_engine_title=search_engine_title,
+        search_engine_description=search_engine_description,
+        slug=slug,
+        draft_section_id=draft_section_id,
+        tags=tags,
+        prepublish=prepublish,
+        publish=publish,
+        send=send,
+        share_automatically=share_automatically,
     )
-
-    post.from_markdown(markdown, api=client)
-
-    draft = client.post_draft(post.get_draft())
-
-    update_payload: Dict[str, Any] = {}
-    if search_engine_title:
-        update_payload["search_engine_title"] = search_engine_title
-    if search_engine_description:
-        update_payload["search_engine_description"] = search_engine_description
-    if slug:
-        update_payload["slug"] = slug
-    if draft_section_id is not None:
-        update_payload["draft_section_id"] = draft_section_id
-
-    if update_payload:
-        draft = client.put_draft(draft.get("id"), **update_payload)
-
-    tags_list = _normalize_tags(tags)
-    tags_result = None
-    if tags_list:
-        tags_result = client.add_tags_to_post(draft.get("id"), tags_list)
-
-    prepublish_result = None
-    if prepublish:
-        prepublish_result = client.prepublish_draft(draft.get("id"))
-
-    publish_result = None
-    if publish:
-        publish_result = client.publish_draft(
-            draft.get("id"), send=send, share_automatically=share_automatically
-        )
-
-    return {
-        "draft": draft,
-        "tags": tags_result,
-        "prepublish": prepublish_result,
-        "publish": publish_result,
-    }
 
 
 @mcp.tool()
@@ -269,7 +238,11 @@ async def publish_draft(
     send: bool = True,
     share_automatically: bool = False,
 ) -> Dict[str, Any]:
-    """Publish a draft to live post state.
+    """Publish a draft to live post state. (Legacy compatibility interface).
+
+    This tool remains for backward compatibility. It is recommended to use
+    `publish_draft_checked` instead, which provides a safer publishing path
+    with explicit confirmation and prepublish validation.
 
     Args:
         draft_id: target draft identifier.
@@ -283,6 +256,126 @@ async def publish_draft(
     return client.publish_draft(
         draft_id, send=send, share_automatically=share_automatically
     )
+
+
+@mcp.tool()
+async def publish_draft_checked(
+    draft_id: int,
+    confirm: bool = False,
+    send: bool = False,
+    share_automatically: bool = False,
+) -> Dict[str, Any]:
+    """A safer publishing path that requires confirmation and runs prepublish checks.
+
+    Args:
+        draft_id: target draft identifier.
+        confirm: Must be True to proceed with publication.
+        send: if False then do not send email to subscribers. Defaults to False.
+        share_automatically: whether to auto-share.
+
+    Returns:
+        Response from Substack `publish_draft`.
+    """
+    if not confirm:
+        raise ValueError("Publishing rejected: confirm parameter must be True.")
+
+    client = get_api()
+    client.prepublish_draft(draft_id)
+    return client.publish_draft(
+        draft_id, send=send, share_automatically=share_automatically
+    )
+
+
+@mcp.tool()
+async def get_status() -> Dict[str, Any]:
+    """Get the authentication status and basic user information.
+
+    Returns:
+        A dictionary containing user profile and primary publication details.
+    """
+    client = get_api()
+    profile = client.get_user_profile()
+    primary_pub = client.get_user_primary_publication()
+    return {"profile": profile, "primary_publication": primary_pub}
+
+
+@mcp.tool()
+async def list_publications() -> List[Dict[str, Any]]:
+    """List all publications available to the authenticated user.
+
+    Returns:
+        A list of publications.
+    """
+    client = get_api()
+    return client.get_user_publications()
+
+
+@mcp.tool()
+async def list_drafts(
+    filter: str = "draft", offset: int = 0, limit: int = 25
+) -> List[Dict[str, Any]]:
+    """List drafts for the current publication.
+
+    Args:
+        filter: Filter string, defaults to "draft".
+        offset: Pagination offset.
+        limit: Max number of drafts to return.
+
+    Returns:
+        A list of drafts.
+    """
+    client = get_api()
+    return client.get_drafts(filter=filter, offset=offset, limit=limit)
+
+
+@mcp.tool()
+async def get_draft(draft_id: int) -> Dict[str, Any]:
+    """Get a specific draft by its ID.
+
+    Args:
+        draft_id: The identifier of the draft.
+
+    Returns:
+        The draft details.
+    """
+    client = get_api()
+    return client.get_draft(draft_id)
+
+
+@mcp.tool()
+async def schedule_draft(draft_id: int, at: str) -> Dict[str, Any]:
+    """Schedule a draft for release.
+
+    Args:
+        draft_id: target draft identifier.
+        at: ISO 8601 formatted datetime string (e.g., "2024-01-01T12:00:00Z").
+
+    Returns:
+        API response dict for the scheduled draft.
+    """
+    from datetime import datetime
+
+    try:
+        draft_datetime = datetime.fromisoformat(at.replace("Z", "+00:00"))
+    except ValueError as e:
+        raise ValueError(f"Invalid ISO datetime string for 'at': {e}")
+
+    client = get_api()
+    return client.schedule_draft(draft_id, draft_datetime)
+
+
+@mcp.tool()
+async def unschedule_draft(draft_id: int) -> Dict[str, Any]:
+    """Unschedule a previously scheduled draft.
+
+    Args:
+        draft_id: target draft identifier.
+
+    Returns:
+        API response dict for unscheduling.
+    """
+    client = get_api()
+    return client.unschedule_draft(draft_id)
 
 
 def main() -> None:

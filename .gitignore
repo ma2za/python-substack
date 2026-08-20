@@ -110,6 +110,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Gemini CLI and Testing artifacts
+.gemini/
+tmp_pytest/
+
 # Spyder project settings
 .spyderproject
 .spyproject
