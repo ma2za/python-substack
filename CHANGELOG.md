@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- Seven new MCP tools for read operations and safe publishing: `get_status`, `list_publications`, `list_drafts`, `get_draft`, `schedule_draft`, `unschedule_draft`, and `publish_draft_checked`.
+- Pre-publish validation, interactive confirmation requirements, and no-email defaults for the new `publish_draft_checked` MCP tool.
+- Verified MCP client configuration examples in `docs/mcp.md`.
+- Documentation for Gemini CLI with Vertex AI (`docs/gemini-vertex-ai.md`).
+
+### Improved
+
+- Simplify MCP draft creation by routing through the existing `Api.create_draft_from_markdown` SDK helper, preserving response format.
+- Document the legacy `publish_draft` MCP tool as the compatibility interface.
+- Bump `cryptography` dependency from `48.0.1` to `50.0.0` (#68).
+
 ## 0.3.0
 
 ### Added
