@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.4.0"
+version = "0.5.0"
 description = "Write and safely manage Substack drafts from Markdown with Python, CLI, and MCP."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"

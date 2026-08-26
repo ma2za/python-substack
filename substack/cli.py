@@ -18,7 +18,7 @@ class CLIUsageError(Exception):
     pass
 
 
-def _api_from_env(cookies_path=None, publication_url=None):
+def _api_from_env(cookies_path=None, publication_url=None, timeout=None):
     load_dotenv()
 
     cookies_path = cookies_path or os.getenv("COOKIES_PATH")
@@ -30,12 +30,14 @@ def _api_from_env(cookies_path=None, publication_url=None):
             cookies_path=cookies_path,
             cookies_string=cookies_string,
             publication_url=publication_url,
+            timeout=timeout,
         )
 
     return Api(
         email=os.getenv("EMAIL"),
         password=os.getenv("PASSWORD"),
         publication_url=publication_url,
+        timeout=timeout,
     )
 
 
@@ -370,6 +372,9 @@ def _build_parser():
     parser.add_argument(
         "--publication-url", help="Override PUBLICATION_URL for this command."
     )
+    parser.add_argument(
+        "--timeout", type=float, help="Timeout in seconds for API requests."
+    )
     parser.add_argument("--json", action="store_true", dest="json_output")
     parser.add_argument("--version", action="version", version=__version__)
 
@@ -450,6 +455,7 @@ def main(argv=None):
         api = _api_from_env(
             cookies_path=args.cookies,
             publication_url=args.publication_url,
+            timeout=args.timeout,
         )
         args.handler(api, args)
     except CLIUsageError as exc:

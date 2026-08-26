@@ -110,8 +110,8 @@ def test_documented_cli_onboarding_examples(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(
         cli,
         "_api_from_env",
-        lambda cookies_path=None, publication_url=None: (
-            received.append((cookies_path, publication_url)) or api
+        lambda cookies_path=None, publication_url=None, timeout=None: (
+            received.append((cookies_path, publication_url, timeout)) or api
         ),
     )
 
@@ -144,7 +144,7 @@ def test_documented_cli_onboarding_examples(tmp_path, monkeypatch, capsys):
     assert main(["--json", "drafts", "list", "--limit", "10"]) == 0
 
     capsys.readouterr()
-    assert received[3] == (None, "https://example.substack.com")
+    assert received[3] == (None, "https://example.substack.com", None)
     assert ("list", {"filter": "draft", "offset": 0, "limit": 10}) in api.calls
     assert (
         "schedule",
