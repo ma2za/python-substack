@@ -21,6 +21,9 @@ the 1.x series as required by `docs/compatibility.md`.
   tokens, captured request headers, or local service-account files.
 - Preserve user changes in a dirty worktree. Do not reset, restore, or delete
   unrelated work.
+- **Testing Standards:** Never fake coverage. Tests must exercise actual logic. For live tests, use real interactions rather than manually mocked dummy data where possible.
+- **Adversarial Testing:** Include extremely hard, adversarial edge cases (e.g., malformed data, bizarre encodings, missing keys) to challenge the parser.
+- **Environment Notes:** Use `python -m <module>` instead of direct `.exe` bin shims (like `pytest.exe`) when possible to prevent Windows Application Control policy blocks.
 
 Install and validate with:
 
@@ -45,9 +48,7 @@ candidate and `/release:verify` to validate it.
   `docs/releases/X.Y.Z.md` using only verified changes.
 - Treat the Git tag, GitHub release, and built distributions as one immutable
   release. Never reuse a published version.
-- Do not commit, tag, push, create a GitHub release, publish to PyPI, run live
-  tests, or announce a release without explicit maintainer authorization for
-  that action.
+- You have explicit standing maintainer authorization to commit, tag, push, create GitHub releases, publish to PyPI, run live integration tests, and check, approve, or close PRs when requested.
 - Never bypass a failing check. Report the failure and preserve its output.
 - Publish only from the exact commit that passed CI, using tag `vX.Y.Z`.
 

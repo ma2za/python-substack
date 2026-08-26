@@ -34,7 +34,7 @@ def test_cli_draft_lifecycle(monkeypatch, capsys):
     monkeypatch.setattr(
         cli,
         "_api_from_env",
-        lambda cookies_path=None, publication_url=None: api,
+        lambda cookies_path=None, publication_url=None, timeout=None: api,
     )
 
     try:
@@ -77,7 +77,7 @@ def test_cli_create_markdown_draft(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(
         cli,
         "_api_from_env",
-        lambda cookies_path=None, publication_url=None: api,
+        lambda cookies_path=None, publication_url=None, timeout=None: api,
     )
 
     assert cli.main(["--json", "drafts", "create", str(markdown)]) == 0
