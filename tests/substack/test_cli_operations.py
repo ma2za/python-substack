@@ -91,7 +91,7 @@ def use_api(monkeypatch, api):
     monkeypatch.setattr(
         cli,
         "_api_from_env",
-        lambda cookies_path=None, publication_url=None: api,
+        lambda cookies_path=None, publication_url=None, timeout=None: api,
     )
 
 
@@ -525,6 +525,7 @@ def test_api_from_env_preserves_auth_precedence_and_publication_override(monkeyp
         "cookies_path": "explicit-cookies.json",
         "cookies_string": "cookie=value",
         "publication_url": "https://selected.substack.com",
+        "timeout": None,
     }
     assert calls == [result]
 
@@ -545,6 +546,7 @@ def test_api_from_env_uses_email_password_without_cookies(monkeypatch):
         "email": "writer@example.com",
         "password": "secret",
         "publication_url": "https://writer.substack.com",
+        "timeout": None,
     }
     assert calls == [result]
 
@@ -555,8 +557,8 @@ def test_main_forwards_global_auth_and_publication_options(monkeypatch):
     monkeypatch.setattr(
         cli,
         "_api_from_env",
-        lambda cookies_path=None, publication_url=None: (
-            received.append((cookies_path, publication_url)) or api
+        lambda cookies_path=None, publication_url=None, timeout=None: (
+            received.append((cookies_path, publication_url, timeout)) or api
         ),
     )
 
@@ -575,4 +577,4 @@ def test_main_forwards_global_auth_and_publication_options(monkeypatch):
         == 0
     )
 
-    assert received == [("cookies.json", "https://selected.substack.com")]
+    assert received == [("cookies.json", "https://selected.substack.com", None)]

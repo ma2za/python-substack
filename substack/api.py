@@ -37,6 +37,7 @@ class Api:
         publication_url=None,
         debug=False,
         cookies_string=None,
+        timeout=None,
     ):
         """
 
@@ -65,7 +66,18 @@ class Api:
             logging.basicConfig()
             logging.getLogger().setLevel(logging.DEBUG)
 
+        self.timeout = timeout
+
         self._session = requests.Session()
+        original_request = self._session.request
+
+        def _request_with_timeout(*args, **kwargs):
+            if kwargs.get("timeout") is None and self.timeout is not None:
+                kwargs["timeout"] = self.timeout
+            return original_request(*args, **kwargs)
+
+        self._session.request = _request_with_timeout
+
         retry = Retry(
             total=4,
             status=4,
@@ -100,22 +112,36 @@ class Api:
         user_publication = None
         # if the user provided a publication url, then use that
         if publication_url:
-            import re
+            from urllib.parse import urlparse
 
-            # Regular expression to extract subdomain name
-            match = re.search(r"https://(.*).substack.com", publication_url.lower())
-            subdomain = match.group(1) if match else None
+            # Normalize requested URL
+            parsed_req = urlparse(publication_url.lower())
+            req_hostname = parsed_req.hostname or parsed_req.path
+            # Strip trailing slashes and www.
+            req_hostname = req_hostname.strip("/").replace("www.", "", 1)
 
             user_publications = self.get_user_publications()
-            # search through publications to find the publication with the matching subdomain
             for publication in user_publications:
-                if publication["subdomain"] == subdomain:
-                    # set the current publication to the users publication
+                pub_url = Api.get_publication_url(publication).lower()
+                parsed_pub = urlparse(pub_url)
+                pub_hostname = parsed_pub.hostname or parsed_pub.path
+                pub_hostname = pub_hostname.strip("/").replace("www.", "", 1)
+
+                if req_hostname == pub_hostname:
                     user_publication = publication
                     break
+
+            if user_publication is None:
+                raise SubstackRequestException(
+                    f"Requested publication is unavailable: {publication_url}"
+                )
         else:
             # get the users primary publication
             user_publication = self.get_user_primary_publication()
+            if user_publication is None:
+                raise SubstackRequestException(
+                    "Could not find primary publication in profile"
+                )
 
         # set the current publication to the users primary publication
         self.change_publication(user_publication)
@@ -599,8 +625,25 @@ class Api:
 
         """
         if os.path.exists(image):
+            import mimetypes
+
+            mime_type, _ = mimetypes.guess_type(image)
+            if mime_type not in ["image/jpeg", "image/png", "image/gif", "image/webp"]:
+                ext = os.path.splitext(image)[1].lower()
+                if ext in [".jpg", ".jpeg"]:
+                    mime_type = "image/jpeg"
+                elif ext == ".png":
+                    mime_type = "image/png"
+                elif ext == ".gif":
+                    mime_type = "image/gif"
+                elif ext == ".webp":
+                    mime_type = "image/webp"
+                else:
+                    mime_type = "application/octet-stream"
+
             with open(image, "rb") as file:
-                image = b"data:image/jpeg;base64," + base64.b64encode(file.read())
+                image_bytes = base64.b64encode(file.read())
+                image = f"data:{mime_type};base64,".encode("ascii") + image_bytes
 
         response = self._session.post(
             f"{self.publication_url}/image",

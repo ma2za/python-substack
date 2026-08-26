@@ -1,8 +1,20 @@
 import json
+import re
+
+
+def _redact_message(text: str) -> str:
+    if not text:
+        return text
+    # Redact common cookie-like values and session tokens
+    # e.g., s%3A... or s:... which are typical for express session cookies
+    text = re.sub(r"s%3A[a-zA-Z0-9_\-\.\%]+", "[REDACTED_COOKIE]", text)
+    text = re.sub(r"s:[a-zA-Z0-9_\-\.\%]+", "[REDACTED_COOKIE]", text)
+    return text
 
 
 class SubstackAPIException(Exception):
     def __init__(self, status_code, text):
+        text = _redact_message(text)
         try:
             json_res = json.loads(text)
         except ValueError:
@@ -22,7 +34,7 @@ class SubstackAPIException(Exception):
 
 class SubstackRequestException(Exception):
     def __init__(self, message):
-        self.message = message
+        self.message = _redact_message(message)
 
     def __str__(self):
         return f"SubstackRequestException: {self.message}"
