@@ -6,6 +6,7 @@ import pytest
 from dotenv import load_dotenv
 
 from substack import cli
+from substack.mdrender import markdown_to_doc
 from substack.post import Post
 
 load_dotenv()
@@ -42,6 +43,22 @@ def test_cli_draft_lifecycle(monkeypatch, capsys):
         assert cli.main(["--json", "publications", "list"]) == 0
         assert cli.main(["--json", "drafts", "list", "--limit", "10"]) == 0
         assert cli.main(["--json", "drafts", "get", str(draft_id)]) == 0
+        capsys.readouterr()
+        assert cli.main(["--json", "drafts", "export", str(draft_id)]) == 0
+        exported = json.loads(capsys.readouterr().out)
+        assert exported["draft_id"] == draft_id
+        assert exported["unsupported_nodes"] == []
+        assert markdown_to_doc(exported["markdown"]) == [
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "This draft is created and deleted by the opt-in CLI smoke test.",
+                    }
+                ],
+            }
+        ]
 
         scheduled_at = datetime.now(timezone.utc) + timedelta(days=1)
         assert (

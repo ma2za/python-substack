@@ -309,6 +309,32 @@ def _drafts_create(api, args):
         print(f"Created draft {draft.get('id')}: {title}")
 
 
+def _drafts_export(api, args):
+    output_path = Path(args.output) if args.output else None
+    if output_path is not None and output_path.exists() and not args.force:
+        raise CLIUsageError(
+            f"Output file already exists: {output_path}; use --force to overwrite"
+        )
+
+    result = api.export_draft_to_markdown(args.draft_id)
+    markdown = result["markdown"]
+    if output_path is not None:
+        output_path.write_text(markdown, encoding="utf-8")
+
+    payload = {
+        "action": "export",
+        "draft_id": args.draft_id,
+        "markdown": markdown,
+        "unsupported_nodes": result["unsupported_nodes"],
+    }
+    if args.json_output:
+        _print_json(payload)
+    elif output_path is not None:
+        print(f"Exported draft {args.draft_id} to {output_path}")
+    else:
+        print(markdown, end="")
+
+
 def _drafts_schedule(api, args):
     scheduled_at = _parse_schedule(args.at)
     result = api.schedule_draft(args.draft_id, scheduled_at)
@@ -420,6 +446,14 @@ def _build_parser():
     drafts_create.add_argument("--draft-section-id", type=int)
     drafts_create.add_argument("--tag", action="append", dest="tags", metavar="TAG")
     drafts_create.set_defaults(handler=_drafts_create)
+
+    drafts_export = draft_commands.add_parser(
+        "export", help="Export a draft to Markdown without modifying it."
+    )
+    drafts_export.add_argument("draft_id", type=int)
+    drafts_export.add_argument("--output", metavar="PATH")
+    drafts_export.add_argument("--force", action="store_true")
+    drafts_export.set_defaults(handler=_drafts_export)
 
     drafts_schedule = draft_commands.add_parser("schedule", help="Schedule a draft.")
     drafts_schedule.add_argument("draft_id", type=int)

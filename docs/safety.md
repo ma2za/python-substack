@@ -9,6 +9,7 @@ Creating, scheduling, publishing, and deleting are separate operations.
 
 | Operation | Effect | Confirmation |
 |---|---|---|
+| `drafts export` | Reads a draft and produces Markdown | None |
 | `drafts create` | Creates an unpublished draft | None |
 | `drafts schedule` | Adds a future release time | None |
 | `drafts unschedule` | Removes a future release time | None |
@@ -26,3 +27,7 @@ before they are printed by the CLI.
 Substack's interfaces are undocumented and may change. Keep a reviewed copy of
 important source Markdown and verify the selected publication with
 `substack status` before any write.
+
+Export never writes to Substack and never overwrites a local file unless
+`--force` is supplied. Unsupported editor content is preserved as an opaque
+marker and listed in JSON output so it cannot disappear unnoticed.
