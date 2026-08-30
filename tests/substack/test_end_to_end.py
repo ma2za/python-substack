@@ -28,6 +28,7 @@ import pytest
 from dotenv import load_dotenv
 
 from substack import Api
+from substack.mdrender import markdown_to_doc
 from substack.post import Post
 
 load_dotenv()
@@ -143,6 +144,10 @@ def _roundtrip(api: Api):
         body = stored.get("draft_body")
         if isinstance(body, str):
             body = json.loads(body)
+        exported = api.export_draft_to_markdown(draft_id)
+        assert exported["draft"]["id"] == draft_id
+        assert exported["unsupported_nodes"] == []
+        assert markdown_to_doc(exported["markdown"]) == body["content"]
         return body["content"]
     finally:
         try:

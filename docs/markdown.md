@@ -173,3 +173,25 @@ document remains valid. Unknown `:::` container names remain ordinary text.
   and add it in the Substack editor.
 - Widgets authored only in the Substack editor (buttons, polls, embeds, etc.)
   have no Markdown equivalent.
+
+## Draft export and opaque nodes
+
+`Api.export_draft_to_markdown(draft_id)` and `substack drafts export DRAFT_ID`
+reverse supported Substack nodes into Markdown. The export is read-only and
+returns every unsupported node separately in `unsupported_nodes`.
+
+Unsupported nodes and supported nodes with unknown fields are also kept at
+their document position as:
+
+```text
+<!-- python-substack-node:v1 BASE64URL_JSON -->
+```
+
+The payload is UTF-8 JSON encoded with URL-safe base64 and no padding. This
+makes unsupported content visible and recoverable instead of silently dropping
+it. Version 0.6 does not import these markers into a draft; safe updates that
+preserve them are planned for 0.8.
+
+Export preserves the Markdown meaning of supported images: source, alt text,
+link, and plain-text caption. Substack-only image layout attributes are not a
+Markdown contract in 0.6.

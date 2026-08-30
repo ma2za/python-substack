@@ -57,6 +57,7 @@ Substack result:
 - Upload local images referenced by Markdown.
 - Set audience, comment permissions, SEO metadata, slug, sections, and tags.
 - List and inspect publications and drafts.
+- Export drafts to loss-aware Markdown backups without server writes.
 - Schedule, unschedule, publish, and delete drafts with explicit safeguards.
 - Use stable JSON envelopes in scripts and automation.
 - Authenticate with browser cookies or email and password.
@@ -107,6 +108,7 @@ Inspect publications and drafts:
 substack publications list
 substack drafts list --limit 10
 substack drafts get 12345
+substack drafts export 12345 --output backup.md
 substack --publication-url https://example.substack.com drafts list
 ```
 
@@ -170,6 +172,14 @@ print(result["draft"]["id"])
 
 `create_draft_from_markdown` creates a draft by default. It publishes only when
 `publish=True` is passed.
+
+Back up an existing draft without modifying it:
+
+```python
+backup = api.export_draft_to_markdown(12345)
+print(backup["markdown"])
+print(backup["unsupported_nodes"])
+```
 
 For direct ProseMirror node construction, see the
 [low-level Python API](docs/low-level-api.md). YAML workflows are documented in

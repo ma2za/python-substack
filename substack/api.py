@@ -442,6 +442,28 @@ class Api:
         response = self._session.get(f"{self.publication_url}/drafts/{draft_id}")
         return Api._handle_response(response=response)
 
+    def export_draft_to_markdown(self, draft_id):
+        from substack.mdexport import document_to_markdown
+
+        draft = self.get_draft(draft_id)
+        draft_body = draft.get("draft_body")
+        if isinstance(draft_body, str):
+            try:
+                draft_body = json.loads(draft_body)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    "Malformed draft body: draft_body is not valid JSON"
+                ) from exc
+        if not isinstance(draft_body, dict):
+            raise ValueError("Malformed draft body: draft_body must be a JSON object")
+
+        markdown, unsupported_nodes = document_to_markdown(draft_body)
+        return {
+            "draft": draft,
+            "markdown": markdown,
+            "unsupported_nodes": unsupported_nodes,
+        }
+
     def delete_draft(self, draft_id):
         """
 
