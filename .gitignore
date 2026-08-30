@@ -111,6 +111,12 @@ env.bak/
 venv.bak/
 
 # removed-provider CLI and Testing artifacts
+.removed-provider/*
+!.removed-provider/.env.example
+!.removed-provider/commands/
+!.removed-provider/commands/**
+!.removed-provider/policies/
+!.removed-provider/policies/**
 tmp_pytest/
 
 # Spyder project settings
