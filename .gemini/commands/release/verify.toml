@@ -1,0 +1,17 @@
+description = "Verify a release candidate without publishing it"
+
+prompt = """
+Verify the current python-substack release candidate against GEMINI.md and
+docs/releasing.md. Inspect the worktree and version-bearing files first.
+Confirm pyproject.toml, substack/__init__.py, CHANGELOG.md, and the release page
+agree, and confirm the target version does not already have a Git tag.
+
+Run all safe offline tests, collection checks, Poetry validation, build,
+distribution metadata checks, and base plus MCP wheel smoke checks that are
+possible in this environment. Do not run live Substack tests, publish, tag,
+push, create a GitHub release, or modify release content merely to make a check
+pass.
+
+Report failures first, then successful checks and the exact remaining manual or
+CI-gated release steps.
+"""

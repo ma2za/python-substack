@@ -1,0 +1,20 @@
+description = "Prepare a versioned release candidate without publishing it"
+
+prompt = """
+Prepare python-substack release {{args}} end to end, stopping before commit,
+tag, push, GitHub release creation, PyPI publication, or announcement.
+
+Read GEMINI.md, docs/releasing.md, CHANGELOG.md, pyproject.toml,
+substack/__init__.py, the relevant Git history, and the current worktree first.
+Require one explicit semantic version argument and refuse to reuse an existing
+version or tag. Preserve unrelated worktree changes.
+
+Implement any remaining release preparation that is supported by the actual
+changes: synchronize the version in pyproject.toml and substack/__init__.py,
+add the top CHANGELOG.md entry, and create docs/releases/<version>.md. Do not
+invent features or claims. Run the offline validation and package checks from
+docs/releasing.md that are safe in the current worktree. Do not run live tests.
+
+Finish with the changed files, exact validation results, unresolved blockers,
+and the maintainer actions still required before publication.
+"""
