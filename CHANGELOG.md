@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+
+- Add read-only `Api.export_draft_to_markdown(draft_id)` with the original draft, exported Markdown, and unsupported-node details.
+- Add `substack drafts export DRAFT_ID`, including stable JSON output and safe `--output` and `--force` file handling.
+- Reverse-render every Substack node supported by Markdown import, including formatting, nested lists, images and captions, code languages, footnotes, math, pull quotes, and callouts.
+- Preserve unsupported nodes and unknown fields as versioned, decodable `python-substack-node:v1` markers instead of silently dropping them.
+
 ## 0.5.0
 
 ### Added

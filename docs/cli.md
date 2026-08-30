@@ -17,6 +17,25 @@ substack drafts create post.md
 The title comes from the first Markdown heading, then the filename if the file
 has no heading. Use `--title` to override it.
 
+## Export a draft to Markdown
+
+Print a read-only Markdown backup to standard output:
+
+```bash
+substack drafts export 12345
+```
+
+Write it to a UTF-8 file:
+
+```bash
+substack drafts export 12345 --output backup.md
+```
+
+The command refuses to replace an existing file unless `--force` is present.
+It fetches the draft but performs no server writes. Content without a supported
+Markdown representation is emitted as a versioned opaque HTML comment instead
+of being silently discarded.
+
 ## Select a publication
 
 List every publication available to the authenticated account:
@@ -49,10 +68,13 @@ substack drafts unschedule 12345
 
 ```bash
 substack --json drafts list --limit 10
+substack --json drafts export 12345
 ```
 
 The command writes a JSON object containing `drafts`, `count`, `filter`,
 `offset`, and `limit`. Errors are also JSON when `--json` is present.
+Export JSON contains `action`, `draft_id`, `markdown`, and
+`unsupported_nodes`.
 
 ## Publish and delete
 

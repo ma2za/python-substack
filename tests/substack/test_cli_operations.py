@@ -59,6 +59,14 @@ class OperationsApi:
             "publish": None,
         }
 
+    def export_draft_to_markdown(self, draft_id):
+        self.calls.append(("export", draft_id))
+        return {
+            "draft": {"id": draft_id},
+            "markdown": "# Exported\n",
+            "unsupported_nodes": [{"type": "futureWidget"}],
+        }
+
     def schedule_draft(self, draft_id, scheduled_at):
         self.calls.append(("schedule", draft_id, scheduled_at))
         return {"scheduled": True}
@@ -297,6 +305,79 @@ def test_drafts_create_missing_file_uses_existing_error_contract(
     error = json.loads(capsys.readouterr().err)
     assert error["error"]["type"] == "io_error"
     assert api.calls == []
+
+
+def test_drafts_export_prints_markdown_without_writing(monkeypatch, capsys):
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert cli.main(["drafts", "export", "42"]) == 0
+
+    assert capsys.readouterr().out == "# Exported\n"
+    assert api.calls == [("export", 42)]
+
+
+def test_drafts_export_help_lists_file_safety_options(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        cli._build_parser().parse_args(["drafts", "export", "--help"])
+
+    assert exc_info.value.code == 0
+    output = capsys.readouterr().out
+    assert "--output" in output
+    assert "--force" in output
+
+
+def test_drafts_export_json_contract(monkeypatch, capsys):
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert cli.main(["--json", "drafts", "export", "42"]) == 0
+
+    assert json.loads(capsys.readouterr().out) == {
+        "action": "export",
+        "draft_id": 42,
+        "markdown": "# Exported\n",
+        "unsupported_nodes": [{"type": "futureWidget"}],
+    }
+
+
+def test_drafts_export_writes_utf8_and_refuses_overwrite(tmp_path, monkeypatch, capsys):
+    output = tmp_path / "backup.md"
+    api = OperationsApi()
+    use_api(monkeypatch, api)
+
+    assert cli.main(["drafts", "export", "42", "--output", str(output)]) == 0
+    assert output.read_text(encoding="utf-8") == "# Exported\n"
+    assert "Exported draft 42" in capsys.readouterr().out
+
+    output.write_text("keep me", encoding="utf-8")
+    api.calls.clear()
+    assert cli.main(["drafts", "export", "42", "--output", str(output)]) == 2
+    assert output.read_text(encoding="utf-8") == "keep me"
+    assert api.calls == []
+    assert "--force" in capsys.readouterr().err
+
+    assert cli.main(["drafts", "export", "42", "--output", str(output), "--force"]) == 0
+    assert output.read_text(encoding="utf-8") == "# Exported\n"
+
+
+def test_drafts_export_malformed_body_leaves_no_partial_file(
+    tmp_path, monkeypatch, capsys
+):
+    output = tmp_path / "backup.md"
+    api = OperationsApi()
+    monkeypatch.setattr(
+        api,
+        "export_draft_to_markdown",
+        lambda draft_id: (_ for _ in ()).throw(ValueError("Malformed draft body")),
+    )
+    use_api(monkeypatch, api)
+
+    assert cli.main(["--json", "drafts", "export", "42", "--output", str(output)]) == 1
+
+    assert not output.exists()
+    error = json.loads(capsys.readouterr().err)
+    assert error["error"]["message"] == "Malformed draft body"
 
 
 def test_drafts_create_invalid_utf8_uses_existing_error_contract(
