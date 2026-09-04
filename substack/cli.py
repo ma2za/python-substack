@@ -309,6 +309,53 @@ def _drafts_create(api, args):
         print(f"Created draft {draft.get('id')}: {title}")
 
 
+def _drafts_update(api, args):
+    if not args.yes and (args.json_output or not sys.stdin.isatty()):
+        raise CLIUsageError("--yes is required in non-interactive or JSON mode")
+
+    markdown_file = Path(args.markdown_file)
+    if not markdown_file.exists():
+        raise CLIUsageError(f"File not found: {markdown_file}")
+
+    if not args.yes:
+        action = "update" if not args.dry_run else "dry-run update"
+        print(f"Ready to {action} draft {args.draft_id} from {markdown_file}")
+        print("Substack nodes that are not supported by Markdown export/import")
+        print("will cause the update to be refused to prevent data loss.")
+        print()
+        try:
+            response = input(f"Confirm {action}? [y/N]: ")
+            if response.lower() not in ["y", "yes"]:
+                print("Aborted.")
+                return
+        except EOFError as exc:
+            raise CLIUsageError(
+                f"Confirm {action} requires confirmation or --yes"
+            ) from exc
+
+    markdown = markdown_file.read_text(encoding="utf-8")
+
+    result = api.update_draft_from_markdown(
+        args.draft_id,
+        markdown,
+        subtitle=args.subtitle,
+        audience=args.audience,
+        write_comment_permissions=args.write_comment_permissions,
+        search_engine_title=args.search_engine_title,
+        search_engine_description=args.search_engine_description,
+        slug=args.slug,
+        draft_section_id=args.draft_section_id,
+        tags=args.tags,
+        dry_run=args.dry_run,
+    )
+
+    if args.json_output:
+        _print_json(result)
+    else:
+        status = "Dry-run updated" if args.dry_run else "Updated"
+        print(f"{status} draft {args.draft_id}")
+
+
 def _drafts_export(api, args):
     output_path = Path(args.output) if args.output else None
     if output_path is not None and output_path.exists() and not args.force:
@@ -446,6 +493,23 @@ def _build_parser():
     drafts_create.add_argument("--draft-section-id", type=int)
     drafts_create.add_argument("--tag", action="append", dest="tags", metavar="TAG")
     drafts_create.set_defaults(handler=_drafts_create)
+
+    drafts_update = draft_commands.add_parser(
+        "update", help="Update a draft from a Markdown file."
+    )
+    drafts_update.add_argument("draft_id", type=int)
+    drafts_update.add_argument("markdown_file", metavar="MARKDOWN_FILE")
+    drafts_update.add_argument("--subtitle")
+    drafts_update.add_argument("--audience")
+    drafts_update.add_argument("--write-comment-permissions")
+    drafts_update.add_argument("--search-engine-title")
+    drafts_update.add_argument("--search-engine-description")
+    drafts_update.add_argument("--slug")
+    drafts_update.add_argument("--draft-section-id", type=int)
+    drafts_update.add_argument("--tag", action="append", dest="tags", metavar="TAG")
+    drafts_update.add_argument("--dry-run", action="store_true")
+    drafts_update.add_argument("--yes", action="store_true")
+    drafts_update.set_defaults(handler=_drafts_update)
 
     drafts_export = draft_commands.add_parser(
         "export", help="Export a draft to Markdown without modifying it."
