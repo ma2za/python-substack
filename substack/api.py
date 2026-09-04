@@ -464,6 +464,95 @@ class Api:
             "unsupported_nodes": unsupported_nodes,
         }
 
+    def update_draft_from_markdown(
+        self,
+        draft_id: int,
+        markdown: str,
+        *,
+        subtitle: str = None,
+        audience: str = None,
+        write_comment_permissions: str = None,
+        search_engine_title: str = None,
+        search_engine_description: str = None,
+        slug: str = None,
+        draft_section_id: int = None,
+        tags=None,
+        dry_run: bool = False,
+    ) -> dict:
+        """
+        Update an existing draft body from Markdown, with optional metadata changes.
+        """
+        from substack.mdexport import document_to_markdown
+        from substack.post import Post
+
+        draft = self.get_draft(draft_id)
+        draft_body = draft.get("draft_body")
+        if isinstance(draft_body, str):
+            try:
+                draft_body = json.loads(draft_body)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    "Malformed draft body: draft_body is not valid JSON"
+                ) from exc
+        if not isinstance(draft_body, dict):
+            raise ValueError("Malformed draft body: draft_body must be a JSON object")
+
+        _, unsupported_nodes = document_to_markdown(draft_body)
+        if unsupported_nodes:
+            raise ValueError(
+                "Refusing to update: remote draft contains unsupported Substack nodes. "
+                "Export it first or remove the nodes manually to avoid data loss."
+            )
+
+        post = Post(
+            title=draft.get("title", ""),
+            subtitle=(
+                subtitle if subtitle is not None else (draft.get("subtitle") or "")
+            ),
+            user_id=self.get_user_id(),
+            audience=audience,
+            write_comment_permissions=write_comment_permissions,
+        )
+        post.from_markdown(markdown, api=self)
+
+        update_payload = {"draft_body": json.dumps(post.draft_body)}
+
+        if subtitle is not None:
+            update_payload["subtitle"] = subtitle
+        if audience is not None:
+            update_payload["audience"] = audience
+        if write_comment_permissions is not None:
+            update_payload["write_comment_permissions"] = write_comment_permissions
+        if search_engine_title is not None:
+            update_payload["search_engine_title"] = search_engine_title
+        if search_engine_description is not None:
+            update_payload["search_engine_description"] = search_engine_description
+        if slug is not None:
+            update_payload["slug"] = slug
+        if draft_section_id is not None:
+            update_payload["draft_section_id"] = draft_section_id
+
+        tags_result = None
+        updated_draft = draft
+
+        if not dry_run:
+            updated_draft = self.put_draft(draft_id, **update_payload)
+
+            tags_list = Api._normalize_tags(tags)
+            if tags_list:
+                tags_result = self.add_tags_to_post(draft_id, tags_list)
+
+        return {
+            "action": "update",
+            "draft_id": draft_id,
+            "dry_run": dry_run,
+            "changed": not dry_run,
+            "payload": update_payload,
+            "draft": updated_draft,
+            "tags": tags_result,
+            "unsupported_nodes": unsupported_nodes,
+        }
+
     def delete_draft(self, draft_id):
         """
 
