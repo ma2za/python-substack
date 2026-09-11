@@ -8,7 +8,7 @@ try:
 except ImportError:
     load_dotenv = None
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from substack.api import Api
 from substack.post import Post
