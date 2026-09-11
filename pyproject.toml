@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-substack"
-version = "0.6.0"
+version = "0.7.0"
 description = "Write and safely manage Substack drafts from Markdown with Python, CLI, and MCP."
 authors = ["Paolo Mazza <mazzapaolo2019@gmail.com>"]
 license = "MIT"
@@ -49,6 +49,7 @@ mcp = ["fastmcp"]
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"
 pre-commit = "^4.6.1"
+twine = "^7.0.0"
 
 [tool.pytest.ini_options]
 markers = [
