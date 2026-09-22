@@ -111,8 +111,8 @@ Do not add telemetry to the package, CLI, SDK, or MCP server.
 | 0.4.0 | released | 2026-08-24 | v0.4.0 | - | - | - | - | - | [GitHub](https://github.com/ma2za/python-substack/releases/tag/v0.4.0) |
 | 0.5.0 | released | 2026-08-30 | v0.5.0 | 166 | 28 | 14,448 | 47 | 88 | [GitHub](https://github.com/ma2za/python-substack/releases/tag/v0.5.0) |
 | 0.6.0 | released | 2026-08-30 | v0.6.0 | 166 | 28 | 14,448 | 47 | 88 | [GitHub](https://github.com/ma2za/python-substack/releases/tag/v0.6.0); [Substack](https://mazzapaolo.substack.com/p/back-up-substack-draft-markdown-python-substack-060) |
-| 0.7.0 | in progress | - | - | - | - | - | - | - | - |
-| 0.8.0 | planned | - | - | - | - | - | - | - | - |
+| 0.7.0 | released | 2026-09-22 | v0.7.0 | 166 | 28 | 14,448 | 47 | 88 | [GitHub](https://github.com/ma2za/python-substack/releases/tag/v0.7.0) |
+| 0.8.0 | in progress | - | - | - | - | - | - | - | - |
 | 0.9.0 | planned | - | - | - | - | - | - | - | - |
 | 0.10.0 | planned | - | - | - | - | - | - | - | - |
 | 1.0.0 | planned | - | - | - | 300 target | - | 3x baseline target | - | - | - |
@@ -449,7 +449,7 @@ without risking unsupported content.
 
 ## 0.8.0: Lossless unsupported widget preservation
 
-**Status:** planned
+**Status:** in progress
 
 **Objective:** Allow exported drafts containing Substack-only widgets to be
 updated without data loss.
