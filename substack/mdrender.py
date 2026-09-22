@@ -17,7 +17,10 @@ more than once is duplicated, which mirrors how Substack's own editor behaves.
 
 from __future__ import annotations
 
+import base64
 import copy
+import json
+import re
 from typing import Dict, List, Optional
 
 from markdown_it import MarkdownIt
@@ -38,6 +41,50 @@ _MARK_FOR = {
     "sup": {"type": MarkType.SUPERSCRIPT},
     "sub": {"type": MarkType.SUBSCRIPT},
 }
+
+
+def parse_node_marker(comment_content: str) -> dict | None:
+    """
+    Parse a python-substack-node:v1 comment marker and return the parsed JSON dictionary.
+    
+    If it is not a python-substack-node:v1 marker, returns None.
+    If it is an attempted marker but is corrupt/malformed, raises ValueError.
+    """
+    clean = comment_content.strip()
+    match = re.match(r"^<!--\s*python-substack-node:v1\s+([A-Za-z0-9_-]+=*)\s*-->$", clean)
+    if not match:
+        if "python-substack-node:v1" in clean:
+            raise ValueError("Corrupt marker format")
+        return None
+    
+    encoded = match.group(1)
+    
+    try:
+        padding = len(encoded) % 4
+        if padding:
+            encoded += "=" * (4 - padding)
+        decoded_bytes = base64.urlsafe_b64decode(encoded.encode("ascii"))
+    except Exception as exc:
+        raise ValueError("Invalid URL-safe base64 in marker") from exc
+
+    try:
+        decoded_str = decoded_bytes.decode("utf-8")
+    except Exception as exc:
+        raise ValueError("Invalid UTF-8 in marker") from exc
+
+    try:
+        data = json.loads(decoded_str)
+    except Exception as exc:
+        raise ValueError("Invalid JSON in marker") from exc
+
+    if not isinstance(data, dict):
+        raise ValueError("Marker payload is not a top-level JSON object")
+
+    node_type = data.get("type")
+    if not isinstance(node_type, str) or not node_type:
+        raise ValueError("Marker payload has missing or empty 'type'")
+
+    return data
 
 
 def _make_parser() -> MarkdownIt:
@@ -103,6 +150,10 @@ def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[D
             )
             if alt:
                 out.append(nodes.text(alt, marks))
+        elif t == "html_inline":
+            marker_data = parse_node_marker(child.content)
+            if marker_data is not None:
+                out.append(marker_data)
     return _coalesce(out)
 
 
@@ -145,6 +196,12 @@ def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
 def _render_block(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     """Render a block-level node into zero or more Substack nodes."""
     t = node.type
+
+    if t == "html_block":
+        marker_data = parse_node_marker(node.content)
+        if marker_data is not None:
+            return [marker_data]
+        return []
 
     if t == "paragraph":
         inline = node.children[0]
