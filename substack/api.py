@@ -478,6 +478,7 @@ class Api:
         draft_section_id: int = None,
         tags=None,
         dry_run: bool = False,
+        allow_unsupported_change: bool = False,
     ) -> dict:
         """
         Update an existing draft body from Markdown, with optional metadata changes.
@@ -497,12 +498,7 @@ class Api:
         if not isinstance(draft_body, dict):
             raise ValueError("Malformed draft body: draft_body must be a JSON object")
 
-        _, unsupported_nodes = document_to_markdown(draft_body)
-        if unsupported_nodes:
-            raise ValueError(
-                "Refusing to update: remote draft contains unsupported Substack nodes. "
-                "Export it first or remove the nodes manually to avoid data loss."
-            )
+        _, remote_unsupported = document_to_markdown(draft_body)
 
         post = Post(
             title=draft.get("title", ""),
@@ -514,6 +510,25 @@ class Api:
             write_comment_permissions=write_comment_permissions,
         )
         post.from_markdown(markdown, api=self)
+
+        _, submitted_unsupported = document_to_markdown(post.draft_body)
+
+        if not allow_unsupported_change:
+            remote_serialized = [
+                json.dumps(n, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+                for n in remote_unsupported
+            ]
+            submitted_serialized = [
+                json.dumps(n, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+                for n in submitted_unsupported
+            ]
+            if sorted(remote_serialized) != sorted(submitted_serialized):
+                raise ValueError(
+                    "Refusing to update: remote unsupported nodes are missing, duplicated, stale, or altered. "
+                    "Export the draft first or set allow_unsupported_change=True to proceed."
+                )
+
+        unsupported_nodes = remote_unsupported
 
         update_payload = {"draft_body": json.dumps(post.draft_body)}
 
