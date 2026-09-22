@@ -310,6 +310,9 @@ def _drafts_create(api, args):
 
 
 def _drafts_update(api, args):
+    if args.allow_unsupported_change and not args.yes:
+        raise CLIUsageError("--yes is required when using --allow-unsupported-change")
+
     if not args.yes and (args.json_output or not sys.stdin.isatty()):
         raise CLIUsageError("--yes is required in non-interactive or JSON mode")
 
@@ -347,6 +350,7 @@ def _drafts_update(api, args):
         draft_section_id=args.draft_section_id,
         tags=args.tags,
         dry_run=args.dry_run,
+        allow_unsupported_change=args.allow_unsupported_change,
     )
 
     if args.json_output:
@@ -508,6 +512,7 @@ def _build_parser():
     drafts_update.add_argument("--draft-section-id", type=int)
     drafts_update.add_argument("--tag", action="append", dest="tags", metavar="TAG")
     drafts_update.add_argument("--dry-run", action="store_true")
+    drafts_update.add_argument("--allow-unsupported-change", action="store_true")
     drafts_update.add_argument("--yes", action="store_true")
     drafts_update.set_defaults(handler=_drafts_update)
 
