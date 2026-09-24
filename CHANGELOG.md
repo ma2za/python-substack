@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Preserve absolute and home-relative local Markdown image paths during upload,
+  retain existing root-relative asset fallback, and report missing files or
+  failed uploads instead of saving broken image sources.
+
 ## 0.8.0
 
 ### Added

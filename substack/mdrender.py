@@ -21,7 +21,9 @@ import base64
 import copy
 import json
 import re
+from pathlib import Path
 from typing import Dict, List, Optional
+from urllib.parse import unquote, urlsplit
 
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
@@ -46,19 +48,21 @@ _MARK_FOR = {
 def parse_node_marker(comment_content: str) -> dict | None:
     """
     Parse a python-substack-node:v1 comment marker and return the parsed JSON dictionary.
-    
+
     If it is not a python-substack-node:v1 marker, returns None.
     If it is an attempted marker but is corrupt/malformed, raises ValueError.
     """
     clean = comment_content.strip()
-    match = re.match(r"^<!--\s*python-substack-node:v1\s+([A-Za-z0-9_-]+=*)\s*-->$", clean)
+    match = re.match(
+        r"^<!--\s*python-substack-node:v1\s+([A-Za-z0-9_-]+=*)\s*-->$", clean
+    )
     if not match:
         if "python-substack-node:v1" in clean:
             raise ValueError("Corrupt marker format")
         return None
-    
+
     encoded = match.group(1)
-    
+
     try:
         padding = len(encoded) % 4
         if padding:
@@ -173,13 +177,28 @@ def _only_image(inline: SyntaxTreeNode) -> Optional[SyntaxTreeNode]:
 
 def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
     src = img.attrs.get("src", "")
-    if src.startswith("/"):
-        src = src[1:]
-    if api is not None and not src.startswith("http"):
+    if api is not None and (
+        urlsplit(src).scheme.lower() not in ("http", "https")
+        and not src.startswith("//")
+    ):
+        # Markdown destinations encode spaces and non-ASCII characters as URLs.
+        path = Path(unquote(src)).expanduser()
+        if not path.is_file() and src.startswith("/"):
+            # Preserve legacy root-relative asset paths only when they resolve
+            # to a real file; an existing absolute path always takes precedence.
+            relative = Path(unquote(src[1:]))
+            if relative.is_file():
+                path = relative
+        if not path.is_file():
+            raise FileNotFoundError(f"Local image file not found: {path}")
         try:
-            src = api.get_image(src).get("url")
-        except Exception:
-            pass
+            uploaded = api.get_image(str(path))
+            url = uploaded.get("url")
+            if not isinstance(url, str) or not url.startswith(("https://", "http://")):
+                raise ValueError("Upload did not return an HTTP image URL")
+        except Exception as exc:
+            raise ValueError(f"Failed to upload local image: {path}") from exc
+        src = url
     # markdown-it stores the image alt text as the node's content, not in attrs.
     alt = img.content or img.attrs.get("alt") or None
     # Standard markdown image title `![alt](src "caption")` maps to Substack's caption node.

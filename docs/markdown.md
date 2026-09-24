@@ -105,7 +105,15 @@ A paragraph containing only an image becomes a captioned image.
 - **Link:** wrap the image in a link — `[![alt](url)](https://target.com)`.
 - **Local upload:** if `api=` is passed and the `src` is a local path (not an
   `http(s)` URL), the file is uploaded to Substack and the returned URL is used.
-  Local paths resolve relative to the current working directory.
+  Absolute paths are preserved, `~` expands to the user's home directory, and
+  relative paths resolve from the current working directory. A leading `/` is
+  removed only as a legacy fallback when the absolute file does not exist and
+  the corresponding relative file does. Missing files and failed uploads raise
+  an error naming the file instead of silently saving a broken image.
+  PNG, JPEG, GIF, and WebP are uploaded without conversion, including animations.
+  HTTP(S) and protocol-relative URLs remain unchanged. Without `api=`, image
+  sources remain unchanged and no files are uploaded or checked for existence.
+  Rendering with `api=` can upload images even during a draft update's dry run.
 
 ```markdown
 ![A chart](chart.png "Figure 1: quarterly results")
