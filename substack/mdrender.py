@@ -46,19 +46,21 @@ _MARK_FOR = {
 def parse_node_marker(comment_content: str) -> dict | None:
     """
     Parse a python-substack-node:v1 comment marker and return the parsed JSON dictionary.
-    
+
     If it is not a python-substack-node:v1 marker, returns None.
     If it is an attempted marker but is corrupt/malformed, raises ValueError.
     """
     clean = comment_content.strip()
-    match = re.match(r"^<!--\s*python-substack-node:v1\s+([A-Za-z0-9_-]+=*)\s*-->$", clean)
+    match = re.match(
+        r"^<!--\s*python-substack-node:v1\s+([A-Za-z0-9_-]+=*)\s*-->$", clean
+    )
     if not match:
         if "python-substack-node:v1" in clean:
             raise ValueError("Corrupt marker format")
         return None
-    
+
     encoded = match.group(1)
-    
+
     try:
         padding = len(encoded) % 4
         if padding:
