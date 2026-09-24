@@ -129,6 +129,20 @@ class ApiTest(unittest.TestCase):
             "https://writer.substack.com/api/v1/drafts/42/scheduled_release"
         )
 
+    def test_get_drafts_extracts_posts_from_response_envelope(self):
+        api = Api.__new__(Api)
+        api.publication_url = "https://writer.substack.com/api/v1"
+        api._session = Mock()
+        response = Mock(status_code=200)
+        response.json.return_value = {
+            "posts": [{"id": 42}],
+            "hasMore": False,
+            "nextCursor": None,
+        }
+        api._session.get.return_value = response
+
+        self.assertEqual(api.get_drafts(), [{"id": 42}])
+
     @pytest.mark.live
     @_e2e
     def test_get_posts(self):

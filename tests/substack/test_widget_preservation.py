@@ -5,15 +5,20 @@ from unittest.mock import Mock, patch
 import pytest
 
 from substack import Api, cli
-from substack.mdrender import parse_node_marker, markdown_to_doc
+from substack.mdrender import markdown_to_doc, parse_node_marker
 
 
 def test_parse_node_marker_valid():
-    node = {"type": "button", "attrs": {"text": "Click me", "url": "https://example.com"}}
-    payload = json.dumps(node, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    node = {
+        "type": "button",
+        "attrs": {"text": "Click me", "url": "https://example.com"},
+    }
+    payload = json.dumps(
+        node, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
     encoded = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
     comment = f"<!-- python-substack-node:v1 {encoded} -->"
-    
+
     parsed = parse_node_marker(comment)
     assert parsed == node
 
@@ -63,15 +68,22 @@ def test_parse_node_marker_ordinary_comment():
 
 def test_markdown_to_doc_preserves_block_and_inline_markers():
     # Build a button node
-    btn = {"type": "button", "attrs": {"text": "Click me", "url": "https://example.com"}}
+    btn = {
+        "type": "button",
+        "attrs": {"text": "Click me", "url": "https://example.com"},
+    }
     btn_payload = json.dumps(btn, separators=(",", ":"), sort_keys=True).encode("utf-8")
     btn_encoded = base64.urlsafe_b64encode(btn_payload).decode("ascii").rstrip("=")
     btn_comment = f"<!-- python-substack-node:v1 {btn_encoded} -->"
 
     # Build an inline recipe node
     recipe = {"type": "recipe", "attrs": {"id": 123}}
-    recipe_payload = json.dumps(recipe, separators=(",", ":"), sort_keys=True).encode("utf-8")
-    recipe_encoded = base64.urlsafe_b64encode(recipe_payload).decode("ascii").rstrip("=")
+    recipe_payload = json.dumps(recipe, separators=(",", ":"), sort_keys=True).encode(
+        "utf-8"
+    )
+    recipe_encoded = (
+        base64.urlsafe_b64encode(recipe_payload).decode("ascii").rstrip("=")
+    )
     recipe_comment = f"<!-- python-substack-node:v1 {recipe_encoded} -->"
 
     markdown = f"""# Heading 1
@@ -83,11 +95,11 @@ Some text and inline {recipe_comment} recipe.
 <!-- ordinary comment should be ignored -->
 """
     doc = markdown_to_doc(markdown)
-    
+
     # doc should have heading, paragraph (with text, recipe inline node, text), and the button block node
     assert len(doc) == 3
     assert doc[0]["type"] == "heading"
-    
+
     p = doc[1]
     assert p["type"] == "paragraph"
     inline_content = p["content"]
@@ -105,24 +117,37 @@ def test_update_draft_from_markdown_preservation(monkeypatch):
     monkeypatch.setattr(api, "get_user_id", lambda: 1)
 
     # Remote draft contains an unsupported "button" node
-    remote_btn = {"type": "button", "attrs": {"text": "Click", "url": "https://example.com"}}
+    remote_btn = {
+        "type": "button",
+        "attrs": {"text": "Click", "url": "https://example.com"},
+    }
     remote_body = {
         "type": "doc",
         "content": [
-            {"type": "heading", "attrs": {"level": 1}, "content": [{"type": "text", "text": "Hello"}]},
-            remote_btn
-        ]
+            {
+                "type": "heading",
+                "attrs": {"level": 1},
+                "content": [{"type": "text", "text": "Hello"}],
+            },
+            remote_btn,
+        ],
     }
-    mock_get_draft = Mock(return_value={"id": 42, "draft_body": json.dumps(remote_body)})
+    mock_get_draft = Mock(
+        return_value={"id": 42, "draft_body": json.dumps(remote_body)}
+    )
     monkeypatch.setattr(api, "get_draft", mock_get_draft)
-    
+
     mock_put_draft = Mock(return_value={"id": 42})
     monkeypatch.setattr(api, "put_draft", mock_put_draft)
 
     # 1. Update with correct marker matches and succeeds
-    btn_payload = json.dumps(remote_btn, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    btn_payload = json.dumps(remote_btn, separators=(",", ":"), sort_keys=True).encode(
+        "utf-8"
+    )
     btn_encoded = base64.urlsafe_b64encode(btn_payload).decode("ascii").rstrip("=")
-    submitted_markdown = f"# New Title\n\n<!-- python-substack-node:v1 {btn_encoded} -->\n"
+    submitted_markdown = (
+        f"# New Title\n\n<!-- python-substack-node:v1 {btn_encoded} -->\n"
+    )
 
     res = api.update_draft_from_markdown(42, submitted_markdown)
     assert res["action"] == "update"
@@ -137,23 +162,30 @@ def test_update_draft_from_markdown_preservation(monkeypatch):
 
     # 3. Update without marker succeeds when allow_unsupported_change is True
     mock_put_draft.reset_mock()
-    res = api.update_draft_from_markdown(42, "# New Title without button", allow_unsupported_change=True)
+    res = api.update_draft_from_markdown(
+        42, "# New Title without button", allow_unsupported_change=True
+    )
     assert res["action"] == "update"
     assert mock_put_draft.called
 
 
-def test_cli_update_requires_yes_for_allow_unsupported_change(tmp_path, monkeypatch, capsys):
+def test_cli_update_requires_yes_for_allow_unsupported_change(
+    tmp_path, monkeypatch, capsys
+):
     # Mocking UpdateOperationsApi
     class MockApi:
         def update_draft_from_markdown(self, *args, **kwargs):
             return {"action": "update"}
-    
+
     monkeypatch.setattr(cli, "_api_from_env", lambda **kw: MockApi())
-    
+
     md_file = tmp_path / "test.md"
     md_file.write_text("# Test", encoding="utf-8")
-    
+
     # If passing --allow-unsupported-change without --yes, it must raise CLIUsageError
-    assert cli.main(["drafts", "update", "42", str(md_file), "--allow-unsupported-change"]) == 2
+    assert (
+        cli.main(["drafts", "update", "42", str(md_file), "--allow-unsupported-change"])
+        == 2
+    )
     err = capsys.readouterr().err
     assert "--yes is required when using --allow-unsupported-change" in err
