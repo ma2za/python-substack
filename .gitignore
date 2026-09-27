@@ -110,13 +110,10 @@ ENV/
 env.bak/
 venv.bak/
 
-# Gemini CLI and Testing artifacts
-.gemini/*
-!.gemini/.env.example
-!.gemini/commands/
-!.gemini/commands/**
-!.gemini/policies/
-!.gemini/policies/**
+# Private maintainer configuration
+.gemini/
+GEMINI.md
+docs/gemini-vertex-ai.md
 tmp_pytest/
 
 # Spyder project settings

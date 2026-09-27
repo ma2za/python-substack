@@ -197,9 +197,12 @@ their document position as:
 
 The payload is UTF-8 JSON encoded with URL-safe base64 and no padding. This
 makes unsupported content visible and recoverable instead of silently dropping
-it. Version 0.6 does not import these markers into a draft; safe updates that
-preserve them are planned for 0.8.
+it. `Api.update_draft_from_markdown` and `substack drafts update` recognize
+valid markers and preserve the corresponding nodes. They refuse updates that
+remove, duplicate, or alter remote unsupported nodes unless the caller
+explicitly authorizes that change with `allow_unsupported_change=True` or
+`--allow-unsupported-change --yes`.
 
 Export preserves the Markdown meaning of supported images: source, alt text,
 link, and plain-text caption. Substack-only image layout attributes are not a
-Markdown contract in 0.6.
+Markdown contract.
