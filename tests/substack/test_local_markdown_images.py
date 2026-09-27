@@ -1,5 +1,6 @@
 """Offline regression tests for Markdown local-image uploads."""
 
+import os
 from unittest.mock import Mock
 
 import pytest
@@ -33,6 +34,7 @@ def test_absolute_file_uploaded_unchanged(tmp_path, api, extension):
 
 def test_home_path_expanded(tmp_path, monkeypatch, api):
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     path = tmp_path / "image.png"
     path.touch()
     assert render("~/image.png", api) == UPLOADED
@@ -50,6 +52,7 @@ def test_spaces_unicode_and_percent_in_filename(tmp_path, api):
 def test_missing_file_fails_before_upload(tmp_path, monkeypatch, api, src):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     with pytest.raises(FileNotFoundError, match="Local image file not found:") as error:
         render(src, api)
     assert src.rsplit("/", 1)[-1] in str(error.value)
@@ -70,6 +73,10 @@ def test_relative_and_legacy_root_relative_file(tmp_path, monkeypatch, api, src)
     api.get_image.assert_called_once_with("image.png")
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="Drive-qualified paths do not have a legacy root-relative fallback",
+)
 def test_absolute_file_takes_priority_over_relative(tmp_path, monkeypatch, api):
     absolute = tmp_path / "image.png"
     absolute.touch()
