@@ -4,6 +4,14 @@
 
 ### Fixed
 
+- Preserve absolute and home-relative local Markdown image paths during upload,
+  retain existing root-relative asset fallback, and report missing files or
+  failed uploads instead of saving broken image sources.
+
+## Unreleased
+
+### Fixed
+
 - Return draft records from the Substack drafts response envelope so `drafts list` works with the current API response.
 
 ## 0.8.0

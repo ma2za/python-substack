@@ -21,7 +21,9 @@ import base64
 import copy
 import json
 import re
+from pathlib import Path
 from typing import Dict, List, Optional
+from urllib.parse import unquote, urlsplit
 
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
@@ -175,13 +177,28 @@ def _only_image(inline: SyntaxTreeNode) -> Optional[SyntaxTreeNode]:
 
 def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
     src = img.attrs.get("src", "")
-    if src.startswith("/"):
-        src = src[1:]
-    if api is not None and not src.startswith("http"):
+    if api is not None and (
+        urlsplit(src).scheme.lower() not in ("http", "https")
+        and not src.startswith("//")
+    ):
+        # Markdown destinations encode spaces and non-ASCII characters as URLs.
+        path = Path(unquote(src)).expanduser()
+        if not path.is_file() and src.startswith("/"):
+            # Preserve legacy root-relative asset paths only when they resolve
+            # to a real file; an existing absolute path always takes precedence.
+            relative = Path(unquote(src[1:]))
+            if relative.is_file():
+                path = relative
+        if not path.is_file():
+            raise FileNotFoundError(f"Local image file not found: {path}")
         try:
-            src = api.get_image(src).get("url")
-        except Exception:
-            pass
+            uploaded = api.get_image(str(path))
+            url = uploaded.get("url")
+            if not isinstance(url, str) or not url.startswith(("https://", "http://")):
+                raise ValueError("Upload did not return an HTTP image URL")
+        except Exception as exc:
+            raise ValueError(f"Failed to upload local image: {path}") from exc
+        src = url
     # markdown-it stores the image alt text as the node's content, not in attrs.
     alt = img.content or img.attrs.get("alt") or None
     # Standard markdown image title `![alt](src "caption")` maps to Substack's caption node.
