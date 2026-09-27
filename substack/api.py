@@ -432,7 +432,10 @@ class Api:
             f"{self.publication_url}/drafts",
             params={"filter": filter, "offset": offset, "limit": limit},
         )
-        return Api._handle_response(response=response)
+        drafts = Api._handle_response(response=response)
+        if isinstance(drafts, dict) and isinstance(drafts.get("posts"), list):
+            return drafts["posts"]
+        return drafts
 
     def get_draft(self, draft_id):
         """
