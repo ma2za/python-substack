@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -124,6 +125,10 @@ def test_document_to_markdown_golden_covers_supported_nodes():
     markdown, unsupported = document_to_markdown(document)
 
     assert unsupported == []
+    assert "python-substack-image:v1" in markdown
+    markdown = re.sub(
+        r"\n<!-- python-substack-image:v1 [A-Za-z0-9_-]+ -->", "", markdown
+    )
     assert markdown == (
         "## **Heading**\n\n"
         "**Bold** and *italic* and `code` and ~~strike~~ and ^sup^ and ~sub~ "

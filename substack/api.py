@@ -21,6 +21,19 @@ logger = logging.getLogger(__name__)
 __all__ = ["Api"]
 
 
+def _image_attrs(document):
+    images = []
+    if isinstance(document, dict):
+        if document.get("type") == "image2" and isinstance(document.get("attrs"), dict):
+            images.append(document["attrs"])
+        for value in document.values():
+            images.extend(_image_attrs(value))
+    elif isinstance(document, list):
+        for value in document:
+            images.extend(_image_attrs(value))
+    return images
+
+
 class Api:
     """
 
@@ -482,6 +495,7 @@ class Api:
         tags=None,
         dry_run: bool = False,
         allow_unsupported_change: bool = False,
+        allow_image_replacement: bool = False,
     ) -> dict:
         """
         Update an existing draft body from Markdown, with optional metadata changes.
@@ -513,6 +527,29 @@ class Api:
             write_comment_permissions=write_comment_permissions,
         )
         post.from_markdown(markdown, api=self)
+
+        remote_images = _image_attrs(draft_body)
+        submitted_images = _image_attrs(post.draft_body)
+        for submitted in submitted_images:
+            matches = [
+                image
+                for image in remote_images
+                if image.get("src") == submitted.get("src")
+            ]
+            if len(matches) == 1:
+                source, alt, href = (
+                    submitted.get("src"),
+                    submitted.get("alt"),
+                    submitted.get("href"),
+                )
+                submitted.update(matches[0])
+                submitted.update(
+                    {"src": source, "alt": alt, "href": href, "isProcessing": False}
+                )
+            elif not allow_image_replacement:
+                raise ValueError(
+                    "Refusing to update: image cannot be matched uniquely; set allow_image_replacement=True to proceed."
+                )
 
         _, submitted_unsupported = document_to_markdown(post.draft_body)
 

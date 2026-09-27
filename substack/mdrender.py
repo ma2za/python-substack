@@ -91,6 +91,28 @@ def parse_node_marker(comment_content: str) -> dict | None:
     return data
 
 
+def parse_image_marker(comment_content: str) -> dict | None:
+    clean = comment_content.strip()
+    match = re.match(
+        r"^<!--\s*python-substack-image:v1\s+([A-Za-z0-9_-]+=*)\s*-->$", clean
+    )
+    if not match:
+        if "python-substack-image:v1" in clean:
+            raise ValueError("Corrupt image marker format")
+        return None
+    encoded = match.group(1)
+    encoded += "=" * (-len(encoded) % 4)
+    try:
+        attrs = json.loads(base64.urlsafe_b64decode(encoded.encode("ascii")))
+    except Exception as exc:
+        raise ValueError("Invalid image marker") from exc
+    if not isinstance(attrs, dict) or any(
+        key in {"src", "alt", "href", "isProcessing"} for key in attrs
+    ):
+        raise ValueError("Invalid image marker attributes")
+    return attrs
+
+
 def _make_parser() -> MarkdownIt:
     return (
         MarkdownIt("commonmark")
@@ -314,6 +336,14 @@ def markdown_to_doc(markdown_content: str, api=None) -> List[Dict]:
     for node in tree.children:
         if node.type == "footnote_block":
             continue
+        if node.type == "html_block":
+            attrs = parse_image_marker(node.content)
+            if attrs is not None:
+                if not out or out[-1].get("type") != "captionedImage":
+                    raise ValueError("Image marker must immediately follow an image")
+                out[-1]["content"][0]["attrs"].update(attrs)
+                out[-1]["content"][0]["attrs"]["isProcessing"] = False
+                continue
         out.extend(_render_block(node, api, ctx))
 
     # Emit one footnote block per reference, in anchor order, numbered to match.

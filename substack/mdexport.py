@@ -57,6 +57,21 @@ def _marker(node, unsupported):
     return f"<!-- python-substack-node:v1 {encoded} -->"
 
 
+def _image_marker(attrs):
+    preserved = {
+        key: value
+        for key, value in attrs.items()
+        if key not in {"src", "alt", "href", "isProcessing"}
+    }
+    if not preserved:
+        return ""
+    payload = json.dumps(
+        preserved, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    return f"\n<!-- python-substack-image:v1 {encoded} -->"
+
+
 def _require_dict(node, context):
     if not isinstance(node, dict):
         raise ValueError(f"Malformed draft body: {context} must be an object")
@@ -247,7 +262,7 @@ def _render_image(node, unsupported):
         if not isinstance(href, str):
             return _marker(node, unsupported)
         image_markdown = f"[{image_markdown}]({_escape_destination(href)})"
-    return image_markdown
+    return image_markdown + _image_marker(attrs)
 
 
 def _render_footnote(node, unsupported):
