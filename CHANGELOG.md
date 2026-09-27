@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.9.0
+
+### Added
+
+- Preserve image editor attributes through Markdown export and update with
+  `python-substack-image:v1` markers.
+- Add `allow_image_replacement=False` and
+  `substack drafts update --allow-image-replacement` for explicit image
+  replacement authorization.
+
+### Fixed
 
 ### Fixed
 
