@@ -45,7 +45,10 @@ checking the draft ID.
 
 Pass the authenticated `Api` instance to `Post.from_markdown(..., api=api)` or
 use `Api.create_draft_from_markdown`, which does this automatically. Relative
-image paths resolve from the current working directory.
+image paths resolve from the current working directory; absolute paths are
+preserved and `~` expands to the current user's home directory. HTTP(S) and
+protocol-relative image URLs are not uploaded. Missing files and failed
+uploads name the affected path instead of silently retaining a broken source.
 
 If the problem persists, open an issue using the repository's
 [authentication bug form](https://github.com/ma2za/python-substack/issues/new?template=auth_bug.yml)

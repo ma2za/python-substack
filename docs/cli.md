@@ -36,6 +36,26 @@ It fetches the draft but performs no server writes. Content without a supported
 Markdown representation is emitted as a versioned opaque HTML comment instead
 of being silently discarded.
 
+## Update a draft from Markdown
+
+Preview the generated update without writing to Substack:
+
+```bash
+substack drafts update 12345 revised-post.md --dry-run --yes
+```
+
+Apply it after review:
+
+```bash
+substack drafts update 12345 revised-post.md --yes
+```
+
+Updates preserve unsupported editor nodes exported as
+`python-substack-node:v1` markers. The command refuses to remove or alter
+those nodes by default. `--allow-unsupported-change` is available only with
+`--yes` for an intentional destructive change. The CLI uses its authenticated
+API client while rendering, so local images can upload even during a dry run.
+
 ## Select a publication
 
 List every publication available to the authenticated account:

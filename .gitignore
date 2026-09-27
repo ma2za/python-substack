@@ -110,13 +110,9 @@ ENV/
 env.bak/
 venv.bak/
 
-# removed-provider CLI and Testing artifacts
-.removed-provider/*
-!.removed-provider/.env.example
-!.removed-provider/commands/
-!.removed-provider/commands/**
-!.removed-provider/policies/
-!.removed-provider/policies/**
+# Private maintainer configuration
+removed-provider.md
+docs/removed-provider-removed-provider.md
 tmp_pytest/
 
 # Spyder project settings

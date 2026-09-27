@@ -11,6 +11,7 @@ Creating, scheduling, publishing, and deleting are separate operations.
 |---|---|---|
 | `drafts export` | Reads a draft and produces Markdown | None |
 | `drafts create` | Creates an unpublished draft | None |
+| `drafts update` | Updates a draft from Markdown | Interactive or `--yes` |
 | `drafts schedule` | Adds a future release time | None |
 | `drafts unschedule` | Removes a future release time | None |
 | `drafts publish` | Publishes after a prepublish check | Interactive or `--yes` |
@@ -30,4 +31,6 @@ important source Markdown and verify the selected publication with
 
 Export never writes to Substack and never overwrites a local file unless
 `--force` is supplied. Unsupported editor content is preserved as an opaque
-marker and listed in JSON output so it cannot disappear unnoticed.
+marker and listed in JSON output so it cannot disappear unnoticed. Updates
+refuse to remove or alter those markers unless
+`--allow-unsupported-change --yes` explicitly authorizes it.

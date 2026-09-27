@@ -58,6 +58,7 @@ Substack result:
 - Set audience, comment permissions, SEO metadata, slug, sections, and tags.
 - List and inspect publications and drafts.
 - Export drafts to loss-aware Markdown backups without server writes.
+- Safely update drafts from Markdown, preserving unsupported editor widgets by default.
 - Schedule, unschedule, publish, and delete drafts with explicit safeguards.
 - Use stable JSON envelopes in scripts and automation.
 - Authenticate with browser cookies or email and password.
@@ -109,6 +110,7 @@ substack publications list
 substack drafts list --limit 10
 substack drafts get 12345
 substack drafts export 12345 --output backup.md
+substack drafts update 12345 revised-post.md --dry-run --yes
 substack --publication-url https://example.substack.com drafts list
 ```
 
@@ -181,6 +183,17 @@ print(backup["markdown"])
 print(backup["unsupported_nodes"])
 ```
 
+Review a Markdown update before writing it, then update deliberately:
+
+```python
+result = api.update_draft_from_markdown(12345, "# Revised draft", dry_run=True)
+result = api.update_draft_from_markdown(12345, "# Revised draft")
+```
+
+Unsupported editor widgets exported as `python-substack-node:v1` markers are
+preserved by default. An update refuses to remove or alter them unless
+`allow_unsupported_change=True` is explicitly passed.
+
 For direct ProseMirror node construction, see the
 [low-level Python API](docs/low-level-api.md). YAML workflows are documented in
 [YAML drafts](docs/yaml.md).
@@ -233,11 +246,11 @@ See [MCP server](docs/mcp.md) for the tool list and safety notes.
 - [Python SDK](docs/python-sdk.md)
 - [Authentication](docs/authentication.md)
 - [Markdown reference](docs/markdown.md)
+- [Draft backup and safe updates](docs/cli.md)
 - [Legacy CLI commands](docs/legacy-cli.md)
 - [Low-level Python API](docs/low-level-api.md)
 - [YAML drafts](docs/yaml.md)
 - [MCP server](docs/mcp.md)
-- [removed-provider CLI with removed-provider](docs/removed-provider-removed-provider.md)
 - [Safety and publishing behavior](docs/safety.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Compatibility policy](docs/compatibility.md)

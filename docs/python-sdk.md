@@ -53,3 +53,21 @@ decodable markers.
 
 For supported syntax, see the [Markdown reference](markdown.md). For direct
 editor-node construction, see the [low-level Python API](low-level-api.md).
+
+## Update a draft safely
+
+Preview an update before writing it:
+
+```python
+preview = api.update_draft_from_markdown(
+    12345,
+    "# Revised title\n\nUpdated body.",
+    dry_run=True,
+)
+print(preview["payload"])
+```
+
+Run the same call without `dry_run=True` to write the update. Unsupported
+editor nodes exported as `python-substack-node:v1` markers are preserved by
+default. Removing or changing them raises `ValueError` unless
+`allow_unsupported_change=True` is deliberately supplied.
