@@ -251,6 +251,7 @@ See [MCP server](docs/mcp.md) for the tool list and safety notes.
 - [Low-level Python API](docs/low-level-api.md)
 - [YAML drafts](docs/yaml.md)
 - [MCP server](docs/mcp.md)
+- [Agent workflow](docs/agents.md)
 - [Safety and publishing behavior](docs/safety.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Compatibility policy](docs/compatibility.md)

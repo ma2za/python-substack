@@ -111,8 +111,7 @@ env.bak/
 venv.bak/
 
 # Private maintainer configuration
-removed-provider.md
-docs/removed-provider-removed-provider.md
+.agents/
 tmp_pytest/
 
 # Spyder project settings

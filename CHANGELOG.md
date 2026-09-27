@@ -71,7 +71,7 @@
 - Seven new MCP tools for read operations and safe publishing: `get_status`, `list_publications`, `list_drafts`, `get_draft`, `schedule_draft`, `unschedule_draft`, and `publish_draft_checked`.
 - Pre-publish validation, interactive confirmation requirements, and no-email defaults for the new `publish_draft_checked` MCP tool.
 - Verified MCP client configuration examples in `docs/mcp.md`.
-- Documentation for removed-provider CLI with removed-provider (`docs/removed-provider-removed-provider.md`).
+- Documentation for local agent workflows.
 
 ### Improved
 
