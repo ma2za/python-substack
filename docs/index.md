@@ -20,6 +20,7 @@ publish, or delete it.
 - [Python SDK](python-sdk.md)
 - [Markdown syntax](markdown.md)
 - [MCP setup](mcp.md)
+- [Agent workflow](agents.md)
 - [Safety and publishing behavior](safety.md)
 - [Troubleshooting](troubleshooting.md)
 

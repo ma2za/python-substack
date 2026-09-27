@@ -111,9 +111,7 @@ env.bak/
 venv.bak/
 
 # Private maintainer configuration
-.gemini/
-GEMINI.md
-docs/gemini-vertex-ai.md
+.agents/
 tmp_pytest/
 
 # Spyder project settings
