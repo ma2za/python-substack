@@ -18,6 +18,9 @@
 
 - Bump `pyjwt` from 2.13.0 to 2.15.0 (#80).
 - Bump `fastmcp` from 4.0.5 to 4.0.10 (#81).
+- Bump `urllib3` from 2.7.0 to 2.8.0 to address CVE-2026-97687, CVE-2026-97688, and CVE-2026-97689.
+- Bump `virtualenv` from 21.7.0 to 21.14.5 and `python-discovery` to 1.6.1 to address CVE-2026-102925, CVE-2026-102930, CVE-2026-102937, and CVE-2026-102938.
+- Bump `click` from 8.3.1 to 8.5.0 to address PYSEC-2026-2132.
 
 ### Improved
 
