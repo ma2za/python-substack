@@ -94,23 +94,39 @@ def parse_node_marker(comment_content: str) -> dict | None:
 def parse_image_marker(comment_content: str) -> dict | None:
     clean = comment_content.strip()
     match = re.match(
-        r"^<!--\s*python-substack-image:v1\s+([A-Za-z0-9_-]+=*)\s*-->$", clean
+        r"^<!--\s*python-substack-image:(v1|v2)\s+([A-Za-z0-9_-]+=*)\s*-->$", clean
     )
     if not match:
-        if "python-substack-image:v1" in clean:
+        if "python-substack-image:" in clean:
             raise ValueError("Corrupt image marker format")
         return None
-    encoded = match.group(1)
+    version_str, encoded = match.group(1), match.group(2)
     encoded += "=" * (-len(encoded) % 4)
     try:
-        attrs = json.loads(base64.urlsafe_b64decode(encoded.encode("ascii")))
+        decoded_bytes = base64.urlsafe_b64decode(encoded.encode("ascii"))
     except Exception as exc:
         raise ValueError("Invalid image marker") from exc
-    if not isinstance(attrs, dict) or any(
-        key in {"src", "alt", "href", "isProcessing"} for key in attrs
-    ):
+    try:
+        attrs = json.loads(decoded_bytes.decode("utf-8"))
+    except Exception as exc:
+        raise ValueError("Invalid image marker") from exc
+    if not isinstance(attrs, dict):
         raise ValueError("Invalid image marker attributes")
-    return attrs
+
+    if version_str == "v1":
+        if any(key in {"src", "alt", "href", "isProcessing"} for key in attrs):
+            raise ValueError("Invalid image marker attributes")
+        return {"version": 1, "src": None, "attrs": attrs}
+
+    if version_str == "v2":
+        if "src" not in attrs or not isinstance(attrs["src"], str):
+            raise ValueError("Invalid image marker attributes")
+        if any(key in {"alt", "href", "isProcessing"} for key in attrs):
+            raise ValueError("Invalid image marker attributes")
+        preserved = {k: v for k, v in attrs.items() if k != "src"}
+        return {"version": 2, "src": attrs["src"], "attrs": preserved}
+
+    return None
 
 
 def _make_parser() -> MarkdownIt:
@@ -177,6 +193,8 @@ def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[D
             if alt:
                 out.append(nodes.text(alt, marks))
         elif t == "html_inline":
+            if "python-substack-image:" in child.content:
+                raise ValueError("Image marker must immediately follow an image")
             marker_data = parse_node_marker(child.content)
             if marker_data is not None:
                 out.append(marker_data)
@@ -325,7 +343,9 @@ def _footnote_definitions(tree: SyntaxTreeNode, api) -> Dict[int, List[Dict]]:
     return definitions
 
 
-def markdown_to_doc(markdown_content: str, api=None) -> List[Dict]:
+def markdown_to_doc(
+    markdown_content: str, api=None, track_markers: Optional[List] = None
+) -> List[Dict]:
     """Convert Markdown into a list of Substack ProseMirror block nodes."""
     tree = SyntaxTreeNode(_make_parser().parse(markdown_content))
 
@@ -333,18 +353,39 @@ def markdown_to_doc(markdown_content: str, api=None) -> List[Dict]:
 
     ctx: Dict = {"order": []}
     out: List[Dict] = []
+    last_was_image = False
+    last_image_idx: Optional[int] = None
+
     for node in tree.children:
         if node.type == "footnote_block":
+            last_was_image = False
             continue
         if node.type == "html_block":
-            attrs = parse_image_marker(node.content)
-            if attrs is not None:
-                if not out or out[-1].get("type") != "captionedImage":
+            marker = parse_image_marker(node.content)
+            if marker is not None:
+                if not last_was_image or last_image_idx is None:
                     raise ValueError("Image marker must immediately follow an image")
-                out[-1]["content"][0]["attrs"].update(attrs)
-                out[-1]["content"][0]["attrs"]["isProcessing"] = False
+                last_was_image = False
+                out[last_image_idx]["content"][0]["attrs"].update(marker["attrs"])
+                out[last_image_idx]["content"][0]["attrs"]["isProcessing"] = False
+                if track_markers is not None:
+                    track_markers[-1] = marker
                 continue
-        out.extend(_render_block(node, api, ctx))
+            last_was_image = False
+
+        rendered = _render_block(node, api, ctx)
+        if rendered:
+            for blk in rendered:
+                out.append(blk)
+                if blk.get("type") == NodeType.CAPTIONED_IMAGE:
+                    last_was_image = True
+                    last_image_idx = len(out) - 1
+                    if track_markers is not None:
+                        track_markers.append(None)
+                else:
+                    last_was_image = False
+        else:
+            last_was_image = False
 
     # Emit one footnote block per reference, in anchor order, numbered to match.
     for number, footnote_id in enumerate(ctx["order"], start=1):

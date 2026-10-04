@@ -58,18 +58,19 @@ def _marker(node, unsupported):
 
 
 def _image_marker(attrs):
-    preserved = {
-        key: value
-        for key, value in attrs.items()
-        if key not in {"src", "alt", "href", "isProcessing"}
+    payload_data = {
+        "src": attrs["src"],
+        **{
+            key: value
+            for key, value in attrs.items()
+            if key not in {"src", "alt", "href", "isProcessing"}
+        },
     }
-    if not preserved:
-        return ""
     payload = json.dumps(
-        preserved, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        payload_data, ensure_ascii=False, separators=(",", ":"), sort_keys=True
     ).encode("utf-8")
     encoded = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
-    return f"\n<!-- python-substack-image:v1 {encoded} -->"
+    return f"\n<!-- python-substack-image:v2 {encoded} -->"
 
 
 def _require_dict(node, context):
@@ -229,7 +230,6 @@ def _render_image(node, unsupported):
         image["type"] != "image2"
         or _has_unknown_keys(node, {"type", "content"})
         or _has_unknown_keys(image, {"type", "attrs"})
-        or _has_unknown_keys(attrs, _IMAGE_ATTRS)
         or not isinstance(attrs.get("src"), str)
     ):
         return _marker(node, unsupported)

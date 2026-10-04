@@ -204,5 +204,18 @@ explicitly authorizes that change with `allow_unsupported_change=True` or
 `--allow-unsupported-change --yes`.
 
 Export preserves the Markdown meaning of supported images: source, alt text,
-link, and plain-text caption. Substack-only image layout attributes are not a
-Markdown contract.
+link, and plain-text caption. In addition, images are exported with an immediate:
+
+```text
+<!-- python-substack-image:v2 BASE64URL_JSON -->
+```
+
+The payload binds the image to its original remote source and preserves
+editor layout and non-owned attributes (such as alignment, dimensions,
+watermark, and unrecognized attributes). Markdown remains authoritative for
+`src`, `alt`, `href`, and caption. Changed image sources resolve to their bound
+remote image and restore those attributes safely. Stale, corrupt, duplicate,
+reused, or non-adjacent markers are rejected. Unmatched image replacements require
+`allow_image_replacement=True` or `--allow-image-replacement --yes`. Legacy `v1`
+image markers remain supported when the image source resolves to exactly one
+remote image.

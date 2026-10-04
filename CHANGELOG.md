@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.9.1
+
+### Added
+
+- Export `python-substack-image:v2` markers immediately after every image,
+  binding the image to its original remote source and preserving non-owned
+  editor attributes including alignment, dimensions, watermark, and unknown
+  attributes.
+- Resolve V2 markers by their bound source during draft updates, allowing changed
+  Markdown image sources to safely retain original editor metadata.
+- Reject corrupt, stale, duplicate, reused, or non-adjacent image markers.
+- Continue supporting V1 image markers when the submitted image source resolves
+  uniquely to a single remote image.
+
+### Dependencies
+
+- Bump `pyjwt` from 2.13.0 to 2.15.0 (#80).
+- Bump `fastmcp` from 4.0.5 to 4.0.10 (#81).
+
+### Improved
+
+- Modernize `pyproject.toml` to PEP 621 metadata standard, eliminating Poetry 2 packaging warnings.
+
 ## 0.9.0
 
 ### Added

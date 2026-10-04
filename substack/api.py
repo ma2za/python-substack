@@ -500,6 +500,7 @@ class Api:
         """
         Update an existing draft body from Markdown, with optional metadata changes.
         """
+        from substack import mdrender
         from substack.mdexport import document_to_markdown
         from substack.post import Post
 
@@ -517,6 +518,7 @@ class Api:
 
         _, remote_unsupported = document_to_markdown(draft_body)
 
+        image_markers = []
         post = Post(
             title=draft.get("title", ""),
             subtitle=(
@@ -526,30 +528,88 @@ class Api:
             audience=audience,
             write_comment_permissions=write_comment_permissions,
         )
-        post.from_markdown(markdown, api=self)
+        rendered = mdrender.markdown_to_doc(
+            markdown, api=self, track_markers=image_markers
+        )
+        post.draft_body["content"] = rendered
 
         remote_images = _image_attrs(draft_body)
         submitted_images = _image_attrs(post.draft_body)
-        for submitted in submitted_images:
-            matches = [
-                image
-                for image in remote_images
-                if image.get("src") == submitted.get("src")
-            ]
-            if len(matches) == 1:
+
+        consumed_remote_indices = set()
+
+        for submitted, marker in zip(submitted_images, image_markers):
+            if marker is not None and marker.get("version") == 2:
+                bound_src = marker["src"]
+                matched_idx = None
+                for idx, r_img in enumerate(remote_images):
+                    if (
+                        idx not in consumed_remote_indices
+                        and r_img.get("src") == bound_src
+                    ):
+                        matched_idx = idx
+                        break
+
+                if matched_idx is None:
+                    all_with_src = [
+                        idx
+                        for idx, r_img in enumerate(remote_images)
+                        if r_img.get("src") == bound_src
+                    ]
+                    if not all_with_src:
+                        raise ValueError(
+                            f"Refusing to update: stale image marker bound to '{bound_src}'."
+                        )
+                    else:
+                        raise ValueError(
+                            f"Refusing to update: reused or duplicate image marker for '{bound_src}'."
+                        )
+
+                consumed_remote_indices.add(matched_idx)
+                remote_img = remote_images[matched_idx]
                 source, alt, href = (
                     submitted.get("src"),
                     submitted.get("alt"),
                     submitted.get("href"),
                 )
-                submitted.update(matches[0])
+                submitted.update(remote_img)
+                submitted.update(marker["attrs"])
                 submitted.update(
                     {"src": source, "alt": alt, "href": href, "isProcessing": False}
                 )
-            elif not allow_image_replacement:
-                raise ValueError(
-                    "Refusing to update: image cannot be matched uniquely; set allow_image_replacement=True to proceed."
-                )
+
+            elif marker is not None and marker.get("version") == 1:
+                sub_src = submitted.get("src")
+                matches = [
+                    idx
+                    for idx, r_img in enumerate(remote_images)
+                    if r_img.get("src") == sub_src
+                    and idx not in consumed_remote_indices
+                ]
+                if len(matches) == 1:
+                    matched_idx = matches[0]
+                    consumed_remote_indices.add(matched_idx)
+                    remote_img = remote_images[matched_idx]
+                    source, alt, href = (
+                        submitted.get("src"),
+                        submitted.get("alt"),
+                        submitted.get("href"),
+                    )
+                    submitted.update(remote_img)
+                    submitted.update(marker["attrs"])
+                    submitted.update(
+                        {"src": source, "alt": alt, "href": href, "isProcessing": False}
+                    )
+                elif not allow_image_replacement:
+                    raise ValueError(
+                        "Refusing to update: image cannot be matched uniquely; set allow_image_replacement=True to proceed."
+                    )
+
+            else:
+                if not allow_image_replacement:
+                    raise ValueError(
+                        "Refusing to update: image cannot be matched uniquely; set allow_image_replacement=True to proceed."
+                    )
 
         _, submitted_unsupported = document_to_markdown(post.draft_body)
 

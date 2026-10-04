@@ -125,9 +125,9 @@ def test_document_to_markdown_golden_covers_supported_nodes():
     markdown, unsupported = document_to_markdown(document)
 
     assert unsupported == []
-    assert "python-substack-image:v1" in markdown
+    assert "python-substack-image:v2" in markdown
     markdown = re.sub(
-        r"\n<!-- python-substack-image:v1 [A-Za-z0-9_-]+ -->", "", markdown
+        r"\n<!-- python-substack-image:v2 [A-Za-z0-9_-]+ -->", "", markdown
     )
     assert markdown == (
         "## **Heading**\n\n"

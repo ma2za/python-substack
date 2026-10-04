@@ -59,3 +59,43 @@ def test_drafts_update_json_dry_run(tmp_path, monkeypatch, capsys):
     assert api.calls[0][1] == 42
     assert api.calls[0][2] == "# Test"
     assert api.calls[0][3]["dry_run"] is True
+
+
+def test_drafts_update_requires_yes_for_allow_image_replacement(
+    tmp_path, monkeypatch, capsys
+):
+    api = UpdateOperationsApi()
+    use_api(monkeypatch, api)
+    md_file = tmp_path / "test.md"
+    md_file.write_text("# Test", encoding="utf-8")
+    assert (
+        cli.main(["drafts", "update", "42", str(md_file), "--allow-image-replacement"])
+        == 2
+    )
+    err = capsys.readouterr().err
+    assert "--yes is required when using --allow-image-replacement" in err
+    assert api.calls == []
+
+
+def test_drafts_update_passes_allow_image_replacement(tmp_path, monkeypatch, capsys):
+    api = UpdateOperationsApi()
+    use_api(monkeypatch, api)
+    md_file = tmp_path / "test.md"
+    md_file.write_text("# Test", encoding="utf-8")
+    assert (
+        cli.main(
+            [
+                "--json",
+                "drafts",
+                "update",
+                "42",
+                str(md_file),
+                "--allow-image-replacement",
+                "--yes",
+            ]
+        )
+        == 0
+    )
+    assert api.calls[0][0] == "update"
+    assert api.calls[0][1] == 42
+    assert api.calls[0][3]["allow_image_replacement"] is True
