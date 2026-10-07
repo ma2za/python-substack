@@ -70,4 +70,6 @@ print(preview["payload"])
 Run the same call without `dry_run=True` to write the update. Unsupported
 editor nodes exported as `python-substack-node:v1` markers are preserved by
 default. Removing or changing them raises `ValueError` unless
-`allow_unsupported_change=True` is deliberately supplied.
+`allow_unsupported_change=True` is deliberately supplied. Similarly, image
+replacements that cannot resolve to their original remote source require
+`allow_image_replacement=True`.

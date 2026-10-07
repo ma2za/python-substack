@@ -30,5 +30,5 @@ publish, or delete it.
 - [Low-level Python API](low-level-api.md)
 - [YAML drafts](yaml.md)
 - [Compatibility policy](compatibility.md)
+- [Release checklist](releasing.md)
 - [Changelog](https://github.com/ma2za/python-substack/blob/main/CHANGELOG.md)
-- [Release roadmap](https://github.com/ma2za/python-substack/blob/main/ROADMAP.md)
