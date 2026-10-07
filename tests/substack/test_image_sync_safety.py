@@ -10,6 +10,13 @@ from substack.mdexport import document_to_markdown
 from substack.mdrender import markdown_to_doc, parse_image_marker
 from substack.nodes import captioned_image, paragraph, text
 from substack.post import Post
+from substack.revision import compute_draft_revision, format_revision_marker
+
+
+def _with_rev(markdown: str, remote_doc: dict, draft_id: int = 42) -> str:
+    draft = {"id": draft_id, "draft_body": json.dumps(remote_doc)}
+    marker = format_revision_marker(compute_draft_revision(draft))
+    return f"{marker}\n\n{markdown}"
 
 
 def _make_v2_marker(src: str, attrs: dict) -> str:
@@ -136,8 +143,9 @@ def test_v2_changed_source_update(monkeypatch):
             "unknownAttr": "preserved",
         },
     )
-    submitted_md = (
-        f'![New Alt](https://substackcdn.com/replacement.png "New Caption")\n{marker}\n'
+    submitted_md = _with_rev(
+        f'![New Alt](https://substackcdn.com/replacement.png "New Caption")\n{marker}\n',
+        remote_doc,
     )
 
     res = api.update_draft_from_markdown(
@@ -196,7 +204,9 @@ def test_v1_resolvable_update(monkeypatch):
 
     # V1 marker with identical src
     v1_marker = _make_v1_marker({"imageSize": "wide"})
-    submitted_md = f"![Alt](https://example.com/unique.png)\n{v1_marker}\n"
+    submitted_md = _with_rev(
+        f"![Alt](https://example.com/unique.png)\n{v1_marker}\n", remote_doc
+    )
 
     res = api.update_draft_from_markdown(
         42, submitted_md, allow_image_replacement=False
@@ -239,7 +249,9 @@ def test_v1_ambiguous_update_rejected(monkeypatch):
 
     # V1 marker submitted
     v1_marker = _make_v1_marker({"imageSize": "wide"})
-    submitted_md = f"![Alt](https://example.com/dup.png)\n{v1_marker}\n"
+    submitted_md = _with_rev(
+        f"![Alt](https://example.com/dup.png)\n{v1_marker}\n", remote_doc
+    )
 
     with pytest.raises(ValueError, match="cannot be matched uniquely"):
         api.update_draft_from_markdown(42, submitted_md, allow_image_replacement=False)
@@ -275,7 +287,9 @@ def test_v1_changed_source_rejected(monkeypatch):
 
     # V1 marker with changed source in markdown
     v1_marker = _make_v1_marker({"imageSize": "wide"})
-    submitted_md = f"![Alt](https://example.com/changed.png)\n{v1_marker}\n"
+    submitted_md = _with_rev(
+        f"![Alt](https://example.com/changed.png)\n{v1_marker}\n", remote_doc
+    )
 
     with pytest.raises(
         ValueError, match="cannot be matched uniquely|cannot authorize changed source"
@@ -333,7 +347,10 @@ def test_duplicate_remote_urls_with_v2(monkeypatch):
         "https://example.com/dup.png", {"imageSize": "normal", "align": "left"}
     )
 
-    submitted_md = f"![First](https://example.com/dup.png)\n{m1}\n\n![Second](https://example.com/dup.png)\n{m2}\n"
+    submitted_md = _with_rev(
+        f"![First](https://example.com/dup.png)\n{m1}\n\n![Second](https://example.com/dup.png)\n{m2}\n",
+        remote_doc,
+    )
 
     res = api.update_draft_from_markdown(
         42, submitted_md, allow_image_replacement=False
@@ -376,7 +393,10 @@ def test_v2_marker_reuse_rejected(monkeypatch):
 
     # Two images in markdown reusing the marker bound to the single remote image
     m = _make_v2_marker("https://example.com/single.png", {"imageSize": "wide"})
-    submitted_md = f"![First](https://example.com/single.png)\n{m}\n\n![Second](https://example.com/other.png)\n{m}\n"
+    submitted_md = _with_rev(
+        f"![First](https://example.com/single.png)\n{m}\n\n![Second](https://example.com/other.png)\n{m}\n",
+        remote_doc,
+    )
 
     with pytest.raises(ValueError, match="reused or duplicate image marker"):
         api.update_draft_from_markdown(42, submitted_md, allow_image_replacement=False)
@@ -408,7 +428,9 @@ def test_v2_stale_marker_rejected(monkeypatch):
 
     # Marker bound to a non-existent remote source
     m = _make_v2_marker("https://example.com/stale.png", {"imageSize": "wide"})
-    submitted_md = f"![Photo](https://example.com/actual.png)\n{m}\n"
+    submitted_md = _with_rev(
+        f"![Photo](https://example.com/actual.png)\n{m}\n", remote_doc
+    )
 
     with pytest.raises(ValueError, match="stale image marker"):
         api.update_draft_from_markdown(42, submitted_md, allow_image_replacement=False)
@@ -498,9 +520,10 @@ def test_new_image_without_marker(monkeypatch):
 
     # Markdown has existing image with v2 marker + a brand new image without marker
     m = _make_v2_marker("https://example.com/existing.png", {"imageSize": "wide"})
-    submitted_md = (
+    submitted_md = _with_rev(
         f"![Existing](https://example.com/existing.png)\n{m}\n\n"
-        f"![Brand New](https://example.com/brand_new.png)\n"
+        f"![Brand New](https://example.com/brand_new.png)\n",
+        remote_doc,
     )
 
     with pytest.raises(ValueError, match="cannot be matched uniquely"):
@@ -553,7 +576,9 @@ def test_adversarial_unicode_bidi_and_special_characters(monkeypatch):
     assert "python-substack-image:v2" in md
 
     # Round-trip update
-    res = api.update_draft_from_markdown(42, md, allow_image_replacement=False)
+    res = api.update_draft_from_markdown(
+        42, _with_rev(md, remote_doc), allow_image_replacement=False
+    )
     assert res["action"] == "update"
     saved = json.loads(put_calls[0][1]["draft_body"])
     saved_img = saved["content"][0]["content"][0]["attrs"]
@@ -618,7 +643,7 @@ Interleaved callout
 """
 
     res = api.update_draft_from_markdown(
-        42, submitted_md, allow_image_replacement=False
+        42, _with_rev(submitted_md, remote_doc), allow_image_replacement=False
     )
     assert res["action"] == "update"
     saved = json.loads(put_calls[0][1]["draft_body"])
@@ -694,4 +719,6 @@ def test_adversarial_3_duplicates_and_4th_reused_rejected(monkeypatch):
 {m}
 """
     with pytest.raises(ValueError, match="reused or duplicate image marker"):
-        api.update_draft_from_markdown(42, submitted_md, allow_image_replacement=False)
+        api.update_draft_from_markdown(
+            42, _with_rev(submitted_md, remote_doc), allow_image_replacement=False
+        )

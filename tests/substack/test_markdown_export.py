@@ -229,11 +229,13 @@ def test_api_export_fetches_once_and_performs_no_writes(monkeypatch):
 
     monkeypatch.setattr(api, "get_draft", get_draft)
 
-    assert api.export_draft_to_markdown(42) == {
-        "draft": draft,
-        "markdown": "Read only\n",
-        "unsupported_nodes": [],
-    }
+    res = api.export_draft_to_markdown(42)
+    assert res["draft"] == draft
+    assert res["unsupported_nodes"] == []
+    assert res["revision"]["draft_id"] == 42
+    assert res["revision"]["version"] == 1
+    assert "python-substack-revision:v1" in res["markdown"]
+    assert res["markdown"].endswith("Read only\n")
     assert calls == [42]
 
 

@@ -73,3 +73,11 @@ default. Removing or changing them raises `ValueError` unless
 `allow_unsupported_change=True` is deliberately supplied. Similarly, image
 replacements that cannot resolve to their original remote source require
 `allow_image_replacement=True`.
+
+The method verifies the revision fingerprint from `python-substack-revision:v1`
+markers before updating. If the remote draft changed after export, it raises
+`DraftConflictError` unless `allow_conflict=True` (or `force=True`) is passed.
+Files lacking revision metadata are treated as unprotected updates and also
+require `allow_conflict=True`. In dry-run mode (`dry_run=True`), conflict
+status and specific mismatch details are returned in `preview["conflict"]` and
+`preview["mismatches"]`.

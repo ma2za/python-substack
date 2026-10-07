@@ -35,3 +35,10 @@ marker and listed in JSON output so it cannot disappear unnoticed. Updates
 refuse to remove or alter those markers or replace remote images without
 explicit authorization (`--allow-unsupported-change --yes` or
 `--allow-image-replacement --yes`).
+
+Draft updates verify remote revision fingerprints before writing. If the
+remote draft changed after export, the update fails closed with a conflict
+error to prevent overwriting remote work. Markdown files lacking revision
+metadata are treated as unprotected updates. Overriding conflicts or applying
+unprotected updates requires explicit confirmation (`--allow-conflict --yes`
+or `--force --yes` in the CLI, `allow_conflict=True` in the SDK).

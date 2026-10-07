@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.10.0
+
+### Added
+
+- Export a stable remote revision fingerprint in Markdown backup metadata via
+  `python-substack-revision:v1` markers.
+- Conflict-aware draft updates: compare submitted expected revision with current
+  remote draft before any write, preventing silent overwrites of remote changes.
+- Return actionable mismatch details (body changes, title, subtitle, audience,
+  permissions, section, slug) during dry-run updates (`--dry-run --yes`).
+- Fail closed by default on conflicted updates or missing revision metadata
+  (unprotected updates).
+- Add explicit override via `--allow-conflict` / `--force` (requiring `--yes`)
+  in CLI and `allow_conflict=True` / `force=True` in SDK.
+- Export `revision` dictionary metadata in `Api.export_draft_to_markdown` and
+  CLI `--json drafts export`.
+- Introduce `DraftConflictError` exception inheriting from both `ValueError` and
+  `SubstackException`.
+
 ## 0.9.1
 
 ### Added

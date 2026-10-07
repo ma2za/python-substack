@@ -12,7 +12,13 @@ def _redact_message(text: str) -> str:
     return text
 
 
-class SubstackAPIException(Exception):
+class SubstackException(Exception):
+    """Base exception for all python-substack exceptions."""
+
+    pass
+
+
+class SubstackAPIException(SubstackException):
     def __init__(self, status_code, text):
         text = _redact_message(text)
         try:
@@ -32,7 +38,7 @@ class SubstackAPIException(Exception):
         return f"APIError(code={self.status_code}): {self.message}"
 
 
-class SubstackRequestException(Exception):
+class SubstackRequestException(SubstackException):
     def __init__(self, message):
         self.message = _redact_message(message)
 
@@ -42,3 +48,23 @@ class SubstackRequestException(Exception):
 
 class SectionNotExistsException(SubstackRequestException):
     pass
+
+
+class DraftConflictError(ValueError, SubstackException):
+    """Raised when an update conflicts with the current remote draft state or lacks revision metadata."""
+
+    def __init__(
+        self,
+        message: str,
+        mismatches: list = None,
+        expected_revision: dict = None,
+        current_revision: dict = None,
+    ):
+        super().__init__(message)
+        self.message = message
+        self.mismatches = mismatches or []
+        self.expected_revision = expected_revision
+        self.current_revision = current_revision
+
+    def __str__(self):
+        return self.message

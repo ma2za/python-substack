@@ -99,3 +99,73 @@ def test_drafts_update_passes_allow_image_replacement(tmp_path, monkeypatch, cap
     assert api.calls[0][0] == "update"
     assert api.calls[0][1] == 42
     assert api.calls[0][3]["allow_image_replacement"] is True
+
+
+def test_drafts_update_requires_yes_for_allow_conflict(tmp_path, monkeypatch, capsys):
+    api = UpdateOperationsApi()
+    use_api(monkeypatch, api)
+    md_file = tmp_path / "test.md"
+    md_file.write_text("# Test", encoding="utf-8")
+    assert cli.main(["drafts", "update", "42", str(md_file), "--allow-conflict"]) == 2
+    err = capsys.readouterr().err
+    assert "--yes is required when using --allow-conflict" in err
+    assert api.calls == []
+
+
+def test_drafts_update_requires_yes_for_force(tmp_path, monkeypatch, capsys):
+    api = UpdateOperationsApi()
+    use_api(monkeypatch, api)
+    md_file = tmp_path / "test.md"
+    md_file.write_text("# Test", encoding="utf-8")
+    assert cli.main(["drafts", "update", "42", str(md_file), "--force"]) == 2
+    err = capsys.readouterr().err
+    assert "--yes is required when using --allow-conflict" in err
+    assert api.calls == []
+
+
+def test_drafts_update_passes_allow_conflict(tmp_path, monkeypatch, capsys):
+    api = UpdateOperationsApi()
+    use_api(monkeypatch, api)
+    md_file = tmp_path / "test.md"
+    md_file.write_text("# Test", encoding="utf-8")
+    assert (
+        cli.main(
+            [
+                "--json",
+                "drafts",
+                "update",
+                "42",
+                str(md_file),
+                "--allow-conflict",
+                "--yes",
+            ]
+        )
+        == 0
+    )
+    assert api.calls[0][0] == "update"
+    assert api.calls[0][1] == 42
+    assert api.calls[0][3]["allow_conflict"] is True
+
+
+def test_drafts_update_passes_force_as_allow_conflict(tmp_path, monkeypatch, capsys):
+    api = UpdateOperationsApi()
+    use_api(monkeypatch, api)
+    md_file = tmp_path / "test.md"
+    md_file.write_text("# Test", encoding="utf-8")
+    assert (
+        cli.main(
+            [
+                "--json",
+                "drafts",
+                "update",
+                "42",
+                str(md_file),
+                "--force",
+                "--yes",
+            ]
+        )
+        == 0
+    )
+    assert api.calls[0][0] == "update"
+    assert api.calls[0][1] == 42
+    assert api.calls[0][3]["allow_conflict"] is True

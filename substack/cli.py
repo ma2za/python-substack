@@ -10,7 +10,11 @@ import yaml
 from dotenv import load_dotenv
 
 from substack import Api, __version__
-from substack.exceptions import SubstackAPIException, SubstackRequestException
+from substack.exceptions import (
+    DraftConflictError,
+    SubstackAPIException,
+    SubstackRequestException,
+)
 from substack.post import Post
 
 
@@ -146,6 +150,14 @@ def _redact(message):
 
 
 def _error_payload(exc):
+    if isinstance(exc, DraftConflictError):
+        return {
+            "error": {
+                "type": "conflict_error",
+                "message": _redact(exc.message),
+                "mismatches": exc.mismatches,
+            }
+        }
     if isinstance(exc, SubstackAPIException):
         return {
             "error": {
@@ -314,6 +326,8 @@ def _drafts_update(api, args):
         raise CLIUsageError("--yes is required when using --allow-unsupported-change")
     if args.allow_image_replacement and not args.yes:
         raise CLIUsageError("--yes is required when using --allow-image-replacement")
+    if args.allow_conflict and not args.yes:
+        raise CLIUsageError("--yes is required when using --allow-conflict")
 
     if not args.yes and (args.json_output or not sys.stdin.isatty()):
         raise CLIUsageError("--yes is required in non-interactive or JSON mode")
@@ -354,13 +368,25 @@ def _drafts_update(api, args):
         dry_run=args.dry_run,
         allow_unsupported_change=args.allow_unsupported_change,
         allow_image_replacement=args.allow_image_replacement,
+        allow_conflict=args.allow_conflict,
     )
 
     if args.json_output:
         _print_json(result)
     else:
         status = "Dry-run updated" if args.dry_run else "Updated"
-        print(f"{status} draft {args.draft_id}")
+        if result.get("conflict"):
+            print(f"Conflict detected in draft {args.draft_id}:")
+            for mismatch in result.get("mismatches", []):
+                print(f"  - {mismatch}")
+            if result.get("dry_run"):
+                print(
+                    f"Dry-run preview completed for draft {args.draft_id} with conflicts."
+                )
+            else:
+                print(f"{status} draft {args.draft_id} (override applied)")
+        else:
+            print(f"{status} draft {args.draft_id}")
 
 
 def _drafts_export(api, args):
@@ -381,6 +407,8 @@ def _drafts_export(api, args):
         "markdown": markdown,
         "unsupported_nodes": result["unsupported_nodes"],
     }
+    if "revision" in result and result["revision"] is not None:
+        payload["revision"] = result["revision"]
     if args.json_output:
         _print_json(payload)
     elif output_path is not None:
@@ -517,6 +545,13 @@ def _build_parser():
     drafts_update.add_argument("--dry-run", action="store_true")
     drafts_update.add_argument("--allow-unsupported-change", action="store_true")
     drafts_update.add_argument("--allow-image-replacement", action="store_true")
+    drafts_update.add_argument(
+        "--allow-conflict",
+        "--force",
+        action="store_true",
+        dest="allow_conflict",
+        help="Allow updating draft even if remote revision has changed or revision metadata is missing.",
+    )
     drafts_update.add_argument("--yes", action="store_true")
     drafts_update.set_defaults(handler=_drafts_update)
 

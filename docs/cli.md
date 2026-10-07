@@ -55,8 +55,16 @@ Updates preserve unsupported editor nodes exported as
 `python-substack-image:v2` markers. The command refuses to remove or alter
 those nodes by default. `--allow-unsupported-change` and
 `--allow-image-replacement` are available only with `--yes` for intentional
-modifications or unmatched image replacements. The CLI uses its authenticated
-API client while rendering, so local images can upload even during a dry run.
+modifications or unmatched image replacements.
+
+Draft updates also verify the revision fingerprint exported in
+`python-substack-revision:v1` markers. If remote draft changes occurred after
+export, the update fails closed to prevent overwriting remote work. Dry-run
+updates (`--dry-run --yes`) report specific mismatch details. Markdown files
+lacking revision metadata are treated as unprotected updates. Pass
+`--allow-conflict --yes` (or `--force --yes`) to explicitly override conflicts
+or apply unprotected updates. The CLI uses its authenticated API client while
+rendering, so local images can upload even during a dry run.
 
 ## Select a publication
 

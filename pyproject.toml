@@ -1,6 +1,6 @@
 [project]
 name = "python-substack"
-version = "0.9.1"
+version = "0.10.0"
 description = "Write and safely manage Substack drafts from Markdown with Python, CLI, and MCP."
 authors = [
     { name = "Paolo Mazza", email = "mazzapaolo2019@gmail.com" }

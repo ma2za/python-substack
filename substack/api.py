@@ -460,6 +460,7 @@ class Api:
 
     def export_draft_to_markdown(self, draft_id):
         from substack.mdexport import document_to_markdown
+        from substack.revision import compute_draft_revision, format_revision_marker
 
         draft = self.get_draft(draft_id)
         draft_body = draft.get("draft_body")
@@ -474,9 +475,15 @@ class Api:
             raise ValueError("Malformed draft body: draft_body must be a JSON object")
 
         markdown, unsupported_nodes = document_to_markdown(draft_body)
+        revision = compute_draft_revision(draft)
+        revision_marker = format_revision_marker(revision)
+        full_markdown = (
+            f"{revision_marker}\n\n{markdown}" if markdown else f"{revision_marker}\n"
+        )
         return {
             "draft": draft,
-            "markdown": markdown,
+            "markdown": full_markdown,
+            "revision": revision,
             "unsupported_nodes": unsupported_nodes,
         }
 
@@ -496,13 +503,22 @@ class Api:
         dry_run: bool = False,
         allow_unsupported_change: bool = False,
         allow_image_replacement: bool = False,
+        expected_revision=None,
+        allow_conflict: bool = False,
+        force: bool = False,
     ) -> dict:
         """
         Update an existing draft body from Markdown, with optional metadata changes.
         """
         from substack import mdrender
+        from substack.exceptions import DraftConflictError
         from substack.mdexport import document_to_markdown
         from substack.post import Post
+        from substack.revision import (
+            compare_draft_revisions,
+            compute_draft_revision,
+            parse_revision_marker,
+        )
 
         draft = self.get_draft(draft_id)
         draft_body = draft.get("draft_body")
@@ -515,6 +531,50 @@ class Api:
                 ) from exc
         if not isinstance(draft_body, dict):
             raise ValueError("Malformed draft body: draft_body must be a JSON object")
+
+        current_rev = compute_draft_revision(draft)
+
+        target_expected_rev = None
+        if expected_revision is not None:
+            if isinstance(expected_revision, dict):
+                target_expected_rev = expected_revision
+            elif isinstance(expected_revision, str):
+                target_expected_rev = {"revision": expected_revision}
+            else:
+                raise ValueError("expected_revision must be a revision dict or string")
+        else:
+            target_expected_rev = parse_revision_marker(markdown)
+
+        override_enabled = bool(allow_conflict or force)
+        conflict_detected = False
+        mismatches = []
+
+        if target_expected_rev is None:
+            conflict_detected = True
+            mismatches = [
+                "Markdown file is missing revision metadata (unprotected update); safe conflict comparison is impossible."
+            ]
+            if not override_enabled and not dry_run:
+                raise DraftConflictError(
+                    "Refusing to update: Markdown file is missing revision metadata (unprotected update). "
+                    "Export the draft first or pass allow_conflict=True to proceed.",
+                    mismatches=mismatches,
+                    expected_revision=None,
+                    current_revision=current_rev,
+                )
+        else:
+            mismatches = compare_draft_revisions(target_expected_rev, current_rev)
+            if mismatches:
+                conflict_detected = True
+                if not override_enabled and not dry_run:
+                    details = "; ".join(mismatches)
+                    raise DraftConflictError(
+                        f"Refusing to update: remote draft has changed since export ({details}). "
+                        "Re-export the draft or pass allow_conflict=True to proceed.",
+                        mismatches=mismatches,
+                        expected_revision=target_expected_rev,
+                        current_revision=current_rev,
+                    )
 
         _, remote_unsupported = document_to_markdown(draft_body)
 
@@ -657,7 +717,7 @@ class Api:
             if tags_list:
                 tags_result = self.add_tags_to_post(draft_id, tags_list)
 
-        return {
+        result_payload = {
             "action": "update",
             "draft_id": draft_id,
             "dry_run": dry_run,
@@ -666,7 +726,14 @@ class Api:
             "draft": updated_draft,
             "tags": tags_result,
             "unsupported_nodes": unsupported_nodes,
+            "conflict": conflict_detected,
+            "mismatches": mismatches,
+            "expected_revision": target_expected_rev,
+            "current_revision": current_rev,
         }
+        if override_enabled and conflict_detected:
+            result_payload["override"] = True
+        return result_payload
 
     def delete_draft(self, draft_id):
         """

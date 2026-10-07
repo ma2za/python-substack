@@ -219,3 +219,22 @@ reused, or non-adjacent markers are rejected. Unmatched image replacements requi
 `allow_image_replacement=True` or `--allow-image-replacement --yes`. Legacy `v1`
 image markers remain supported when the image source resolves to exactly one
 remote image.
+
+## Revision fingerprint and conflict prevention
+
+Exported Markdown drafts include a top-level revision marker:
+
+```text
+<!-- python-substack-revision:v1 BASE64URL_JSON -->
+```
+
+The payload contains the exported `draft_id`, a deterministic SHA-256 body hash,
+title, subtitle, audience, comment permissions, section ID, slug, and timestamp.
+On draft update, `python-substack` compares the submitted expected revision
+against the current remote draft before any write. If remote changes were made
+after export, the update fails closed with `DraftConflictError` to prevent silent
+data loss. Dry-run updates (`--dry-run --yes`) return actionable mismatch
+details. Older Markdown files without revision metadata are treated as
+unprotected updates. Conflicted or unprotected updates require explicit
+authorization with `allow_conflict=True` (or `force=True`) in Python or
+`--allow-conflict --yes` (or `--force --yes`) in the CLI.

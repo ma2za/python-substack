@@ -141,13 +141,16 @@ def test_update_draft_from_markdown_preservation(monkeypatch):
     monkeypatch.setattr(api, "put_draft", mock_put_draft)
 
     # 1. Update with correct marker matches and succeeds
+    from substack.revision import compute_draft_revision, format_revision_marker
+
+    remote_draft_obj = {"id": 42, "draft_body": json.dumps(remote_body)}
+    rev_marker = format_revision_marker(compute_draft_revision(remote_draft_obj))
+
     btn_payload = json.dumps(remote_btn, separators=(",", ":"), sort_keys=True).encode(
         "utf-8"
     )
     btn_encoded = base64.urlsafe_b64encode(btn_payload).decode("ascii").rstrip("=")
-    submitted_markdown = (
-        f"# New Title\n\n<!-- python-substack-node:v1 {btn_encoded} -->\n"
-    )
+    submitted_markdown = f"{rev_marker}\n\n# New Title\n\n<!-- python-substack-node:v1 {btn_encoded} -->\n"
 
     res = api.update_draft_from_markdown(42, submitted_markdown)
     assert res["action"] == "update"
@@ -157,13 +160,15 @@ def test_update_draft_from_markdown_preservation(monkeypatch):
     # 2. Update without marker fails when allow_unsupported_change is False
     mock_put_draft.reset_mock()
     with pytest.raises(ValueError, match="remote unsupported nodes are missing"):
-        api.update_draft_from_markdown(42, "# New Title without button")
+        api.update_draft_from_markdown(
+            42, f"{rev_marker}\n\n# New Title without button"
+        )
     assert not mock_put_draft.called
 
     # 3. Update without marker succeeds when allow_unsupported_change is True
     mock_put_draft.reset_mock()
     res = api.update_draft_from_markdown(
-        42, "# New Title without button", allow_unsupported_change=True
+        42, f"{rev_marker}\n\n# New Title without button", allow_unsupported_change=True
     )
     assert res["action"] == "update"
     assert mock_put_draft.called
