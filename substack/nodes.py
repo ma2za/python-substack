@@ -47,6 +47,8 @@ class MarkType:
     SUPERSCRIPT = "superscript"
     SUBSCRIPT = "subscript"
     LINK = "link"
+    TEXT_STYLE = "textStyle"
+    HIGHLIGHT = "highlight"
 
 
 def code_mark() -> Dict:
@@ -62,6 +64,14 @@ def text(value: str, marks: Optional[List[Dict]] = None) -> Dict:
 
 def link_mark(href: str) -> Dict:
     return {"type": MarkType.LINK, "attrs": {"href": href}}
+
+
+def text_style_mark(color: str) -> Dict:
+    return {"type": MarkType.TEXT_STYLE, "attrs": {"color": color}}
+
+
+def highlight_mark(color: str) -> Dict:
+    return {"type": MarkType.HIGHLIGHT, "attrs": {"color": color}}
 
 
 def paragraph(content: Optional[List[Dict]] = None) -> Dict:

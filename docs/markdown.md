@@ -35,9 +35,25 @@ Pass `api=` when your Markdown references local images so they can be uploaded
 | `~subscript~`                 | subscript         |
 | `[text](https://example.com)` | link              |
 | `<https://example.com>`       | autolinked URL    |
+| `[text]{style="color:#hex"}`  | text color        |
+| `[text]{style="background-color:#hex"}` | highlight |
 
 Note that subscript uses a single tilde (`~x~`) and strikethrough uses a double
 tilde (`~~x~~`); both work in the same document.
+
+Text color and highlight use Pandoc-style span attributes: a `[span]` followed
+immediately by `{style="..."}`. Only the `color` and `background-color`
+declarations are recognized (others are ignored), and both may be combined in
+one span:
+
+```markdown
+[colorized text]{style="color:#ff00ff"}
+[highlighted text]{style="background-color:#ffff00"}
+[both]{style="color:#ffffff; background-color:#000000"}
+```
+
+A `{...}` block elsewhere (after an image, link, or inline code) is left as
+plain text; the syntax is only recognized immediately after a `[span]`.
 
 ## Headings
 

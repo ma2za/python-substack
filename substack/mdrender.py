@@ -27,6 +27,7 @@ from urllib.parse import unquote, urlsplit
 
 from markdown_it import MarkdownIt
 from markdown_it.tree import SyntaxTreeNode
+from mdit_py_plugins.attrs import attrs_plugin
 from mdit_py_plugins.container import container_plugin
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 from mdit_py_plugins.footnote import footnote_plugin
@@ -141,6 +142,10 @@ def _make_parser() -> MarkdownIt:
         .use(superscript_plugin)
         .use(container_plugin, name="pullquote")
         .use(container_plugin, name="callout")
+        # Pandoc-style span attributes, `[text]{style="color:#hex"}`, for text
+        # color and highlight. Restricted to spans only (`after=()`) so a
+        # stray `{...}` after an image, link or inline code is left as text.
+        .use(attrs_plugin, after=(), spans=True)
         .enable("strikethrough")
     )
 
@@ -161,6 +166,28 @@ def _coalesce(out_nodes: List[Dict]) -> List[Dict]:
     return merged
 
 
+def _style_marks(attrs: Dict) -> List[Dict]:
+    """Map a span's `style` attribute to textStyle/highlight marks.
+
+    Only `color` and `background-color` declarations are recognized; any
+    other declaration is ignored rather than rejected, since `{...}` spans
+    are also used (via the attrs plugin) for plain CSS-style attributes in
+    general, not just color.
+    """
+    style = attrs.get("style", "")
+    marks: List[Dict] = []
+    for declaration in style.split(";"):
+        prop, _, value = declaration.partition(":")
+        prop, value = prop.strip().lower(), value.strip()
+        if not value:
+            continue
+        if prop == "color":
+            marks.append(nodes.text_style_mark(value))
+        elif prop == "background-color":
+            marks.append(nodes.highlight_mark(value))
+    return marks
+
+
 def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[Dict]:
     """Render an inline subtree into a flat list of text / anchor nodes."""
     out: List[Dict] = []
@@ -178,6 +205,8 @@ def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[D
         elif t == "link":
             href = child.attrs.get("href", "")
             out.extend(_render_inline(child, marks + [nodes.link_mark(href)], ctx))
+        elif t == "span":
+            out.extend(_render_inline(child, marks + _style_marks(child.attrs), ctx))
         elif t in ("softbreak", "hardbreak"):
             out.append(nodes.text(" ", marks))
         elif t == "footnote_ref":

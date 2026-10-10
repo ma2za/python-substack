@@ -201,9 +201,10 @@ For direct ProseMirror node construction, see the
 ## Markdown
 
 Supported Markdown includes headings, paragraphs, bold, italic, inline code,
-strikethrough, superscript, subscript, links, images, linked images, image
-captions, code blocks, blockquotes, ordered and unordered lists, horizontal
-rules, footnotes, LaTeX math, pull quotes, and callouts.
+strikethrough, superscript, subscript, text color, highlight, links, images,
+linked images, image captions, code blocks, blockquotes, ordered and
+unordered lists, horizontal rules, footnotes, LaTeX math, pull quotes, and
+callouts.
 
 ```python
 from substack.post import Post
