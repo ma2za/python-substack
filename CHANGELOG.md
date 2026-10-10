@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Text color and highlight marks (`textStyle` / `highlight`), settable via
+  `substack.nodes.text_style_mark()` / `highlight_mark()` for direct node
+  construction, and in Markdown via Pandoc-style span attributes
+  (`[text]{style="color:#hex"}` / `{style="background-color:#hex"}`), parsed
+  and exported round-trip. Verified against Substack's real editor schema
+  (confirmed by applying both to a live draft and reading the rendered HTML
+  back: `textStyle` becomes a `<span data-color>` with inline `color`,
+  `highlight` becomes a `<mark data-color>` with inline `background-color`).
+
 ## 0.10.0
 
 ### Added
