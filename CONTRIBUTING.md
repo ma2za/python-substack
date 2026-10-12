@@ -2,6 +2,16 @@
 
 ## Setup
 
+For a clean Linux or Codex Cloud checkout, install the pinned Poetry tool and
+locked development dependencies:
+
+```bash
+bash scripts/codex-cloud-setup.sh
+export PATH="$PWD/.tools/poetry/bin:$PATH"
+```
+
+See [CODEX_CLOUD.md](CODEX_CLOUD.md) for cloud configuration and handover context.
+
 Fork and clone the repository, then install the package and all optional
 dependencies:
 

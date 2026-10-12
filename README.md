@@ -252,6 +252,7 @@ See [MCP server](docs/mcp.md) for the tool list and safety notes.
 - [YAML drafts](docs/yaml.md)
 - [MCP server](docs/mcp.md)
 - [Agent workflow](docs/agents.md)
+- [Cloud development](CODEX_CLOUD.md)
 - [Safety and publishing behavior](docs/safety.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Compatibility policy](docs/compatibility.md)

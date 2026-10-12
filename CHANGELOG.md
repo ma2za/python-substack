@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Development
+
+- Add a portable cloud setup script that installs pinned Poetry, locked
+  development dependencies, the MCP extra, and repository hooks.
+- Document cloud configuration, offline validation, and maintainer handover.
+- Keep environment credentials and generated tool environments out of Git.
+
 ## 0.10.0
 
 ### Added
