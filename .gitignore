@@ -113,8 +113,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# Private maintainer configuration
-.agents/
 tmp_pytest/
 
 # Spyder project settings
@@ -137,6 +135,3 @@ dmypy.json
 
 .idea/
 .vscode/
-
-# Local maintainer release plan
-ROADMAP.md

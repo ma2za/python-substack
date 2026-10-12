@@ -5,6 +5,9 @@ title: Release checklist
 
 # Release checklist
 
+Read the [release plan](../RELEASE_PLAN.md) before release work and update its
+status and validation evidence as the release proceeds.
+
 1. Keep `pyproject.toml` and `substack/__init__.py` on the previous version
    while implementing code, tests, workflows, and documentation.
 2. Run `poetry install --all-extras`.

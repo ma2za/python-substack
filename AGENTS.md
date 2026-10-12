@@ -17,9 +17,11 @@ require authorization and must never publish test content.
 Keep the repository public. Never change repository visibility unless the user
 explicitly requests that change for this repository.
 
-Private local maintainer guidance and optional workflows may live under
-`.agents/`. Read the relevant files when they are available:
+Maintainer guidance, the release roadmap, and optional workflows are tracked
+and available in every clone. Read the relevant files:
 
+- `RELEASE_PLAN.md` records the release roadmap and handover context.
+- `.agents/PROJECT_GUIDANCE.md` defines project maintenance requirements.
 - `.agents/commands/release/prepare.toml` defines release preparation.
 - `.agents/commands/release/verify.toml` defines release verification.
 - `.agents/policies/git-override.toml` records repository Git tool policy.

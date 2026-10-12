@@ -65,11 +65,21 @@ or documentation. GitHub Actions secrets do not automatically configure Codex
 Cloud authentication. A local cookie file path cannot carry over to a new cloud
 environment.
 
+On 2026-10-12, the maintainer approved preserving `EMAIL`, `PUBLICATION_URL`,
+and `COOKIES_STRING` as encrypted GitHub Actions secrets in this repository.
+The old `.env` and VS Code MCP configuration contained identical values.
+Successful uploads and secret metadata were verified before local deletion.
+These values were not tested against the live Substack service.
+
 ## Continuing work
 
-Read [AGENTS.md](AGENTS.md), [CHANGELOG.md](CHANGELOG.md), and the relevant tests
-before making changes. Preserve the current package version during ordinary
-development and keep `poetry.lock` unchanged unless dependencies change.
+Read [AGENTS.md](AGENTS.md), [.agents/PROJECT_GUIDANCE.md](.agents/PROJECT_GUIDANCE.md),
+[RELEASE_PLAN.md](RELEASE_PLAN.md), [CHANGELOG.md](CHANGELOG.md), and the relevant
+tests before making changes. The plan and release workflows under `.agents/`
+are tracked, so they carry over in every clone. The next planned release is
+`0.11.0`; this handover does not implement that release. Preserve the current
+package version during ordinary development and keep `poetry.lock` unchanged
+unless dependencies change.
 
 This handover does not publish a package, create a release, or operate on a
 Substack publication. Package publication remains governed by

@@ -1,0 +1,6 @@
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["git", "gh"]
+decision = "allow"
+priority = 500
+modes = ["default", "autoEdit"]
