@@ -25,6 +25,8 @@ _MARK_TYPES = {
     "superscript",
     "subscript",
     "link",
+    "textStyle",
+    "highlight",
 }
 _IMAGE_ATTRS = {
     "src",
@@ -117,6 +119,10 @@ def _code_span(value):
     return f"{delimiter}{padding}{value}{padding}{delimiter}"
 
 
+_ATTR_MARKS = {"link", "textStyle", "highlight"}
+_STYLE_PROPERTY = {"textStyle": "color", "highlight": "background-color"}
+
+
 def _render_marked_text(value, marks, node, unsupported):
     if not isinstance(value, str) or not isinstance(marks, list):
         raise ValueError("Malformed draft body: text and marks have invalid types")
@@ -124,7 +130,7 @@ def _render_marked_text(value, marks, node, unsupported):
         _require_dict(mark, "mark")
         if mark["type"] not in _MARK_TYPES:
             return _marker(node, unsupported)
-        allowed = {"type", "attrs"} if mark["type"] == "link" else {"type"}
+        allowed = {"type", "attrs"} if mark["type"] in _ATTR_MARKS else {"type"}
         if _has_unknown_keys(mark, allowed):
             return _marker(node, unsupported)
 
@@ -133,6 +139,7 @@ def _render_marked_text(value, marks, node, unsupported):
         if any(mark["type"] == "code" for mark in marks)
         else _escape_text(value)
     )
+    style_declarations = []
     for mark in marks:
         mark_type = mark["type"]
         if mark_type == "code":
@@ -154,6 +161,16 @@ def _render_marked_text(value, marks, node, unsupported):
             ):
                 return _marker(node, unsupported)
             rendered = f"[{rendered}]({_escape_destination(attrs['href'])})"
+        elif mark_type in _STYLE_PROPERTY:
+            attrs = _attrs(mark, f"{mark_type} mark")
+            if _has_unknown_keys(attrs, {"color"}) or not isinstance(
+                attrs.get("color"), str
+            ):
+                return _marker(node, unsupported)
+            style_declarations.append(f"{_STYLE_PROPERTY[mark_type]}:{attrs['color']}")
+    if style_declarations:
+        style_value = _escape_title("; ".join(style_declarations))
+        rendered = f'[{rendered}]{{style="{style_value}"}}'
     return rendered
 
 

@@ -60,6 +60,34 @@ class TestInlineFormatting:
             {"type": "link", "attrs": {"href": "https://e.com"}}
         ]
 
+    def test_text_color(self):
+        post = make_post()
+        post.from_markdown('x [c]{style="color:#ff00ff"} y')
+        assert marked(first_para_nodes(post), "c") == [
+            {"type": "textStyle", "attrs": {"color": "#ff00ff"}}
+        ]
+
+    def test_highlight(self):
+        post = make_post()
+        post.from_markdown('x [h]{style="background-color:#ffff00"} y')
+        assert marked(first_para_nodes(post), "h") == [
+            {"type": "highlight", "attrs": {"color": "#ffff00"}}
+        ]
+
+    def test_text_color_and_highlight_combined(self):
+        post = make_post()
+        post.from_markdown('x [both]{style="color:#fff; background-color:#000"} y')
+        marks = marked(first_para_nodes(post), "both")
+        assert {"type": "textStyle", "attrs": {"color": "#fff"}} in marks
+        assert {"type": "highlight", "attrs": {"color": "#000"}} in marks
+
+    def test_unrecognized_style_declaration_is_ignored(self):
+        post = make_post()
+        post.from_markdown('x [p]{style="font-weight:bold"} y')
+        # No recognized color/background-color, so the span adds no marks and
+        # merges back into plain surrounding text.
+        assert first_para_nodes(post) == [{"type": "text", "text": "x p y"}]
+
     def test_multiple_marks_in_one_paragraph(self):
         post = make_post()
         post.from_markdown("**b** and *i* and `c` and [l](https://e.com)")

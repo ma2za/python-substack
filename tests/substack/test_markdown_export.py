@@ -23,6 +23,10 @@ def _paragraph(value):
     return {"type": "paragraph", "content": [_text(value)]}
 
 
+def _paragraph_with(*inline_nodes):
+    return {"type": "paragraph", "content": list(inline_nodes)}
+
+
 def test_document_to_markdown_golden_covers_supported_nodes():
     image = captioned_image(
         "https://example.com/image.png",
@@ -159,6 +163,86 @@ def test_document_to_markdown_golden_covers_supported_nodes():
         "captionedImage",
         "footnote",
     ]
+
+
+def test_document_to_markdown_renders_text_color():
+    document = {
+        "type": "doc",
+        "content": [
+            _paragraph_with(
+                _text("c", [{"type": "textStyle", "attrs": {"color": "#ff00ff"}}])
+            )
+        ],
+    }
+    markdown, unsupported = document_to_markdown(document)
+    assert unsupported == []
+    assert markdown == '[c]{style="color:#ff00ff"}\n'
+
+
+def test_document_to_markdown_renders_highlight():
+    document = {
+        "type": "doc",
+        "content": [
+            _paragraph_with(
+                _text("h", [{"type": "highlight", "attrs": {"color": "#ffff00"}}])
+            )
+        ],
+    }
+    markdown, unsupported = document_to_markdown(document)
+    assert unsupported == []
+    assert markdown == '[h]{style="background-color:#ffff00"}\n'
+
+
+def test_document_to_markdown_renders_combined_color_and_highlight():
+    document = {
+        "type": "doc",
+        "content": [
+            _paragraph_with(
+                _text(
+                    "both",
+                    [
+                        {"type": "textStyle", "attrs": {"color": "#fff"}},
+                        {"type": "highlight", "attrs": {"color": "#000"}},
+                    ],
+                )
+            )
+        ],
+    }
+    markdown, unsupported = document_to_markdown(document)
+    assert unsupported == []
+    assert markdown == '[both]{style="color:#fff; background-color:#000"}\n'
+
+
+@pytest.mark.parametrize(
+    "mark",
+    [
+        {"type": "textStyle", "attrs": {}},
+        {"type": "highlight", "attrs": {"color": 1}},
+        {"type": "textStyle", "attrs": {"color": "#fff", "extra": True}},
+    ],
+)
+def test_document_to_markdown_treats_malformed_style_mark_as_opaque(mark):
+    document = {
+        "type": "doc",
+        "content": [_paragraph_with(_text("c", [mark]))],
+    }
+    markdown, unsupported = document_to_markdown(document)
+    assert len(unsupported) == 1
+    assert markdown.startswith("<!-- python-substack-node:v1 ")
+
+
+def test_color_and_highlight_round_trip_through_markdown():
+    markdown = (
+        'A [colorized]{style="color:#ff00ff"} and '
+        '[highlighted]{style="background-color:#ffff00"} word'
+    )
+    post = Post("T", "", user_id=1)
+    post.from_markdown(markdown)
+
+    rendered, unsupported = document_to_markdown(post.draft_body)
+
+    assert unsupported == []
+    assert markdown_to_doc(rendered) == post.draft_body["content"]
 
 
 def test_full_feature_fixture_round_trips_exactly():
