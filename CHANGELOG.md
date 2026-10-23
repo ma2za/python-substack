@@ -13,6 +13,12 @@
   back: `textStyle` becomes a `<span data-color>` with inline `color`,
   `highlight` becomes a `<mark data-color>` with inline `background-color`).
 
+### Fixed
+
+- Nested color and highlight spans override inherited styles of the same type
+  without creating duplicate ProseMirror marks or changing sibling styles.
+  Repeated style properties use the last nonempty declaration.
+
 ## 0.10.0
 
 ### Added

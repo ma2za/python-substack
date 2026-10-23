@@ -172,20 +172,21 @@ def _style_marks(attrs: Dict) -> List[Dict]:
     Only `color` and `background-color` declarations are recognized; any
     other declaration is ignored rather than rejected, since `{...}` spans
     are also used (via the attrs plugin) for plain CSS-style attributes in
-    general, not just color.
+    general, not just color. The last nonempty declaration for each property
+    wins, so each style contributes at most one mark of its type.
     """
     style = attrs.get("style", "")
-    marks: List[Dict] = []
+    marks: Dict[str, Dict] = {}
     for declaration in style.split(";"):
         prop, _, value = declaration.partition(":")
         prop, value = prop.strip().lower(), value.strip()
         if not value:
             continue
         if prop == "color":
-            marks.append(nodes.text_style_mark(value))
+            marks[MarkType.TEXT_STYLE] = nodes.text_style_mark(value)
         elif prop == "background-color":
-            marks.append(nodes.highlight_mark(value))
-    return marks
+            marks[MarkType.HIGHLIGHT] = nodes.highlight_mark(value)
+    return list(marks.values())
 
 
 def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[Dict]:
@@ -206,7 +207,12 @@ def _render_inline(node: SyntaxTreeNode, marks: List[Dict], ctx: Dict) -> List[D
             href = child.attrs.get("href", "")
             out.extend(_render_inline(child, marks + [nodes.link_mark(href)], ctx))
         elif t == "span":
-            out.extend(_render_inline(child, marks + _style_marks(child.attrs), ctx))
+            # Replace inherited styles without mutating the parent/sibling marks.
+            span_marks = {mark["type"]: mark for mark in marks}
+            span_marks.update(
+                (mark["type"], mark) for mark in _style_marks(child.attrs)
+            )
+            out.extend(_render_inline(child, list(span_marks.values()), ctx))
         elif t in ("softbreak", "hardbreak"):
             out.append(nodes.text(" ", marks))
         elif t == "footnote_ref":

@@ -52,6 +52,10 @@ one span:
 [both]{style="color:#ffffff; background-color:#000000"}
 ```
 
+When a property is repeated, its last nonempty declaration wins. Nested spans
+override the same property on their parent while inheriting other styles.
+Styles on an inner span do not affect its siblings.
+
 A `{...}` block elsewhere (after an image, link, or inline code) is left as
 plain text; the syntax is only recognized immediately after a `[span]`.
 
