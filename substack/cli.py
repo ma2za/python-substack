@@ -62,7 +62,9 @@ def _auth_method(cookies_path=None):
 def _title_from_markdown(markdown, fallback):
     for line in markdown.splitlines():
         if line.startswith("# "):
-            return line[2:].strip()
+            title = line[2:].strip()
+            if title:
+                return title
     return fallback
 
 

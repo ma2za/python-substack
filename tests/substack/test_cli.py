@@ -84,6 +84,20 @@ def test_auth_check_prints_profile_and_publication(monkeypatch, capsys):
     assert "Available publications: 2" in output
 
 
+def test_publish_markdown_falls_back_to_filename_for_blank_heading(
+    tmp_path, monkeypatch
+):
+    markdown = tmp_path / "post.md"
+    markdown.write_text("# \n\nBody", encoding="utf-8")
+    api = FakeApi()
+    monkeypatch.setattr(cli, "_api_from_env", lambda cookies_path=None: api)
+
+    result = cli.publish_markdown([str(markdown)])
+
+    assert result == 0
+    assert api.kwargs["title"] == "post"
+
+
 def test_auth_method_prefers_explicit_cookies_path(monkeypatch):
     monkeypatch.delenv("COOKIES_PATH", raising=False)
     monkeypatch.delenv("COOKIES_STRING", raising=False)
