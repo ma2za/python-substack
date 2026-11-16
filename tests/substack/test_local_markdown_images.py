@@ -124,3 +124,46 @@ def test_remote_url_unchanged(api, src):
 )
 def test_without_api_retains_source(src):
     assert render(src) == src
+
+
+def image_attrs(src, api):
+    post = Post(title="Image test", subtitle="", user_id=1)
+    post.from_markdown(f"![alt](<{src}>)", api=api)
+    return post.draft_body["content"][0]["content"][0]["attrs"]
+
+
+def test_uploaded_image_takes_size_and_type_from_upload_response(tmp_path, api):
+    path = tmp_path / "tall.png"
+    path.touch()
+    api.get_image.return_value = {
+        "url": UPLOADED,
+        "imageWidth": 1440,
+        "imageHeight": 3576,
+        "bytes": 418331,
+        "contentType": "image/png",
+    }
+    attrs = image_attrs(str(path), api)
+    assert (attrs["width"], attrs["height"]) == (1440, 3576)
+    assert attrs["bytes"] == 418331
+    assert attrs["type"] == "image/png"
+
+
+@pytest.mark.parametrize(
+    "size",
+    [
+        {},
+        {"imageWidth": 1440},
+        {"imageWidth": None, "imageHeight": None},
+        {"imageWidth": 0, "imageHeight": 0},
+        {"imageWidth": "1440", "imageHeight": "3576"},
+        {"imageWidth": True, "imageHeight": True},
+    ],
+)
+def test_uploaded_image_keeps_default_size_without_usable_dimensions(
+    tmp_path, api, size
+):
+    path = tmp_path / "image.png"
+    path.touch()
+    api.get_image.return_value = {"url": UPLOADED, **size}
+    attrs = image_attrs(str(path), api)
+    assert (attrs["width"], attrs["height"]) == (1456, 819)

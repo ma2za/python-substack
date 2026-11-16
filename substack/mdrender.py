@@ -250,8 +250,24 @@ def _only_image(inline: SyntaxTreeNode) -> Optional[SyntaxTreeNode]:
     return None
 
 
+def _uploaded_image_details(uploaded: Dict) -> Dict:
+    """Pick the image's real size and type out of Substack's upload response."""
+    details: Dict = {}
+    width, height = uploaded.get("imageWidth"), uploaded.get("imageHeight")
+    # Only trust the dimensions as a pair: a lone or malformed value would
+    # distort the image, which is worse than the placeholder size.
+    if all(type(value) is int and value > 0 for value in (width, height)):
+        details["width"], details["height"] = width, height
+    if type(uploaded.get("bytes")) is int:
+        details["size_bytes"] = uploaded["bytes"]
+    if isinstance(uploaded.get("contentType"), str):
+        details["mime_type"] = uploaded["contentType"]
+    return details
+
+
 def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
     src = img.attrs.get("src", "")
+    details: Dict = {}
     if api is not None and (
         urlsplit(src).scheme.lower() not in ("http", "https")
         and not src.startswith("//")
@@ -274,6 +290,7 @@ def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
         except Exception as exc:
             raise ValueError(f"Failed to upload local image: {path}") from exc
         src = url
+        details = _uploaded_image_details(uploaded)
     # markdown-it stores the image alt text as the node's content, not in attrs.
     alt = img.content or img.attrs.get("alt") or None
     # Standard markdown image title `![alt](src "caption")` maps to Substack's caption node.
@@ -284,6 +301,7 @@ def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
         alt=alt,
         href=getattr(img, "_link_href", None),
         caption=caption,
+        **details,
     )
 
 
