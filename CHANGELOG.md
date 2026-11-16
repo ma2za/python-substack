@@ -18,6 +18,9 @@
 - Nested color and highlight spans override inherited styles of the same type
   without creating duplicate ProseMirror marks or changing sibling styles.
   Repeated style properties use the last nonempty declaration.
+- `Api.get_drafts()` now asks for drafts by default. Substack rejects the
+  request with `400 Invalid value` when no filter is sent, so calling it
+  without arguments always failed.
 
 ### Development
 
