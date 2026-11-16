@@ -160,6 +160,15 @@ class TestBlocks:
         assert block["type"] == "blockquote"
         assert block["content"][0]["type"] == "paragraph"
 
+    def test_image_alt_resolves_backslash_escapes(self):
+        post = make_post()
+        post.from_markdown(
+            r'![find . -iname "\*taxes\*" \[a\_b\] C:\\dir \q](https://example.com/img.png)'
+        )
+        attrs = body(post)[0]["content"][0]["attrs"]
+        # Escaped punctuation loses its backslash; "\q" is not an escape.
+        assert attrs["alt"] == r'find . -iname "*taxes*" [a_b] C:\dir \q'
+
     def test_image(self):
         post = make_post()
         post.from_markdown("![alt](https://example.com/img.png)")

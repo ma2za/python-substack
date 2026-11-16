@@ -250,6 +250,10 @@ def _only_image(inline: SyntaxTreeNode) -> Optional[SyntaxTreeNode]:
     return None
 
 
+# A backslash before ASCII punctuation is a Markdown escape for that character.
+_BACKSLASH_ESCAPE = re.compile(r"\\([!-/:-@\[-`{-~])")
+
+
 def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
     src = img.attrs.get("src", "")
     if api is not None and (
@@ -275,7 +279,10 @@ def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
             raise ValueError(f"Failed to upload local image: {path}") from exc
         src = url
     # markdown-it stores the image alt text as the node's content, not in attrs.
-    alt = img.content or img.attrs.get("alt") or None
+    # That content is the raw Markdown source, so resolve backslash escapes:
+    # "\*" in the source means a literal "*" in the alt text.
+    alt = _BACKSLASH_ESCAPE.sub(r"\1", img.content or "")
+    alt = alt or img.attrs.get("alt") or None
     # Standard markdown image title `![alt](src "caption")` maps to Substack's caption node.
     title = img.attrs.get("title") or None
     caption = [nodes.text(title)] if title else None

@@ -251,7 +251,9 @@ def _render_image(node, unsupported):
     ):
         return _marker(node, unsupported)
 
-    alt = str(attrs.get("alt") or "").replace("\\", "\\\\").replace("]", "\\]")
+    # Escape what would end or unbalance the image's alt text; the renderer
+    # resolves these escapes again when the Markdown is read back.
+    alt = re.sub(r"([\\\[\]])", r"\\\1", str(attrs.get("alt") or ""))
     image_markdown = f"![{alt}]({_escape_destination(attrs['src'])}"
     if len(content) > 2:
         return _marker(node, unsupported)

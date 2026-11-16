@@ -18,6 +18,9 @@
 - Nested color and highlight spans override inherited styles of the same type
   without creating duplicate ProseMirror marks or changing sibling styles.
   Repeated style properties use the last nonempty declaration.
+- Image alt text now resolves Markdown backslash escapes, so `![a \*b\*](...)`
+  produces the alt text `a *b*` instead of keeping the backslashes. Exported
+  alt text containing a backslash or square bracket now reads back unchanged.
 
 ### Development
 
