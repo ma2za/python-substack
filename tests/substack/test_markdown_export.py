@@ -330,3 +330,23 @@ def test_api_export_rejects_malformed_draft_body(monkeypatch, draft_body):
 
     with pytest.raises(ValueError, match="Malformed draft body"):
         api.export_draft_to_markdown(42)
+
+
+@pytest.mark.parametrize(
+    "alt",
+    [
+        r"back\slash and ] bracket",
+        "an [unbalanced bracket",
+        r"literal \* and \\ and \]",
+        'find . -iname "*taxes*"',
+    ],
+)
+def test_image_alt_text_survives_export_and_reimport(alt):
+    document = {
+        "type": "doc",
+        "content": [captioned_image("https://example.com/image.png", alt=alt)],
+    }
+    markdown, unsupported = document_to_markdown(document)
+    assert unsupported == []
+    reimported = markdown_to_doc(markdown)
+    assert reimported[0]["content"][0]["attrs"]["alt"] == alt
