@@ -430,11 +430,13 @@ class Api:
 
         return Api._handle_response(response=response)
 
-    def get_drafts(self, filter=None, offset=None, limit=None):
+    def get_drafts(self, filter="draft", offset=None, limit=None):
         """
+        List the publication's drafts.
 
         Args:
-            filter:
+            filter: Which posts to list. Substack rejects the request when
+                this is missing.
             offset:
             limit:
 

@@ -143,6 +143,22 @@ class ApiTest(unittest.TestCase):
 
         self.assertEqual(api.get_drafts(), [{"id": 42}])
 
+    def test_get_drafts_asks_for_drafts_by_default(self):
+        # Substack rejects the request with a 400 unless a filter is sent.
+        api = Api.__new__(Api)
+        api.publication_url = "https://writer.substack.com/api/v1"
+        api._session = Mock()
+        response = Mock(status_code=200)
+        response.json.return_value = {"posts": []}
+        api._session.get.return_value = response
+
+        api.get_drafts(limit=5)
+
+        api._session.get.assert_called_once_with(
+            "https://writer.substack.com/api/v1/drafts",
+            params={"filter": "draft", "offset": None, "limit": 5},
+        )
+
     @pytest.mark.live
     @_e2e
     def test_get_posts(self):
