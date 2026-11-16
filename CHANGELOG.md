@@ -18,6 +18,9 @@
 - Nested color and highlight spans override inherited styles of the same type
   without creating duplicate ProseMirror marks or changing sibling styles.
   Repeated style properties use the last nonempty declaration.
+- Local Markdown images now carry the real width, height, byte size, and
+  content type that Substack reports for the upload, instead of every image
+  being recorded as 1456x819 whatever its real shape.
 
 ### Development
 

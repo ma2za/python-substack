@@ -121,6 +121,10 @@ def captioned_image(
     href: Optional[str] = None,
     caption: Optional[List[Dict]] = None,
     image_size: str = "normal",
+    width: int = 1456,
+    height: int = 819,
+    size_bytes: Optional[int] = None,
+    mime_type: Optional[str] = None,
 ) -> Dict:
     content: List[Dict] = [
         {
@@ -130,13 +134,13 @@ def captioned_image(
                 "srcNoWatermark": None,
                 "fullscreen": False,
                 "imageSize": image_size,
-                "height": 819,
-                "width": 1456,
+                "height": height,
+                "width": width,
                 "resizeWidth": 728 if image_size == "normal" else None,
-                "bytes": None,
+                "bytes": size_bytes,
                 "alt": alt,
                 "title": None,
-                "type": None,
+                "type": mime_type,
                 "href": href,
                 "belowTheFold": False,
                 "topImage": False,
