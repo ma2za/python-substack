@@ -100,3 +100,48 @@ def test_auth_method_reads_env(monkeypatch):
     monkeypatch.setenv("COOKIES_STRING", "substack.sid=value")
 
     assert cli._auth_method() == "cookies_string"
+
+
+def test_publish_markdown_passes_markdown_folder_for_local_images(
+    tmp_path, monkeypatch, capsys
+):
+    markdown = tmp_path / "posts" / "post.md"
+    markdown.parent.mkdir()
+    markdown.write_text("# Title\n\nBody", encoding="utf-8")
+    api = FakeApi()
+    monkeypatch.setattr(cli, "_api_from_env", lambda cookies_path=None: api)
+
+    assert cli.publish_markdown([str(markdown)]) == 0
+
+    assert api.kwargs["markdown_dir"] == markdown.parent
+
+
+def test_publish_yaml_passes_markdown_file_folder_for_local_images(
+    tmp_path, monkeypatch, capsys
+):
+    markdown = tmp_path / "posts" / "post.md"
+    markdown.parent.mkdir()
+    markdown.write_text("Body", encoding="utf-8")
+    post = tmp_path / "draft.yaml"
+    post.write_text("title: Title\nmarkdown_file: posts/post.md\n", encoding="utf-8")
+    api = FakeApi()
+    monkeypatch.setattr(cli, "_api_from_env", lambda cookies_path=None: api)
+
+    assert cli.publish_yaml([str(post)]) == 0
+
+    assert api.kwargs["markdown"] == "Body"
+    assert api.kwargs["markdown_dir"] == markdown.parent
+
+
+def test_publish_yaml_passes_yaml_folder_for_inline_markdown(
+    tmp_path, monkeypatch, capsys
+):
+    post = tmp_path / "drafts" / "draft.yaml"
+    post.parent.mkdir()
+    post.write_text("title: Title\nmarkdown: Body\n", encoding="utf-8")
+    api = FakeApi()
+    monkeypatch.setattr(cli, "_api_from_env", lambda cookies_path=None: api)
+
+    assert cli.publish_yaml([str(post)]) == 0
+
+    assert api.kwargs["markdown_dir"] == post.parent

@@ -593,7 +593,7 @@ class Post:
         self.draft_body["content"] = self.draft_body.get("content", []) + [node]
         return self
 
-    def from_markdown(self, markdown_content: str, api=None):
+    def from_markdown(self, markdown_content: str, api=None, markdown_dir=None):
         """
         Parse Markdown content and add it to the post.
 
@@ -618,6 +618,9 @@ class Post:
             markdown_content: Markdown string to parse and add to the post.
             api: Optional Api instance for uploading local images. If provided,
                  local image paths will be uploaded via api.get_image().
+            markdown_dir: Optional folder of the file the Markdown came from.
+                 A relative local image path that is not found in the working
+                 directory is then looked up in this folder.
 
         Returns:
             Self for method chaining.
@@ -628,6 +631,8 @@ class Post:
         """
         from substack import mdrender
 
-        rendered = mdrender.markdown_to_doc(markdown_content, api=api)
+        rendered = mdrender.markdown_to_doc(
+            markdown_content, api=api, markdown_dir=markdown_dir
+        )
         self.draft_body["content"] = self.draft_body.get("content", []) + rendered
         return self

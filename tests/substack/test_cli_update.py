@@ -169,3 +169,15 @@ def test_drafts_update_passes_force_as_allow_conflict(tmp_path, monkeypatch, cap
     assert api.calls[0][0] == "update"
     assert api.calls[0][1] == 42
     assert api.calls[0][3]["allow_conflict"] is True
+
+
+def test_drafts_update_passes_markdown_folder_for_local_images(
+    tmp_path, monkeypatch, capsys
+):
+    api = UpdateOperationsApi()
+    use_api(monkeypatch, api)
+    md_file = tmp_path / "posts" / "test.md"
+    md_file.parent.mkdir()
+    md_file.write_text("# Test", encoding="utf-8")
+    assert cli.main(["drafts", "update", "42", str(md_file), "--yes"]) == 0
+    assert api.calls[0][3]["markdown_dir"] == md_file.parent

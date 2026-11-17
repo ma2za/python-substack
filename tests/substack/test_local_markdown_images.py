@@ -1,6 +1,7 @@
 """Offline regression tests for Markdown local-image uploads."""
 
 import os
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -124,3 +125,115 @@ def test_remote_url_unchanged(api, src):
 )
 def test_without_api_retains_source(src):
     assert render(src) == src
+
+
+@pytest.fixture
+def post_dir(tmp_path, monkeypatch):
+    """A Markdown file's folder that is not the working directory."""
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    folder = tmp_path / "posts" / "first post"
+    (folder / "figures").mkdir(parents=True)
+    return folder
+
+
+def render_from(markdown, api, markdown_dir):
+    post = Post(title="Image test", subtitle="", user_id=1)
+    post.from_markdown(markdown, api=api, markdown_dir=markdown_dir)
+    return post.draft_body["content"]
+
+
+@pytest.mark.parametrize("as_type", [str, lambda path: path])
+def test_relative_file_found_beside_markdown(api, post_dir, as_type):
+    image = post_dir / "figures" / "obraz żółty.png"
+    image.touch()
+    content = render_from("![alt](<figures/obraz żółty.png>)", api, as_type(post_dir))
+    assert content[0]["content"][0]["attrs"]["src"] == UPLOADED
+    api.get_image.assert_called_once_with(str(image))
+
+
+@pytest.mark.parametrize(
+    "markdown",
+    [
+        "> ![alt](figures/chart.png)",
+        "- ![alt](figures/chart.png)",
+        "1. Item\n\n   ![alt](figures/chart.png)",
+        ":::callout\n![alt](figures/chart.png)\n:::",
+        "Text.[^note]\n\n[^note]: ![alt](figures/chart.png)",
+    ],
+)
+def test_nested_relative_file_found_beside_markdown(api, post_dir, markdown):
+    image = post_dir / "figures" / "chart.png"
+    image.touch()
+    render_from(markdown, api, post_dir)
+    api.get_image.assert_called_once_with(str(image))
+
+
+def test_working_directory_takes_priority_over_markdown_folder(api, post_dir):
+    (post_dir / "image.png").touch()
+    Path("image.png").touch()
+    render_from("![alt](image.png)", api, post_dir)
+    api.get_image.assert_called_once_with("image.png")
+
+
+def test_file_missing_from_both_folders_fails_before_upload(api, post_dir):
+    with pytest.raises(FileNotFoundError) as error:
+        render_from("![alt](figures/missing.png)", api, post_dir)
+    # The message names the path as written, as it does without markdown_dir.
+    written = Path("figures/missing.png")
+    assert str(error.value) == f"Local image file not found: {written}"
+    api.get_image.assert_not_called()
+
+
+@pytest.mark.parametrize("src", ["/image.png", "~/image.png"])
+def test_rooted_and_home_paths_ignore_markdown_folder(
+    tmp_path, monkeypatch, api, post_dir, src
+):
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
+    (post_dir / "image.png").touch()
+    with pytest.raises(FileNotFoundError):
+        render_from(f"![alt]({src})", api, post_dir)
+    api.get_image.assert_not_called()
+
+
+def test_directory_beside_markdown_is_not_an_image(api, post_dir):
+    with pytest.raises(FileNotFoundError):
+        render_from("![alt](figures)", api, post_dir)
+    api.get_image.assert_not_called()
+
+
+def test_remote_url_ignores_markdown_folder(api, post_dir):
+    content = render_from("![alt](https://example.com/a.png)", api, post_dir)
+    assert content[0]["content"][0]["attrs"]["src"] == "https://example.com/a.png"
+    api.get_image.assert_not_called()
+
+
+def test_create_draft_from_markdown_finds_file_beside_markdown(api, post_dir):
+    image = post_dir / "figures" / "chart.png"
+    image.touch()
+    api.get_user_id = Mock(return_value=1)
+    api.post_draft = Mock(return_value={"id": 123})
+    api.create_draft_from_markdown(
+        title="Title", markdown="![alt](figures/chart.png)", markdown_dir=post_dir
+    )
+    api.get_image.assert_called_once_with(str(image))
+
+
+def test_update_draft_from_markdown_finds_file_beside_markdown(api, post_dir):
+    image = post_dir / "figures" / "chart.png"
+    image.touch()
+    api.get_user_id = Mock(return_value=1)
+    api.get_draft = Mock(
+        return_value={"id": 42, "draft_body": '{"type":"doc","content":[]}'}
+    )
+    api.put_draft = Mock(return_value={"id": 42})
+    api.update_draft_from_markdown(
+        42,
+        "![alt](figures/chart.png)",
+        allow_conflict=True,
+        allow_image_replacement=True,
+        markdown_dir=post_dir,
+    )
+    api.get_image.assert_called_once_with(str(image))

@@ -188,6 +188,7 @@ def test_drafts_create_infers_title_and_preserves_safe_defaults(
     assert kwargs == {
         "title": "Inferred title",
         "markdown": "# Inferred title\n\nBody",
+        "markdown_dir": tmp_path,
         "subtitle": "",
         "audience": "everyone",
         "write_comment_permissions": "everyone",
