@@ -17,6 +17,11 @@ substack drafts create post.md
 The title comes from the first Markdown heading, then the filename if the file
 has no heading. Use `--title` to override it.
 
+Relative local image paths resolve from the current working directory. An
+image that is not found there is also looked up in the Markdown file's folder,
+so `substack drafts create posts/post.md` finds `![chart](figures/chart.png)`
+at `posts/figures/chart.png`. `substack drafts update` does the same.
+
 ## Export a draft to Markdown
 
 Print a read-only Markdown backup to standard output:

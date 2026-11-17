@@ -250,7 +250,7 @@ def _only_image(inline: SyntaxTreeNode) -> Optional[SyntaxTreeNode]:
     return None
 
 
-def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
+def _captioned_image(img: SyntaxTreeNode, api, markdown_dir=None) -> Dict:
     src = img.attrs.get("src", "")
     if api is not None and (
         urlsplit(src).scheme.lower() not in ("http", "https")
@@ -264,6 +264,12 @@ def _captioned_image(img: SyntaxTreeNode, api) -> Dict:
             relative = Path(unquote(src[1:]))
             if relative.is_file():
                 path = relative
+        if not path.is_file() and markdown_dir is not None:
+            # A relative path that is not in the working directory may be
+            # relative to the Markdown file it was written in.
+            beside_markdown = Path(markdown_dir) / path
+            if beside_markdown.is_file():
+                path = beside_markdown
         if not path.is_file():
             raise FileNotFoundError(f"Local image file not found: {path}")
         try:
@@ -301,7 +307,7 @@ def _render_block(node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
         inline = node.children[0]
         img = _only_image(inline)
         if img is not None:
-            return [_captioned_image(img, api)]
+            return [_captioned_image(img, api, ctx.get("markdown_dir"))]
         return [nodes.paragraph(_render_inline(inline, [], ctx))]
 
     if t == "heading":
@@ -362,7 +368,9 @@ def _render_list_items(list_node: SyntaxTreeNode, api, ctx: Dict) -> List[Dict]:
     return items
 
 
-def _footnote_definitions(tree: SyntaxTreeNode, api) -> Dict[int, List[Dict]]:
+def _footnote_definitions(
+    tree: SyntaxTreeNode, api, markdown_dir=None
+) -> Dict[int, List[Dict]]:
     """Map each footnote id to its rendered block content."""
     definitions: Dict[int, List[Dict]] = {}
     for node in tree.children:
@@ -370,7 +378,7 @@ def _footnote_definitions(tree: SyntaxTreeNode, api) -> Dict[int, List[Dict]]:
             continue
         for fn in node.children:
             # A footnote's own content should not register anchors of its own.
-            local_ctx = {"order": []}
+            local_ctx = {"order": [], "markdown_dir": markdown_dir}
             content: List[Dict] = []
             for child in fn.children:
                 content.extend(_render_block(child, api, local_ctx))
@@ -379,14 +387,22 @@ def _footnote_definitions(tree: SyntaxTreeNode, api) -> Dict[int, List[Dict]]:
 
 
 def markdown_to_doc(
-    markdown_content: str, api=None, track_markers: Optional[List] = None
+    markdown_content: str,
+    api=None,
+    track_markers: Optional[List] = None,
+    markdown_dir=None,
 ) -> List[Dict]:
-    """Convert Markdown into a list of Substack ProseMirror block nodes."""
+    """Convert Markdown into a list of Substack ProseMirror block nodes.
+
+    ``markdown_dir`` is the folder of the file the Markdown came from. A
+    relative local image path that is not found in the working directory is
+    then looked up in that folder.
+    """
     tree = SyntaxTreeNode(_make_parser().parse(markdown_content))
 
-    definitions = _footnote_definitions(tree, api)
+    definitions = _footnote_definitions(tree, api, markdown_dir)
 
-    ctx: Dict = {"order": []}
+    ctx: Dict = {"order": [], "markdown_dir": markdown_dir}
     out: List[Dict] = []
     last_was_image = False
     last_image_idx: Optional[int] = None

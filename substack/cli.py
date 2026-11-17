@@ -307,6 +307,7 @@ def _drafts_create(api, args):
         tags=args.tags,
         prepublish=False,
         publish=False,
+        markdown_dir=markdown_path.parent,
     )
     draft = result["draft"]
     payload = {
@@ -369,6 +370,7 @@ def _drafts_update(api, args):
         allow_unsupported_change=args.allow_unsupported_change,
         allow_image_replacement=args.allow_image_replacement,
         allow_conflict=args.allow_conflict,
+        markdown_dir=markdown_file.parent,
     )
 
     if args.json_output:
@@ -648,6 +650,7 @@ def publish_markdown(argv=None):
         publish=args.publish,
         send=args.send,
         share_automatically=args.share_automatically,
+        markdown_dir=markdown_path.parent,
     )
     _print_result(result)
     return 0
@@ -669,12 +672,14 @@ def publish_yaml(argv=None):
     api = _api_from_env(args.cookies)
 
     markdown = post_data.get("markdown")
+    markdown_dir = post_path.parent
     markdown_file = post_data.get("markdown_file")
     if markdown_file:
         markdown_path = Path(markdown_file)
         if not markdown_path.is_absolute():
             markdown_path = post_path.parent / markdown_path
         markdown = markdown_path.read_text(encoding="utf-8")
+        markdown_dir = markdown_path.parent
 
     if markdown is not None:
         result = api.create_draft_from_markdown(
@@ -694,6 +699,7 @@ def publish_yaml(argv=None):
             publish=args.publish,
             send=args.send,
             share_automatically=args.share_automatically,
+            markdown_dir=markdown_dir,
         )
         _print_result(result)
         return 0

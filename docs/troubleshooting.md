@@ -46,7 +46,10 @@ checking the draft ID.
 Pass the authenticated `Api` instance to `Post.from_markdown(..., api=api)` or
 use `Api.create_draft_from_markdown`, which does this automatically. Relative
 image paths resolve from the current working directory; absolute paths are
-preserved and `~` expands to the current user's home directory. HTTP(S) and
+preserved and `~` expands to the current user's home directory. A relative
+path that is not found there is also looked up in the Markdown file's folder:
+the CLI does this automatically, and Python callers can pass
+`markdown_dir=Path("posts")` alongside the Markdown text. HTTP(S) and
 protocol-relative image URLs are not uploaded. Missing files and failed
 uploads name the affected path instead of silently retaining a broken source.
 

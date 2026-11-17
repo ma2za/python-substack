@@ -34,6 +34,10 @@ markdown_file: "post.md"
 
 Relative Markdown paths resolve from the YAML file's directory.
 
+Relative local image paths resolve from the current working directory. An
+image that is not found there is also looked up in the Markdown file's folder,
+or in the YAML file's folder when the Markdown is inline.
+
 The lower-level node form remains supported:
 
 ```yaml

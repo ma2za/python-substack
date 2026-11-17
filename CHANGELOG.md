@@ -12,6 +12,14 @@
   (confirmed by applying both to a live draft and reading the rendered HTML
   back: `textStyle` becomes a `<span data-color>` with inline `color`,
   `highlight` becomes a `<mark data-color>` with inline `background-color`).
+- Optional `markdown_dir` argument on `Post.from_markdown`,
+  `Api.create_draft_from_markdown`, `Api.update_draft_from_markdown`, and
+  `mdrender.markdown_to_doc`. A relative local image path that is not found in
+  the working directory is then looked up in that folder. The `substack drafts
+  create`, `substack drafts update`, `substack-publish-markdown`, and
+  `substack-publish-yaml` commands pass the Markdown file's folder (the YAML
+  file's folder for inline Markdown), so images stored beside a post are found
+  from any working directory. Paths that resolve today resolve to the same file.
 
 ### Fixed
 

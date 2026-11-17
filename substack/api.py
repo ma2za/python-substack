@@ -506,9 +506,14 @@ class Api:
         expected_revision=None,
         allow_conflict: bool = False,
         force: bool = False,
+        markdown_dir=None,
     ) -> dict:
         """
         Update an existing draft body from Markdown, with optional metadata changes.
+
+        ``markdown_dir`` is the folder of the file the Markdown came from. A
+        relative local image path that is not found in the working directory
+        is then looked up in that folder.
         """
         from substack import mdrender
         from substack.exceptions import DraftConflictError
@@ -589,7 +594,10 @@ class Api:
             write_comment_permissions=write_comment_permissions,
         )
         rendered = mdrender.markdown_to_doc(
-            markdown, api=self, track_markers=image_markers
+            markdown,
+            api=self,
+            track_markers=image_markers,
+            markdown_dir=markdown_dir,
         )
         post.draft_body["content"] = rendered
 
@@ -775,7 +783,15 @@ class Api:
         publish: bool = False,
         send: bool = True,
         share_automatically: bool = False,
+        markdown_dir=None,
     ) -> dict:
+        """
+        Create a draft from Markdown.
+
+        ``markdown_dir`` is the folder of the file the Markdown came from. A
+        relative local image path that is not found in the working directory
+        is then looked up in that folder.
+        """
         from substack.post import Post
 
         post = Post(
@@ -785,7 +801,7 @@ class Api:
             audience=audience,
             write_comment_permissions=write_comment_permissions,
         )
-        post.from_markdown(markdown, api=self)
+        post.from_markdown(markdown, api=self, markdown_dir=markdown_dir)
 
         draft = self.post_draft(post.get_draft())
         draft_id = draft.get("id")

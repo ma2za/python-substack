@@ -128,7 +128,10 @@ A paragraph containing only an image becomes a captioned image.
   Absolute paths are preserved, `~` expands to the user's home directory, and
   relative paths resolve from the current working directory. A leading `/` is
   removed only as a legacy fallback when the absolute file does not exist and
-  the corresponding relative file does. Missing files and failed uploads raise
+  the corresponding relative file does. A relative path that is not found in
+  the working directory is also looked up in the Markdown file's folder when
+  that folder is known: the CLI passes it automatically, and Python callers
+  can pass `markdown_dir=`. Missing files and failed uploads raise
   an error naming the file instead of silently saving a broken image.
   PNG, JPEG, GIF, and WebP are uploaded without conversion, including animations.
   HTTP(S) and protocol-relative URLs remain unchanged. Without `api=`, image
